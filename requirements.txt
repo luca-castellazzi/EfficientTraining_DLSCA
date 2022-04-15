@@ -1,0 +1,5 @@
+keras
+pandas
+tensorflow
+ipykernel
+trsfile
