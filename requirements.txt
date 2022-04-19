@@ -3,3 +3,4 @@ pandas
 tensorflow
 ipykernel
 trsfile
+matplotlib
