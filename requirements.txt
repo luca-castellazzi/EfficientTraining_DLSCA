@@ -4,3 +4,5 @@ tensorflow
 ipykernel
 trsfile
 matplotlib
+tqdm
+sklearn
