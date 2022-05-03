@@ -3,9 +3,10 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
-# Enable imports from modules
+########## Enable imports from modules folder ##########
 import sys
 sys.path.insert(0, '/home/lcastellazzi/DL-SCA/modules')
+########################################################
 
 import aes
 
@@ -15,24 +16,48 @@ KEY = [int(c, 16) for c in ['CA', 'FE', 'BA', 'BE', 'DE', 'AD', 'BE', 'EF', '00'
 
 def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, key):
 
-    """ Read .trs file containing the traces and generate the corresponding
+    """ 
+    Reads .trs file containing the traces and generates the corresponding
     labels (all 16 bytes) either from traces metadata, or from given 
-    plaintexts and keys.
+    plaintexts and key.
 
-    Input: ...
-    Output: ...
+    Parameters:
+        - trace_set_path (str): 
+            path to the trace set to be read
+        - target (str): 
+            target of the attack (either 'SBO', for SBox Output, or 'HW', 
+            for Hamming Weight of the SBox Output).
+        - metadata (bool): 
+            value to specify if the given traces have metadata relative to key 
+            and plaintext.
+        - plaintext_list (str list): 
+            hex value of the plaintexts (one per trace).
+            Useful only if metadata=True.
+        - key (str): 
+            hex value of the encryption key used for the trace set.
+            Useful only if metadata=True.
+    
+    Returns: 
+        2-elements tuple containing the values of each trace and the corresponding 
+        set of 16 labels, one per byte of plaintext/key.
+        The values are stored in a list of numpy arrays, while the labels in a 
+        list of int.
     """
 
     traces = []
     labels = []
 
     with trsfile.open(trace_set_path, 'r') as tr_set:
-        # Get key if it is from TraceSet ##########################################################
+        # UNCOMMENT FOR "Edit parameters" from Inspector
+        #if metadata: 
+            #tr_set_parameters = tr_set.get_header(trsfile.common.Header.TRACE_SET_PARAMETERS)
+            #key = np.array(trace_set_parameters.pop('KEY').value) 
+        
         for i, tr in tqdm(enumerate(tr_set)):
-            
-            if metadata:
-                # Get key if it is from Trace ##########################################################
-                plaintext = np.array(tr.get_input()) # Int format by default
+
+            if metadata: # if the traces contain metadata for key and plaintext
+                key = np.array(tr.get_key()) # int format by default
+                plaintext = np.array(tr.get_input()) # int format by default
             else:
                 assert plaintext_list is not None, 'If metadata=False, then provide a plaintext list!'
                 assert len(plaintext_list[i]) == 32, 'Plaintext must be 32 characters!'
@@ -42,8 +67,8 @@ def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, k
                 assert len(key) == 32, 'Key must be 32 characters!'
                 key = hex_str_to_int(key)
 
-            # labels = aes.compute_labels(plaintext, key, target)
-            labels_all_bytes = aes.compute_labels(plaintext, KEY, target)
+            labels = aes.compute_labels(plaintext, key, target) # Compute the set of 16 labels
+            #labels_all_bytes = aes.compute_labels(plaintext, KEY, target)
             
             traces.append(tr.samples)
             labels.append(labels_all_bytes)
@@ -53,11 +78,17 @@ def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, k
 
 def hex_str_to_int(hex_str):
     
-    """ Convert a given string corresponding to a hex number into an array
-    of int, each one relative to a single byte of the hex input. 
+    """ 
+    Converts the given hex number into an array of int, each one relative to 
+    a single byte of the input. 
 
-    Input: ...
-    Output: ...
+    Parameters: 
+        - hex_str (str):
+            hex value to be converted.
+    
+    Returns: 
+        Conversion of the given hex value as a list of int, each one relative to
+        a single byte of the input.
     """
 
     split_hex_str = [hex_str[i:i+2] for i in range(0, len(hex_str), 2)]
@@ -67,20 +98,49 @@ def hex_str_to_int(hex_str):
 
 class Dataset:
     
-    """ Dataset class, allows to retrieve traces and corresponding labels
-    and to produce train, val and test sets.
+    """ 
+    A class to represent the whole dataset (both train and test sets).
+
+    Methods:
+        - build_train_val:
+            Generates the train/validation split where each trace is associated to
+            a single label, the one relative a specific byte.
+        - build_test:
+            Generates the test-set where each trace is associated to a single label, 
+            the one relative to a specific byte.
     """
 
     def __init__(self, train_set_path, test_set_path, target='SBO', metadata=True, 
                  train_plaintext_list=None, test_plaintext_list=None, 
                  train_key=None, test_key=None):
         
-        """ Class constructor that allows to directly collect the data
-        relative to both train and test traces and to generate the respective
-        16-bytes labels.
+        """ 
+        Class constructor that collects the data relative to both train and test traces
+        and generates the respective 16 labels.
 
-        Input: ...
-        Output: ...
+        Parameters: 
+            - train_set_path (str): 
+                path to the set of traces that will be the train-set. 
+            - test_set_path (str): 
+                path to the set of traces that will be the test-set.
+            - target (str, default 'SBO'): 
+                target of the attack (either 'SBO', for SBox Output, or 'HW', 
+                for Hamming Weight of the SBox Output).
+            - metadata (bool, default True): 
+                value to specify if the traces (both train and test) have metadata 
+                relative to key and plaintext.
+            - train_plaintext_list (str list, default None): 
+                hex value of the train plaintexts (one per trace). 
+                Useful only if metadata=True.
+            - test_plaintext_list (str list, default None): 
+                hex value of the test plaintexts (one per trace).
+                Useful only if metadata=True.
+            - train_key (str, default None):
+                hex value of the encryption key used for the train set.
+                Useful only if metadata=True.
+            - test_key (str, default None): 
+                hex value of the encryption key used for the test set.
+                Useful only if metadata=True.
         """
 
         # Train set
@@ -102,14 +162,26 @@ class Dataset:
         print()
 
 
-    def build_train_val(self, byte_idx, train_size, shuffle=True, seed=1234):
+    def build_train_val(self, byte_idx, train_size, shuffle=True, seed=None):
         
-        """ Generation of the train/validation split where each trace
-        is associated to a single label, the one relative to the provided
-        byte.
+        """
+        Generates the train/validation split, where each trace is associated to 
+        a single label, the one relative to the specified byte.
 
-        Input: ...
-        Output: ...
+        Parameters: 
+            - byte_idx (int): 
+                0-based index relative to the byte to consider while labeling each trace.
+            - train_size (float, between 0 and 1): 
+                percentage of data to consider as train-set. 
+            - shuffle (bool, default: True): 
+                whether or not to shuffle the data before splitting.
+            - seed (int, default: None):
+                value that controls the shuffle operation 
+        
+        Returns:
+            4-elements tuple containing the values of the train-traces, the specific
+            labels of the train-traces, the values of the val-traces and the specific
+            labels of the val-traces.
         """
 
         selected_byte_labels = [l[byte_idx] for l in self._train_labels] 
@@ -123,11 +195,17 @@ class Dataset:
     
     def build_test(self, byte_idx):
         
-        """ Generation of the test set where each trace is associated to
-        a single label, the one relative to the provided byte.
+        """ 
+        Generates the test-set where each trace, is associated to a single label,
+        the one relative to the specified byte.
 
-        Input: ...
-        Output: ...
+        Parameters:
+            - byte_idx (int):
+                0-based index relative to the byte to consider while labeling each trace.
+        
+        Returns:
+            2-elements tuple containing the values of the test-traces and the relative
+            specific labels.
         """
 
         selected_byte_labels = [l[byte_idx] for l in self._test_labels] 

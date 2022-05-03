@@ -19,21 +19,33 @@ SBOX_DEC = np.array([ # Int-version of the AES SBox
     [140, 161, 137,  13, 191, 230,  66, 104,  65, 153,  45,  15, 176,  84, 187,  22]
 ]) 
 
-
-SUPPORTED_TARGETS = ['SBO', 'HW']
+SUPPORTED_TARGETS = ['SBO', 'HW'] # SBO = SBox Output
+                                  # HW  = Hamming Weight of the SBox Output
 
 
 def compute_labels(plaintext, key, target='SBO'):
     
-    """ Computation of the targets for each byte of the key
-    Input: 
-        - plaintext: numpy array of int relative to each byte of the hex plaintext
-        - key: numpy array of int relative to each byte of the hex key
-        - target: Target of the network
+    """ 
+    Generates the labels associated to each byte of the given plaintext/key 
+    w.r.t. the given target.
 
-    Output: numpy array of int relative to the specified target for each byte of the key
-        - 'SOB': numpy array containing the SBox-lookup outputs 
-        - 'HW': numpy array containing the Hamming Weights of the SBox-lookup outputs
+    Parameters: 
+        - plaintext (int numpy array):
+            plaintext considered as list of int values, each one relative to 
+            a single byte of the hex version.
+        - key (int numpy array): 
+            encryption key considered as list of int values, each one relative
+            to a single byte of the hex version.
+        - target (str):
+            target of the attack (either 'SBO', for SBox Output, or 'HW', for 
+            Hamming Weight of the SBox Output).
+
+    Returns:
+        int numpy array containing the 16 labels (one per byte of plaintext/key)
+        relative to the given target.
+        In case of 'SBO' target, the output is the result of the SBox-lookup.
+        In case of 'HW' target, the output is the Hamming Weight of the result 
+        of the SBox-lookup.
     """
 
     assert target in SUPPORTED_TARGETS, 'Given target is not supported!'
@@ -43,17 +55,25 @@ def compute_labels(plaintext, key, target='SBO'):
     if target == 'SBO':
         return sbox_out
     elif target == 'HW':
-        return compute_hamming_weights(sbox_out)
+        return hamming_weights(sbox_out)
 
 
 def compute_sbox_out(plaintext, key):
 
-    """ SBox-lookup outputs computation given plaintext and key
-    Input:
-        - plaintext: 128 bit (16 bytes) in hex format (single string without separators)
-        - key: 128 bit (16 bytes) in hex format (single string without separators)
+    """ 
+    Computes the result of the SBox-lookup performed with the given plaintext and key.
 
-    Output: numpy array containing the SBox-lookup outputs relative to the given plaintext and key
+    Parameters:
+        - plaintext (int numpy array):
+            plaintext considered as list of int values, each one relative to 
+            a single byte of the hex version.
+        - key (int numpy array): 
+            encryption key considered as list of int values, each one relative
+            to a single byte of the hex version.
+    
+    Returns: 
+        int numpy array containing the SBox-lookup outputs relative to the given 
+        plaintext and key.
     """
 
     sbox_in = add_round_key(plaintext, key) # AES AddRoundKey
@@ -64,12 +84,20 @@ def compute_sbox_out(plaintext, key):
         
 def add_round_key(plaintext, key):
 
-    """ Implementation of AES AddRoundKey (plaintext XOR key)
-    Input:
-        - plaintext: numpy array of int relative to each byte of the hex plaintext
-        - key: numpy array of int relative to each byte of the hex key
+    """ 
+    Implements AES AddRoundKey (plaintext XOR key).
 
-    Output: numpy array containing each byte of the XOR between plaintext and key (int values) 
+    Parameters:
+        - plaintext (int numpy array):
+            plaintext considered as list of int values, each one relative to 
+            a single byte of the hex version.
+        - key (int numpy array): 
+            encryption key considered as list of int values, each one relative
+            to a single byte of the hex version.
+
+    Returns: 
+        int numpy array containing each byte of the XOR between the given plaintext
+        and key. 
     """
 
     return plaintext ^ key
@@ -77,14 +105,18 @@ def add_round_key(plaintext, key):
     
 def sub_bytes(sbox_in):
 
-    """ Implementation of AES SubBytes (SBox-lookup)
+    """ 
+    Implements AES SubBytes (SBox-lookup).
+    
     Input:
-        - sbox_in: numpy array containing each byte of the XOR between plaintext and key (int values) 
+        - sbox_in (int numpy array): 
+            list of each byte of the XOR between a plaintext and a key. 
 
-    Output: Result of the SBox-lookup 
+    Returns: 
+        int list containing the result of the SBox-lookup.
     """
 
-    sbox_in_hex = format_hex(sbox_in) # Convert the SBox input to well-formatted hex (each byte independently)
+    sbox_in_hex = int_to_hex(sbox_in) # Convert the SBox input to well-formatted hex (each byte independently)
 
     rows = [int(byte[0], 16) for byte in sbox_in_hex] # The first 4 bits (of each byte) are the row index 
     cols = [int(byte[1], 16) for byte in sbox_in_hex] # The remaining 4 bits (of each byte) are the col index 
@@ -92,34 +124,45 @@ def sub_bytes(sbox_in):
     return SBOX_DEC[rows, cols]
         
         
-def format_hex(int_bytes_array):
+def int_to_hex(int_values):
 
-    """ Conversion of an array of int to an array of hex, where the eventual 0 in front is explicit
-    Input:
-        - int_bytes_array: numpy array of int (one int refers to a single byte of a hex string)
+    """ 
+    Converts int values into hex values, where the eventual 0 in front is explicit.
 
-    Output: list of well-formatted hex values relative to the input int (0 in front in case of len-1 hex number) 
+    Parameters:
+        - int_values (int numpy array):
+            int values to be converted in hex.
+
+    Returns:
+        srt list where each value is the hex conversion of the int value in input.
+        The eventual 0 in fron is expicit. 
     """
 
-    hex_bytes = []
-    for byte in int_bytes_array:
-        tmp = hex(byte).replace('0x', '') # Get rid of '0x' that is generated by the cast to hex
+    hex_values = []
+    for val in int_values:
+        tmp = hex(val).replace('0x', '') # Get rid of '0x' that is generated by the cast to hex
         if len(tmp) == 1:
             tmp = f'0{tmp}' # Add 0 in front of the conversion if its len is 1
-        hex_bytes.append(tmp)
+        hex_values.append(tmp)
 
-    return hex_bytes
+    return hex_values
     
     
-def compute_hamming_weights(sbox_out):
+def hamming_weights(int_values):
 
-    """ Hamming Weights computation given the output of the SBox-lookup
-    Input:
-        - sbox_out: numpy array containing the result of a SBox-lookup
+    """ 
+    Computes the Hamming Weights of the given int values.
+    The Hamming Weight of a int value X is the number of 1s in the binary-conversion 
+    of X.
 
-    Output: numpy array containing the Hamming Weights of the given SBox-lookup output  
+    Parameters:
+        - int_values (int numpy array):
+            int values whose Hamming Weights should be computed.
+
+    Returns:
+        int list containing the Hamming Weights of the given int values.  
     """
 
-    bin_sbox_out = [np.binary_repr(out) for out in sbox_out] # Binary SBox outputs
+    bin_values = [np.binary_repr(val) for val in int_values] # Binary-conversion of the input
 
-    return [bin_out.count('1') for bin_out in bin_sbox_out] # HW = Number of 1s in bin number
+    return [bin_val.count('1') for bin_val in bin_values] # HW = Number of 1s in a bin number
