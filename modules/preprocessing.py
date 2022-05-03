@@ -40,8 +40,7 @@ def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, k
     Returns: 
         2-elements tuple containing the values of each trace and the corresponding 
         set of 16 labels, one per byte of plaintext/key.
-        The values are stored in a list of numpy arrays, while the labels in a 
-        list of int.
+        The values and the labels are stored in lists of numpy arrays.
     """
 
     traces = []
@@ -53,7 +52,7 @@ def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, k
             #tr_set_parameters = tr_set.get_header(trsfile.common.Header.TRACE_SET_PARAMETERS)
             #key = np.array(trace_set_parameters.pop('KEY').value) 
         
-        for i, tr in tqdm(enumerate(tr_set)):
+        for i, tr in enumerate(tqdm(tr_set)):
 
             if metadata: # if the traces contain metadata for key and plaintext
                 key = np.array(tr.get_key()) # int format by default
@@ -67,11 +66,11 @@ def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, k
                 assert len(key) == 32, 'Key must be 32 characters!'
                 key = hex_str_to_int(key)
 
-            labels = aes.compute_labels(plaintext, key, target) # Compute the set of 16 labels
-            #labels_all_bytes = aes.compute_labels(plaintext, KEY, target)
+            tr_labels = aes.compute_labels(plaintext, key, target) # Compute the set of 16 labels
+            #tr_labels = aes.compute_labels(plaintext, KEY, target)
             
             traces.append(tr.samples)
-            labels.append(labels_all_bytes)
+            labels.append(tr_labels)
     
     return traces, labels
 
@@ -144,7 +143,7 @@ class Dataset:
         """
 
         # Train set
-        print('Reading train-set traces and extracting all-bytes labels...')
+        print('Reading train-set traces and extracting labels...')
         self._train_traces, self._train_labels = produce_labeled_traceset(train_set_path, 
                                                                           target,
                                                                           metadata,
@@ -153,13 +152,12 @@ class Dataset:
         print()
 
         # Test set
-        print('Reading test-set traces and extracting all-bytes labels...')
+        print('Reading test-set traces and extracting labels...')
         self._test_traces, self._test_labels = produce_labeled_traceset(test_set_path, 
                                                                         target,
                                                                         metadata,
                                                                         test_plaintext_list,
                                                                         test_key)
-        print()
 
 
     def build_train_val(self, byte_idx, train_size, shuffle=True, seed=None):
@@ -179,15 +177,15 @@ class Dataset:
                 value that controls the shuffle operation 
         
         Returns:
-            4-elements tuple containing the values of the train-traces, the specific
-            labels of the train-traces, the values of the val-traces and the specific
-            labels of the val-traces.
+            4-elements tuple containing the values of the train-traces, the values
+            of the val-traces, the specific labels of the train-traces and the 
+            specific labels of the val-traces (in this order).
         """
 
         selected_byte_labels = [l[byte_idx] for l in self._train_labels] 
     
-        return train_test_split(self._train_traces, 
-                                selected_byte_labels, 
+        return train_test_split(self._train_traces,     # returns:
+                                selected_byte_labels,   # x_train, x_val, y_train, y_val
                                 train_size=train_size,
                                 shuffle=shuffle,
                                 random_state=seed)
