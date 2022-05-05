@@ -11,9 +11,6 @@ sys.path.insert(0, '/home/lcastellazzi/DL-SCA/modules')
 import aes128
 
 
-KEY = [int(c, 16) for c in ['CA', 'FE', 'BA', 'BE', 'DE', 'AD', 'BE', 'EF', '00', '01', '02', '03', '04', '05', '06', '07']]
-
-
 def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, key):
 
     """ 
@@ -66,8 +63,7 @@ def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, k
                 assert len(key) == 32, 'Key must be 32 characters!'
                 key = hex_str_to_int(key)
 
-            tr_labels = aes.compute_labels(plaintext, key, target) # Compute the set of 16 labels
-            #tr_labels = aes.compute_labels(plaintext, KEY, target)
+            tr_labels = aes128.compute_labels(plaintext, key, target) # Compute the set of 16 labels
             
             traces.append(tr.samples)
             labels.append(tr_labels)
