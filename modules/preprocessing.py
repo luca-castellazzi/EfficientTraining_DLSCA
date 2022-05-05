@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, '/home/lcastellazzi/DL-SCA/modules')
 ########################################################
 
-import aes
+import aes128
 
 
 KEY = [int(c, 16) for c in ['CA', 'FE', 'BA', 'BE', 'DE', 'AD', 'BE', 'EF', '00', '01', '02', '03', '04', '05', '06', '07']]
