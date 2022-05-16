@@ -1,5 +1,8 @@
 import numpy as np
 
+from targets import TargetEnum
+
+
 SBOX_DEC = np.array([ # Int-version of the AES SBox 
     [ 99, 124, 119, 123, 242, 107, 111, 197,  48,   1, 103,  43, 254, 215, 171, 118],
     [202, 130, 201, 125, 250,  89,  71, 240, 173, 212, 162, 175, 156, 164, 114, 192],
@@ -48,13 +51,11 @@ def compute_labels(plaintext, key, target='SBO'):
         of the SBox-lookup.
     """
 
-    assert target in SUPPORTED_TARGETS, 'Given target is not supported!'
-
     sbox_out = compute_sbox_out(plaintext, key)
 
-    if target == 'SBO':
+    if target == TargetEnum.SBO:
         return sbox_out
-    elif target == 'HW':
+    elif target == TargetEnum.HW:
         return hamming_weights(sbox_out)
 
 
