@@ -1,6 +1,5 @@
 import trsfile
 import numpy as np
-from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
 import aes128
@@ -45,7 +44,7 @@ def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, k
             #tr_set_parameters = tr_set.get_header(trsfile.common.Header.TRACE_SET_PARAMETERS)
             #key = np.array(trace_set_parameters.pop('KEY').value) 
         
-        for i, tr in enumerate(tqdm(tr_set)):
+        for i, tr in enumerate(tr_set):
 
             if metadata: # if the traces contain metadata for key and plaintext
                 key = np.array(tr.get_key()) # int format by default
@@ -63,7 +62,7 @@ def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, k
             
             traces.append(tr.samples)
             labels.append(tr_labels)
-    
+        
     return traces, labels
 
 
@@ -121,6 +120,7 @@ class Dataset:
                                                                           metadata,
                                                                           train_plaintext_list,
                                                                           train_key)
+        print('Done')
         print()
 
         # Test set
@@ -130,6 +130,7 @@ class Dataset:
                                                                         metadata,
                                                                         test_plaintext_list,
                                                                         test_key)
+        print('Done')
 
 
     def build_train_val(self, byte_idx, train_size, shuffle=True, seed=None):

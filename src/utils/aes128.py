@@ -1,7 +1,7 @@
 import numpy as np
 
 from helpers import int_to_hex
-from targets import TargetEnum
+from targets import TargetEnum, hamming_weights
 
 
 SBOX_DEC = np.array([ # Int-version of the AES SBox 
@@ -49,7 +49,7 @@ def compute_labels(plaintext, key, target='SBO'):
         In case of 'HW' target, the output is the Hamming Weight of the result 
         of the SBox-lookup.
     """
-
+    
     sbox_out = compute_sbox_out(plaintext, key)
 
     if target == TargetEnum.SBO:

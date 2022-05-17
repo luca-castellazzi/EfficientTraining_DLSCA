@@ -22,7 +22,7 @@ def hamming_weights(int_values):
     return [bin_val.count('1') for bin_val in bin_values]
 
 
-class TargetEnum(enum.Enum):
+class TargetEnum(str, enum.Enum): # Inheritance from str to have a string-like behaviour
 
     """
     Enumeration class containing the supported targets of an attack.
