@@ -3,12 +3,8 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
-########## Enable imports from modules folder ##########
-import sys
-sys.path.insert(0, '/home/lcastellazzi/DL-SCA/modules')
-########################################################
-
 import aes128
+from helpers import hex_to_int
 
 
 def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, key):
@@ -57,11 +53,11 @@ def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, k
             else:
                 assert plaintext_list is not None, 'If metadata=False, then provide a plaintext list!'
                 assert len(plaintext_list[i]) == 32, 'Plaintext must be 32 characters!'
-                plaintext = hex_str_to_int(plaintext_list[i])
+                plaintext = hex_to_int(plaintext_list[i])
 
                 assert key is not None, 'If metadata=False, then provide a key!'
                 assert len(key) == 32, 'Key must be 32 characters!'
-                key = hex_str_to_int(key)
+                key = hex_to_int(key)
 
             tr_labels = aes128.compute_labels(plaintext, key, target) # Compute the set of 16 labels
             
@@ -69,26 +65,6 @@ def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, k
             labels.append(tr_labels)
     
     return traces, labels
-
-
-def hex_str_to_int(hex_str):
-    
-    """ 
-    Converts the given hex number into an array of int, each one relative to 
-    a single byte of the input. 
-
-    Parameters: 
-        - hex_str (str):
-            hex value to be converted.
-    
-    Returns: 
-        Conversion of the given hex value as a list of int, each one relative to
-        a single byte of the input.
-    """
-
-    split_hex_str = [hex_str[i:i+2] for i in range(0, len(hex_str), 2)]
-
-    return [int(sb, 16) for sb in split_hex_str] 
 
 
 class Dataset:

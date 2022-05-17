@@ -1,6 +1,17 @@
+############################################################################
+#                                                                          # 
+# This code is based on the NICV implementation from AISyLab.              #
+#                                                                          # 
+# The reference project is AISyLab/side-channel-analysis-toolbox, which is #
+# licensed under MIT License.                                              #
+#                                                                          #
+############################################################################
+
+
 import numpy as np
 
-def nicv(traces: np.ndarray, labels: np.ndarray, byte_idx: int) -> np.array:
+
+def nicv(traces, labels, byte_idx):
 
     """
     Compute the Normalized Inter-Class Variance (NICV) index for the provided
@@ -11,12 +22,16 @@ def nicv(traces: np.ndarray, labels: np.ndarray, byte_idx: int) -> np.array:
 
 
     Parameters:
-        - traces: set of traces to consider during the computation
-        - labels: labels related to the given traces
-        - byte_idx: index of the byte to consider during the computation (range 0-15)
+        - traces (float np.ndarray): 
+            set of traces to consider during the computation.
+        - labels (int np.ndarray):
+            labels related to the given traces.
+        - byte_idx (int): 
+            index of the byte to consider during the computation (range 0-15).
 
     Returns:
-        - nicv: NICV values, one for each sample of the given traces
+        - nicv (float np.array): 
+            NICV values, one for each sample of the given traces.
     """
 
     # Define all fixed values
@@ -31,8 +46,9 @@ def nicv(traces: np.ndarray, labels: np.ndarray, byte_idx: int) -> np.array:
     for x in range(num_possible_labels):
         idx_tr_with_x = np.where(labels[:, byte_idx] == x) # Isolate traces by index
         val_tr_with_x = traces[idx_tr_with_x] # Get the actual values of the isolated traces
+        
         # Compute the mean value of the isolated traces w.r.t. axis=0 
-        #(for each sample, sum the value of each trace and divide by the number of traces)
+        # (for each sample, sum the value of each trace and divide by the number of traces)
         mean_t_given_x.append(np.mean(val_tr_with_x, axis=0)) 
 
     mean_t_given_x = np.array(mean_t_given_x)

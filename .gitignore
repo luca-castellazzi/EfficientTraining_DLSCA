@@ -110,7 +110,6 @@ ENV/
 env.bak/
 venv.bak/
 mdm32_env/
-dlsca_env/
 
 # Spyder project settings
 .spyderproject
