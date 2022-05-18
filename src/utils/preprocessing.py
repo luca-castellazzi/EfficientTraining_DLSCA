@@ -1,70 +1,104 @@
 import trsfile
 import numpy as np
+from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
-import aes128
+import aes128 
 from helpers import hex_to_int
 
 
-def produce_labeled_traceset(trace_set_path, target, metadata, plaintext_list, key):
-
-    """ 
-    Reads .trs file containing the traces and generates the corresponding
-    labels (all 16 bytes) either from traces metadata, or from given 
-    plaintexts and key.
-
-    Parameters:
-        - trace_set_path (str): 
-            path to the trace set to be read
-        - target (str): 
-            target of the attack (either 'SBO', for SBox Output, or 'HW', 
-            for Hamming Weight of the SBox Output).
-        - metadata (bool): 
-            value to specify if the given traces have metadata relative to key 
-            and plaintext.
-        - plaintext_list (str list): 
-            hex value of the plaintexts (one per trace).
-            Useful only if metadata=True.
-        - key (str): 
-            hex value of the encryption key used for the trace set.
-            Useful only if metadata=True.
+class TraceHandler():
     
-    Returns: 
-        2-elements tuple containing the values of each trace and the corresponding 
-        set of 16 labels, one per byte of plaintext/key.
-        The values and the labels are stored in lists of numpy arrays.
+    """
+    Class dedicated to the manipulation and preprocessing of the traces.
+
+    Methods:
+        - get_traces:
+            getter for the values of the traceset.
+        - get_plaintexts:
+            getter for the plaintexts of the traceset.
+        - get_labels:
+            getter for the 16-bytes labels of the traceset.
+
     """
 
-    traces = []
-    labels = []
 
-    with trsfile.open(trace_set_path, 'r') as tr_set:
-        # UNCOMMENT FOR "Edit parameters" from Inspector
-        #if metadata: 
-            #tr_set_parameters = tr_set.get_header(trsfile.common.Header.TRACE_SET_PARAMETERS)
-            #key = np.array(trace_set_parameters.pop('KEY').value) 
+    def __init__(self, path, target='SBO'):
         
-        for i, tr in enumerate(tr_set):
+        """
+        Class constructor: given a path and a target, retrieve the traces, 
+        retrieve the plaintexts and compute the 16-bytes labels for each trace
+        w.r.t. the specified target.
 
-            if metadata: # if the traces contain metadata for key and plaintext
+        Parameters:
+            - path (str):
+                path to the traceset to be considered.
+            - target (str or TargetEnum):
+                attack target to use during labels computation ('SBO' for SBox
+                Output, 'HM' for Hamming Weight of SBox Output)
+        """
+
+        self.traces = []
+        self.plaintexts = []
+        self.labels = []
+        self.target = target
+
+        with trsfile.open(path, 'r') as tr_set:
+                
+            for i, tr in enumerate(tqdm(tr_set)):
                 key = np.array(tr.get_key()) # int format by default
+                   
+                trace = np.array(tr.samples)
                 plaintext = np.array(tr.get_input()) # int format by default
-            else:
-                assert plaintext_list is not None, 'If metadata=False, then provide a plaintext list!'
-                assert len(plaintext_list[i]) == 32, 'Plaintext must be 32 characters!'
-                plaintext = hex_to_int(plaintext_list[i])
+                labels = aes128.compute_labels(plaintext, key, target) # Compute the set of 16 labels
+                
+                self.traces.append(trace)
+                self.plaintexts.append(plaintext)
+                self.labels.append(labels)
 
-                assert key is not None, 'If metadata=False, then provide a key!'
-                assert len(key) == 32, 'Key must be 32 characters!'
-                key = hex_to_int(key)
 
-            tr_labels = aes128.compute_labels(plaintext, key, target) # Compute the set of 16 labels
-            
-            traces.append(tr.samples)
-            labels.append(tr_labels)
+    def get_traces(self):
+
+        """
+        Getter for the values of the traceset whose path is specified in the 
+        constructor.
+
+        Returns:
+            float np.ndarray containing the values of the samples of each trace
+            in the traceset.
+        """
+
+        return np.array(self.traces)
+
+
+    def get_plaintexts(self):
+
+        """
+        Getter for the plaintexts of the traceset whose path is specified in the 
+        constructor.
+
+        Returns:
+            int np.ndarray containing the int values of the bytes of each plaintext
+            in the traceset.
+        """
+
+        return np.array(self.plaintexts)
+
+
+    def get_labels(self):
+
+        """
+        Getter for the 16-bytes labels of the traceset whose path is specified
+        in the constructor.
         
-    return traces, labels
+        Returns:
+            int np.ndarray containing the 16-bytes labels of each trace in the 
+            traceset.
+        """
 
+        return np.array(self.labels)
+
+# -----------------------------------------------------------------------------
 
 class Dataset:
     
