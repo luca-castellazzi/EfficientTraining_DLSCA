@@ -1,11 +1,11 @@
-############################################################################
-#                                                                          # 
-# This code is based on the NICV implementation from AISyLab.              #
-#                                                                          # 
-# The reference project is AISyLab/side-channel-analysis-toolbox, which is #
-# licensed under MIT License.                                              #
-#                                                                          #
-############################################################################
+################################################################################
+#                                                                              # 
+# This code is based on the NICV implementation from AISyLab.                  #
+#                                                                              # 
+# The reference project is AISyLab/side-channel-analysis-toolbox, which is     #
+# licensed under MIT License.                                                  #
+#                                                                              #
+################################################################################
 
 
 import numpy as np
