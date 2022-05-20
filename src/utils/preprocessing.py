@@ -12,6 +12,16 @@ class TraceHandler():
     """
     Class dedicated to the manipulation and preprocessing of the traces.
 
+    Attributes:
+        - traces (np.ndarray):
+            values of the trace.
+        - plaintexts (np.ndarray):
+            plaintexts used to produce each trace.
+        - labels (np.ndarray):
+            16-bytes labels relative to each plaintext.
+        - target (str or TargetEnum):
+            target of the attack.
+
     Methods:
         - get_traces:
             getter for the values of the traceset.
@@ -19,6 +29,8 @@ class TraceHandler():
             getter for the plaintexts of the traceset.
         - get_labels:
             getter for the 16-bytes labels of the traceset.
+        - generate_train_val:
+            generation of the train and validation sets splitting 
 
     """
 
@@ -33,15 +45,15 @@ class TraceHandler():
         Parameters:
             - path (str):
                 path to the traceset to be considered.
-            - target (str or TargetEnum):
+            - target (str or TargetEnum, Default: SBO):
                 attack target to use during labels computation ('SBO' for SBox
                 Output, 'HM' for Hamming Weight of SBox Output)
         """
 
-        self.traces = []
-        self.plaintexts = []
-        self.labels = []
-        self.target = target
+        self._traces = []
+        self._plaintexts = []
+        self._labels = []
+        self._target = target
 
         with trsfile.open(path, 'r') as tr_set:
                 
@@ -50,11 +62,15 @@ class TraceHandler():
                    
                 trace = np.array(tr.samples)
                 plaintext = np.array(tr.get_input()) # int format by default
-                labels = aes128.compute_labels(plaintext, key, target) # Compute the set of 16 labels
+                labels = aes128.compute_labels(plaintext, key, self._target) # Compute the set of 16 labels
                 
-                self.traces.append(trace)
-                self.plaintexts.append(plaintext)
-                self.labels.append(labels)
+                self._traces.append(trace)
+                self._plaintexts.append(plaintext)
+                self._labels.append(labels)
+
+        self._traces = np.array(self._traces)
+        self._plaintexts = np.array(self._plaintexts)
+        self._labels = np.array(self._labels)
 
 
     def get_traces(self):
@@ -98,77 +114,9 @@ class TraceHandler():
 
         return np.array(self.labels)
 
-# -----------------------------------------------------------------------------
 
-class Dataset:
-    
-    """ 
-    A class to represent the whole dataset (both train and test sets).
+    def generate_train_val(self, byte_idx, val_perc, shuffle=True, seed=None):
 
-    Methods:
-        - build_train_val:
-            Generates the train/validation split where each trace is associated to
-            a single label, the one relative a specific byte.
-        - build_test:
-            Generates the test-set where each trace is associated to a single label, 
-            the one relative to a specific byte.
-    """
-
-    def __init__(self, train_set_path, test_set_path, target='SBO', metadata=True, 
-                 train_plaintext_list=None, test_plaintext_list=None, 
-                 train_key=None, test_key=None):
-        
-        """ 
-        Class constructor that collects the data relative to both train and test traces
-        and generates the respective 16 labels.
-
-        Parameters: 
-            - train_set_path (str): 
-                path to the set of traces that will be the train-set. 
-            - test_set_path (str): 
-                path to the set of traces that will be the test-set.
-            - target (str, default 'SBO'): 
-                target of the attack (either 'SBO', for SBox Output, or 'HW', 
-                for Hamming Weight of the SBox Output).
-            - metadata (bool, default True): 
-                value to specify if the traces (both train and test) have metadata 
-                relative to key and plaintext.
-            - train_plaintext_list (str list, default None): 
-                hex value of the train plaintexts (one per trace). 
-                Useful only if metadata=True.
-            - test_plaintext_list (str list, default None): 
-                hex value of the test plaintexts (one per trace).
-                Useful only if metadata=True.
-            - train_key (str, default None):
-                hex value of the encryption key used for the train set.
-                Useful only if metadata=True.
-            - test_key (str, default None): 
-                hex value of the encryption key used for the test set.
-                Useful only if metadata=True.
-        """
-
-        # Train set
-        print('Reading train-set traces and extracting labels...')
-        self._train_traces, self._train_labels = produce_labeled_traceset(train_set_path, 
-                                                                          target,
-                                                                          metadata,
-                                                                          train_plaintext_list,
-                                                                          train_key)
-        print('Done')
-        print()
-
-        # Test set
-        print('Reading test-set traces and extracting labels...')
-        self._test_traces, self._test_labels = produce_labeled_traceset(test_set_path, 
-                                                                        target,
-                                                                        metadata,
-                                                                        test_plaintext_list,
-                                                                        test_key)
-        print('Done')
-
-
-    def build_train_val(self, byte_idx, train_size, shuffle=True, seed=None):
-        
         """
         Generates the train/validation split, where each trace is associated to 
         a single label, the one relative to the specified byte.
@@ -176,12 +124,12 @@ class Dataset:
         Parameters: 
             - byte_idx (int): 
                 0-based index relative to the byte to consider while labeling each trace.
-            - train_size (float, between 0 and 1): 
-                percentage of data to consider as train-set. 
+            - val_perc (float): 
+                percentage of data to consider as val-set. 
             - shuffle (bool, default: True): 
                 whether or not to shuffle the data before splitting.
             - seed (int, default: None):
-                value that controls the shuffle operation 
+                value that controls the shuffle operation. 
         
         Returns:
             4-elements tuple containing the values of the train-traces, the values
@@ -189,19 +137,21 @@ class Dataset:
             specific labels of the val-traces (in this order).
         """
 
-        selected_byte_labels = [l[byte_idx] for l in self._train_labels] 
-    
-        return train_test_split(self._train_traces,     # returns:
-                                selected_byte_labels,   # x_train, x_val, y_train, y_val
-                                train_size=train_size,
-                                shuffle=shuffle,
-                                random_state=seed)
+        specific_labels = np.array([l[byte_idx] for l in self._labels])
 
-    
-    def build_test(self, byte_idx):
+        x_train, x_val, y_train, y_val = train_test_split(self._traces,
+                                                          specific_labels,
+                                                          test_size=val_perc,
+                                                          shuffle=shuffle, 
+                                                          random_state=seed)
+
+        return np.array(x_train), np.array(x_val), np.array(y_train), np.array(y_val)
+
+
+    def generate_test(self, byte_idx):
         
         """ 
-        Generates the test-set where each trace, is associated to a single label,
+        Generates the test-set where each trace is associated to a single label,
         the one relative to the specified byte.
 
         Parameters:
@@ -213,6 +163,6 @@ class Dataset:
             specific labels.
         """
 
-        selected_byte_labels = [l[byte_idx] for l in self._test_labels] 
+        specific_labels = np.array([l[byte_idx] for l in self._labels]) 
     
-        return self._test_traces, selected_byte_labels
+        return self._traces, specific_labels
