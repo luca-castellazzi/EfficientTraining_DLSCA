@@ -84,7 +84,7 @@ class TraceHandler():
             in the traceset.
         """
 
-        return np.array(self.traces)
+        return np.array(self._traces)
 
 
     def get_plaintexts(self):
@@ -98,7 +98,7 @@ class TraceHandler():
             in the traceset.
         """
 
-        return np.array(self.plaintexts)
+        return np.array(self._plaintexts)
 
 
     def get_labels(self):
@@ -112,7 +112,7 @@ class TraceHandler():
             traceset.
         """
 
-        return np.array(self.labels)
+        return np.array(self._labels)
 
 
     def generate_train_val(self, byte_idx, val_perc, shuffle=True, seed=None):
