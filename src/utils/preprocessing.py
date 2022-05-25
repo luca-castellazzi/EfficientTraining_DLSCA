@@ -57,7 +57,7 @@ class TraceHandler():
 
         with trsfile.open(path, 'r') as tr_set:
                 
-            for i, tr in enumerate(tqdm(tr_set)):
+            for i, tr in enumerate(tqdm(tr_set, desc='Labeling traces: ')):
                 key = np.array(tr.get_key()) # int format by default
                    
                 trace = np.array(tr.samples)
