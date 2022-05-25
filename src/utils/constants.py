@@ -12,9 +12,9 @@ import numpy as np
 DEVICES = ['D1', 'D2']
 
 # All keys (generated with key_gen.py script)
-KEYS = {'K1': 'c4552e063bfbff50266d237d91654ef5',
-        'K2': '5d634de10ee32ba7bba19f4e882f4965', 
-        'K3': '6f5691ef569b829c11ad31fa8cfda643'}
+KEYS = {'K1': ['c4', '55', '2e', '06', '3b', 'fb', 'ff', '50', '26', '6d', '23', '7d', '91', '65', '4e', 'f5'],
+        'K2': ['5d', '63', '4d', 'e1', '0e', 'e3', '2b', 'a7', 'bb', 'a1', '9f', '4e', '88', '2f', '49', '65'], 
+        'K3': ['6f', '56', '91', 'ef', '56', '9b', '82', '9c', '11', 'ad', '31', 'fa', '8c', 'fd', 'a6', '43']}
 
 # Int-version of AES SBox
 SBOX_DEC = np.array([
