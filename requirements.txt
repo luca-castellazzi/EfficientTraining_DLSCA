@@ -28,7 +28,9 @@ jupyter-client==7.2.2
 jupyter-core==4.10.0
 keras==2.8.0
 Keras-Preprocessing==1.1.2
+keras-tuner==1.1.2
 kiwisolver==1.4.2
+kt-legacy==1.0.4
 libclang==13.0.0
 Markdown==3.3.6
 matplotlib==3.5.1
