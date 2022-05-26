@@ -115,6 +115,24 @@ class TraceHandler():
         return np.array(self._labels)
 
 
+    def get_specific_labels(self, byte_idx):
+
+        """
+        Getter for the specific labels associated to the provided byte index.
+
+        Parameters:
+            - byte_idx (int):
+                 0-based index relative to the byte to consider while recovering
+                 specific labels. 
+
+        Returns:
+            int np.array containing, for each trace, the specific label 
+            associated to the provided byte index. 
+        """
+
+        return np.array([l[byte_idx] for l in self._labels])
+
+
     def generate_train_val(self, byte_idx, val_perc, shuffle=True, seed=None):
 
         """
@@ -137,7 +155,7 @@ class TraceHandler():
             specific labels of the val-traces (in this order).
         """
 
-        specific_labels = np.array([l[byte_idx] for l in self._labels])
+        specific_labels = self.get_specific_labels(byte_idx)
 
         x_train, x_val, y_train, y_val = train_test_split(self._traces,
                                                           specific_labels,
@@ -163,6 +181,6 @@ class TraceHandler():
             specific labels.
         """
 
-        specific_labels = np.array([l[byte_idx] for l in self._labels]) 
-    
+        specific_labels = self.get_specific_labels(byte_idx)
+
         return self._traces, specific_labels

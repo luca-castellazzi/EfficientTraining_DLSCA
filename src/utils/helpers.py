@@ -2,7 +2,9 @@ def int_to_hex(int_values):
 
     """
     Converts int values into hex values, where the eventual 0 in front is explicit.
-    
+    This function works also with len-1 lists, but in that case the returned
+    value is a single str.
+
     Parameters:
         - int_values (int np.array or list): 
             int values to be converted to hex.
@@ -19,8 +21,11 @@ def int_to_hex(int_values):
         if len(tmp) == 1:
             tmp = f'0{tmp}' # Add 0 in front of the conversion if its len is 1
         hex_values.append(tmp)
-
-    return hex_values
+    
+    if len(hex_values) == 1:
+        return hex_values[0]
+    else:
+        return hex_values
 
 
 def hex_to_int(hex_str):

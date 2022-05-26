@@ -4,12 +4,14 @@ import numpy as np
 import aes128
 import constants
 from targets import TargetEnum
+from helpers import int_to_hex
 
 
 class Evaluator():
     
     def __init__(self, label_probs, plaintexts, byte_idx, target='SBO'):
         
+        # Labels (SBox out) to key-bytes conversion
         self._key_byte_probs = []
         
         if target == TargetEnum.SBO:
@@ -20,26 +22,27 @@ class Evaluator():
         elif target == TargetEnum.HW: 
             pass ####################################################################################################################
 
-        self._ranking = {str(key_byte): 0.0 for key_byte in range(256)}
-
 
     def rank_key_bytes(self):
-
-        tmp_dict = {str(key_byte): 0.0 
-                    for key_byte in range(256)} # Temporary dict used to store 
-                                                # key-bytes and relative prob values
+        
+        # Initialize a tempory dict where to store the probs of each key_byte
+        tmp_dict = {str(key_byte): 0.0 for key_byte in range(256)}
 
         # Sum the probs (log10) relative to the same key-byte
         for probs in tqdm(self._key_byte_probs, desc='Computing final key-byte probabilities: '):
             for key_byte in tmp_dict.keys():
                 tmp_dict[key_byte] += np.log10(probs[key_byte] + 1e-22)    
 
-        # Produce a ranking of the key-bytes (hex) w.r.t. their prob values
-        self._ranking = sorted(self._ranking, 
-                               key=lambda x: self._ranking[x], 
-                               reverse=True)
-        self._ranking = [hex(int(val))[2:] for val in self._ranking]
+        # Sort the key-bytes w.r.t. their prob
+        sorted_key_byte_probs = list(tmp_dict.items())
+        sorted_key_byte_probs.sort(key=lambda x: -x[1]) # The "-" is used to sort values from the highest
+
+        # Produce the final ranking of the key-bytes (hex)
+        ranking = {int_to_hex([int(key_byte)]): prob for key_byte, prob in sorted_key_byte_probs}
+        
+        return ranking
 
 
-    def get_true_key_byte_rank(self, true_key_byte):
-        return self._ranking.index(true_key_byte)
+    def get_true_key_byte_rank(self, ranking, true_key_byte):
+
+        return list(ranking.keys()).index(true_key_byte)
