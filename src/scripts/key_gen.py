@@ -1,4 +1,4 @@
-# Random generation of the 3 keys used in MDM
+# Random generation of the keys used in MDM
 
 import random
 
