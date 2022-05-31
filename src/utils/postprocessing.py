@@ -59,7 +59,8 @@ class SingleByteEvaluator():
 
         # Create the mapping from plaintext to key-byte probability predictions
         num_labels = len(label_preds[0]) # Number of predicted classes
-        for i, plaintext in enumerate(tqdm(test_plaintexts, desc='Switching from labels to key-bytes: ')):
+        #for i, plaintext in enumerate(tqdm(test_plaintexts, desc='Switching from labels to key-bytes: ')):
+        for i, plaintext in enumerate(test_plaintexts):
             curr_key_bytes = aes.key_from_labels(plaintext, byte_idx, range(num_labels), target) # 1 x num_labels
             key_bytes_probs = dict(zip(curr_key_bytes, label_preds[i]))
 
@@ -126,7 +127,8 @@ class SingleByteEvaluator():
         possible_key_byte_values = range(256)
         summed_preds = {kb_val: 0.0 for kb_val in possible_key_byte_values}
         
-        for kb_preds in tqdm(self._mapping, desc='Summing the predictions: '):
+        #for kb_preds in tqdm(self._mapping, desc='Summing the predictions: '):
+        for kb_preds in self._mapping:
             for kb_val in possible_key_byte_values: 
                 summed_preds[kb_val] += np.log10(kb_preds[kb_val] + 1e-22)
         
