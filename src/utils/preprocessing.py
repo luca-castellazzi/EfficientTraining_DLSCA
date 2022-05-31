@@ -3,8 +3,7 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
-import aes128 
-from helpers import hex_to_int
+import aes
 
 
 class TraceHandler():
@@ -17,25 +16,29 @@ class TraceHandler():
             values of the trace.
         - plaintexts (np.ndarray):
             plaintexts used to produce each trace.
+        - key (np.array):
+            encryption key used to produce the traces.
         - labels (np.ndarray):
-            16-bytes labels relative to each plaintext.
-        - target (str or TargetEnum):
-            target of the attack.
 
     Methods:
         - get_traces:
             getter for the values of the traceset.
         - get_plaintexts:
             getter for the plaintexts of the traceset.
+        - get_key:
+            getter for the key of the traceset.
         - get_labels:
             getter for the 16-bytes labels of the traceset.
+        - get_specific_labels:
+            getter for specific labels, given a specific byte.
         - generate_train_val:
-            generation of the train and validation sets splitting 
-
+            generation of the train and validation sets splitting. 
+        - generate_test:
+            generation of the test set.
     """
 
 
-    def __init__(self, path, target='SBO'):
+    def __init__(self, path, target='SBOX_OUT'):
         
         """
         Class constructor: given a path and a target, retrieve the traces, 
@@ -45,15 +48,14 @@ class TraceHandler():
         Parameters:
             - path (str):
                 path to the traceset to be considered.
-            - target (str or TargetEnum, Default: SBO):
-                attack target to use during labels computation ('SBO' for SBox
-                Output, 'HM' for Hamming Weight of SBox Output)
+            - target (str, default: 'SBOX_OUT'):
+                target of the attack ('SBOX_OUTPUT' for SBox Output).
+                More targets in future (e.g. Hamming Weights, Key, ...).
         """
 
         self._traces = []
         self._plaintexts = []
         self._labels = []
-        self._target = target
 
         with trsfile.open(path, 'r') as tr_set:
                 
@@ -62,14 +64,15 @@ class TraceHandler():
                    
                 trace = np.array(tr.samples)
                 plaintext = np.array(tr.get_input()) # int format by default
-                labels = aes128.compute_labels(plaintext, key, self._target) # Compute the set of 16 labels
-                
+                labels = aes.labels_from_key(plaintext, key, target) # Compute the set of 16 labels
+
                 self._traces.append(trace)
                 self._plaintexts.append(plaintext)
                 self._labels.append(labels)
 
         self._traces = np.array(self._traces)
         self._plaintexts = np.array(self._plaintexts)
+        self._key = key
         self._labels = np.array(self._labels)
 
 
@@ -99,6 +102,20 @@ class TraceHandler():
         """
 
         return np.array(self._plaintexts)
+
+
+    def get_key(self):
+
+        """
+        Getter for the key of the traceset whose path is specified in the 
+        constructor.
+
+        Returns:
+            int np.ndarray containing the int values of the bytes of the 
+            encryption key used to generate the traceset.
+        """
+
+        return np.array(self._key)
 
 
     def get_labels(self):

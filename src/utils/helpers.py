@@ -46,3 +46,13 @@ def hex_to_int(hex_str):
     split_hex_str = [hex_str[i:i+2] for i in range(0, len(hex_str), 2)]
 
     return [int(sb, 16) for sb in split_hex_str]
+
+
+def to_coords(int_values):
+
+    hex_values = int_to_hex(int_values)
+
+    rows = [int(hex_val[0], 16) for hex_val in hex_values]
+    cols = [int(hex_val[1], 16) for hex_val in hex_values]
+
+    return rows, cols
