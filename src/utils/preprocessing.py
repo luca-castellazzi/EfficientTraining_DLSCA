@@ -12,13 +12,14 @@ class TraceHandler():
     Class dedicated to the manipulation and preprocessing of the traces.
 
     Attributes:
-        - traces (np.ndarray):
+        - _traces (np.ndarray):
             values of the trace.
-        - plaintexts (np.ndarray):
+        - _plaintexts (np.ndarray):
             plaintexts used to produce each trace.
-        - key (np.array):
+        - _key (np.array):
             encryption key used to produce the traces.
-        - labels (np.ndarray):
+        - _labels (np.ndarray):
+            target labels generated with the given plaintext and key.
 
     Methods:
         - get_traces:
