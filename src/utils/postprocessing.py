@@ -10,8 +10,6 @@ class SingleByteEvaluator():
     Class dedicated to the evaluation of the model predictions.
 
     Attributes:
-        - _ranking (dict):
-            ranking of the key-bytes w.r.t. their prediction value.
         - _mapping (dict list):
             mapping from each plaintext to the relative key-byte probabilities
             (single plaintext-byte).
@@ -59,14 +57,23 @@ class SingleByteEvaluator():
 
         # Create the mapping from plaintext to key-byte probability predictions
         num_labels = len(label_preds[0]) # Number of predicted classes
-        #for i, plaintext in enumerate(tqdm(test_plaintexts, desc='Switching from labels to key-bytes: ')):
+        
         for i, plaintext in enumerate(test_plaintexts):
+            # Get the key-bytes relative to the predicted labels
             curr_key_bytes = aes.key_from_labels(plaintext, byte_idx, range(num_labels), target) # 1 x num_labels
-            key_bytes_probs = dict(zip(curr_key_bytes, label_preds[i]))
+            
+            # Zip to map key-bytes to their predictions
+            key_bytes_probs = list(zip(curr_key_bytes, label_preds[i]))
+            
+            # Sort the predictions w.r.t. the key-bytes (0 to 255)
+            key_bytes_probs.sort(key=lambda x: x[0])
+
+            # Unzip key-bytes and predictions and consider only the predictions
+            key_bytes_probs = list(zip(*key_bytes_probs))[1]
 
             self._mapping.append(key_bytes_probs)
-
-        self._ranking = {} # structure to save the ranking of all possible key-byte
+        
+        self._mapping = np.array(self._mapping)
 
 
     def get_mapping(self):
@@ -108,54 +115,60 @@ class SingleByteEvaluator():
             The returned value is the model's final output.
         """
 
-        predicted_int_key_byte = int(list(self._ranking.keys())[0])
+        predicted_int_key_byte = self._ranking[0]
         predicted_key_byte = int_to_hex([predicted_int_key_byte])
 
         return predicted_key_byte 
 
 
-    def _sum_predictions(self):
+    def _sum_predictions(self, num_traces):
         
         """
         Sums the prediction values relative to the same key-byte (w.r.t. different
         plaintexts).
+        
+        Parameters:
+            - num_traces (int):
+                number of traces to consider in order to perform the sum.
 
         Returns:    
             dict containing, for each key-byte, the total prediction value.
         """
 
-        possible_key_byte_values = range(256)
-        summed_preds = {kb_val: 0.0 for kb_val in possible_key_byte_values}
-        
-        #for kb_preds in tqdm(self._mapping, desc='Summing the predictions: '):
-        for kb_preds in self._mapping:
-            for kb_val in possible_key_byte_values: 
-                summed_preds[kb_val] += np.log10(kb_preds[kb_val] + 1e-22)
-        
+        summed_preds = np.sum(np.log10(self._mapping[:num_traces] + 1e-22), axis=0)
+
         return summed_preds
 
 
-    def _rank_key_bytes(self):
+    def _rank_key_bytes(self, num_traces):
 
         """
         Produces the key-byte ranking sorting the key-bytes w.r.t. their total
         prediction value.
+
+        Parameters:
+            - num_traces (int):
+                number of traces to consider in order to produce the ranking.
+        
+        Returns:
+            - int list representing the ranking of all 256 possible values of 
+                the key-byte.
         """
 
         # Sum the obtained predictions
-        summed_preds = self._sum_predictions()
-
+        summed_preds = self._sum_predictions(num_traces)
+        
         # Sort the summed predictions (high to low)
-        sorted_summed_preds = list(summed_preds.items())
+        sorted_summed_preds = list(zip(range(256), summed_preds)) # Add classes 
         sorted_summed_preds.sort(key=lambda x: -x[1]) # "-" used to sort from 
                                                       # highest to lowest
-
         # Produce the final ranking of the key-bytes
-        for kb, kb_pred in sorted_summed_preds:
-            self._ranking[kb] = kb_pred
+        ranking = [kb for kb, _ in sorted_summed_preds]
+
+        return ranking
 
 
-    def rank(self, key_byte):
+    def rank(self, key_byte, num_traces):
         
         """
         Generates the rank position of the specified key-byte.
@@ -165,13 +178,13 @@ class SingleByteEvaluator():
                 key_byte whose rank is needed.
                 Usually it is the true key-byte of the encryption key used to
                 generate the test traces.
+            - num_traces (int):
+                number of traces to consider in order to produce the ranking.
 
         Returns:
             int (from 0 to 255) relative to the rank of the specified key-byte.
         """
+        
+        ranking = self._rank_key_bytes(num_traces)
 
-        self._rank_key_bytes()
-
-        ranking_list = list(self._ranking.keys())
-
-        return ranking_list.index(key_byte)
+        return ranking.index(key_byte)
