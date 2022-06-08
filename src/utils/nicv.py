@@ -2,8 +2,9 @@
 #                                                                              # 
 # This code is based on the NICV implementation from AISyLab.                  #
 #                                                                              # 
-# The reference project is AISyLab/side-channel-analysis-toolbox, which is     #
-# licensed under MIT License.                                                  #
+# The reference project is                                                     # 
+# https://github.com/AISyLab/side-channel-analysis-toolbox,                    # 
+# which is licensed under MIT License.                                         #
 #                                                                              #
 ################################################################################
 
