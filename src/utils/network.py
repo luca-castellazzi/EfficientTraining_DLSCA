@@ -11,6 +11,7 @@
 
 
 import random
+from tqdm import tqdm
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, BatchNormalization
 
