@@ -10,13 +10,11 @@ class SingleByteEvaluator():
     Class dedicated to the evaluation of the model predictions.
 
     Attributes:
-        - _mapping (dict list):
+        - _mapping (list):
             mapping from each plaintext to the relative key-byte probabilities
             (single plaintext-byte).
 
     Methods:
-        - get_ranking:
-            getter for the ranking.
         - get_mapping:
             getter for the mapping.
         - get_predicted_key_byte:
@@ -83,26 +81,11 @@ class SingleByteEvaluator():
         key-byte predictions.
 
         Returns:
-            dict list representing the mapping (w.r.t. the byte specified in the 
-            constructor)
+            float np.ndarray representing the mapping (w.r.t. the byte specified in the 
+            constructor).
         """
 
         return self._mapping
-
-
-    def get_ranking(self):
-
-        """
-        Getter for the key-byte ranking.
-
-        Returns:
-            dict containing, for each possible key-byte value, the corresponding
-            prediction value.
-            The dict is sorted w.r.t. the prediction value, from the highest to 
-            the lowest.
-        """
-
-        return self._ranking
     
 
     def get_predicted_key_byte(self):
@@ -132,7 +115,9 @@ class SingleByteEvaluator():
                 number of traces to consider in order to perform the sum.
 
         Returns:    
-            dict containing, for each key-byte, the total prediction value.
+            float np.ndarray containing, for each key-byte, the total prediction
+            value (at position i there is the value relative to key-byte i,
+            with i from 0 to 255).
         """
 
         summed_preds = np.sum(np.log10(self._mapping[:num_traces] + 1e-22), axis=0)
@@ -151,8 +136,8 @@ class SingleByteEvaluator():
                 number of traces to consider in order to produce the ranking.
         
         Returns:
-            - int list representing the ranking of all 256 possible values of 
-                the key-byte.
+            int list representing the ranking of all 256 possible values of 
+            the key-byte (rank of byte i at position i).
         """
 
         # Sum the obtained predictions
