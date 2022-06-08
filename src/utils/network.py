@@ -12,6 +12,8 @@
 
 import random
 from tqdm import tqdm
+import numpy as np
+import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, BatchNormalization
 
