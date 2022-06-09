@@ -1,5 +1,3 @@
-from tensorflow.keras.callbacks import EarlyStopping
-
 def int_to_hex(int_values):
 
     """
@@ -70,27 +68,3 @@ def to_coords(int_values):
     cols = [int(hex_val[1], 16) for hex_val in hex_values]
 
     return rows, cols
-
-
-def create_callbacks(es=True):
-
-    """
-    Generates the specified callbacks for a DL model.
-
-    Parameters:
-        - es (bool, default: True):
-            Whether or not creating an EarlyStopping callback.
-
-    Returns:
-        Keras Callback list containing all the specified callbacks.
-    """
-
-    callbacks = []
-
-    if es:
-        callbacks.append(EarlyStopping(monitor='val_loss', patience=5))
-    else:
-        pass # In future also other callbacks (e.g. the one used to save the 
-             # model in .h5)
-    
-    return callbacks
