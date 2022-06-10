@@ -12,7 +12,7 @@
 
 import random
 
-from network import Network
+from network import Individual
 
 
 class GeneticTuner():
@@ -22,8 +22,8 @@ class GeneticTuner():
     Network Hyperparameter Tuning.
 
     Attributes:
-        - _model_type:
-            type of model implemented by each individual of the population.
+        - _network_type:
+            type of network implemented by each individual of the population.
         - _pop_size:
             size of the population.
         - _hp_choices:
@@ -53,10 +53,10 @@ class GeneticTuner():
     """
 
 
-    def __init__(self, hp_choices, model_type='MLP', pop_size=10, selection_perc=0.5, mutation_chance=0.2):
+    def __init__(self, hp_choices, network_type='MLP', pop_size=10, selection_perc=0.5, mutation_chance=0.2):
         
         """
-        Class constructor: gidven the hyperparameter space, a model type, a
+        Class constructor: gidven the hyperparameter space, a network type, a
         population size, a selection percentage and a mutation probability, a 
         new GeneticTuner is initialized.
 
@@ -64,9 +64,9 @@ class GeneticTuner():
             - hp_choices (dict):
                 hyperparameter space containing all the possible values for each
                 hyperparameter.
-            - model_type (str, default: 'MLP'):
-                type of model implemented by the individual ('MLP' for a
-                Multi-Layer Perceptron, 'CNN' for a Convolutional Neural Network).
+            - network_type (str, default: 'MLP'):
+                type of network implemented by the individual ('MLP' for
+                Multi-Layer Perceptron, 'CNN' for Convolutional Neural Network).
             - pop_size (int, default: 10):
                 size of the population.
             - selection_perc (float, default: 0.5):
@@ -78,7 +78,7 @@ class GeneticTuner():
                 offspring.
         """
 
-        self._model_type = model_type
+        self._network_type = network_type
         self._pop_size = pop_size
         self._hp_choices = hp_choices
         self._selection_perc = selection_perc
@@ -88,29 +88,29 @@ class GeneticTuner():
     def populate(self):
 
         """
-        Generates a population of Network individuals.
+        Generates a population of Individuals.
         Population size, model type and hyperparameter space are specified in
         the initialization phase.
         
         Returns:
-            Network list representing the population.
+            Individual list representing the population.
         """
 
         pop = []
         for _ in range(self._pop_size):
-            individual = Network(self._model_type, self._hp_choices)
+            individual = Individual(self._network_type, self._hp_choices)
             individual.select_random_hp()
             pop.append(individual)
             
         return pop
     
         
-    def evaluate(self, pop, x_train, y_train, x_val, y_val):
+    def evaluate(self, pop, x_train, y_train, epochs, x_val, y_val):
         
         """
         Evaluates the given population training it over the specified train data
         and validating it over the specified val data.
-        The metric is ... .
+        The metric is the validation accuracy.
 
         Parameters: 
             - pop:
@@ -120,6 +120,8 @@ class GeneticTuner():
             - y_train (0/1 list):
                 one-hot-encoding of the train labels (all 0s but a single 1
                 in position i to represent label i).
+            - epochs (int):
+                number of epochs of the training phase.
             - x_val (float np.array):
                 values of the val traces.
             - y_val (0/1 list):
@@ -128,8 +130,9 @@ class GeneticTuner():
         
         Returns:
             tuple list representing the evaluation.
-            Each tuple contains a Network, which represents an individual, and
-            a ..., which represents the individual's performance.
+            Each tuple contains a Individual object, which represents an 
+            individual, and a float number, which represents the individual's 
+            performance.
             The tuples are sorted w.r.t. the performance (best to worst).
         """
 
@@ -138,8 +141,14 @@ class GeneticTuner():
             print(f'Training individual {i+1}/{self._pop_size}...')
             
             individual.build_model()
-            # Default train w.r.t. accuracy
-            val_acc = individual.train_and_val(x_train, y_train, x_val, y_val)
+            individual.train_model(x_train, 
+                                   y_train, 
+                                   epochs=epochs,
+                                   cb=True,
+                                   validate=True,
+                                   x_val=x_val, 
+                                   y_val=y_val)
+            val_acc = individual.evaluate(x_val, y_val)
             fitness_values.append(val_acc) 
         
         evaluation = list(zip(pop, fitness_values))
@@ -160,7 +169,7 @@ class GeneticTuner():
                 performance (best to worst).
         
         Returns:
-            Network list containing the best-performing individuals of the
+            Individual list containing the best-performing individuals of the
             population.
         """
 
@@ -180,10 +189,10 @@ class GeneticTuner():
         Generation of an offspring starting from two individuals.
 
         Parameters:
-            - parentA (Network):
-                individual.
-            - parentB (Network):
-                individual.
+            - parentA (Individual):
+                parent individual.
+            - parentB (Individual):
+                parent individual.
         
         Returns:
             dict containing the hyperparameters of the offspring generated by
@@ -191,7 +200,8 @@ class GeneticTuner():
         """
 
         # An offspring contains hps from both parents (random selection)
-        offspring_hp = {hp_name: random.choice([parentA.get_hp(hp_name), parentA.get_hp(hp_name)]) 
+        offspring_hp = {hp_name: 
+                        random.choice([parentA.get_hp()[hp_name], parentA.get_hp()[hp_name]]) 
                         for hp_name in self._hp_choices}
         
         return offspring_hp
@@ -227,11 +237,11 @@ class GeneticTuner():
         The remaining individuals are offspring of the best-performing individuals.
     
         Parameters:
-            - parents (Network list):
+            - parents (Individual list):
                 best-performing individuals of the previous generation.
 
         Returns:
-            Network list representing a the population for the next generation,
+            Individual list representing the population for the next generation,
             containing the best-performing individuals of the previous generation
             and their offsprings.
         """
@@ -246,7 +256,7 @@ class GeneticTuner():
             if self._mutation_chance > random.random():
                 offspring_hp = self._mutate_offspring(offspring_hp)
             
-            offspring = Network(self._model_type, self._hp_choices)
+            offspring = Individual(self._network_type, self._hp_choices)
             offspring.set_hp(offspring_hp)
             
             offsprings.append(offspring)
