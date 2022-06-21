@@ -53,7 +53,9 @@ class GeneticTuner():
     """
 
 
-    def __init__(self, hp_choices, network_type='MLP', pop_size=10, selection_perc=0.5, mutation_chance=0.2):
+    def __init__(self, hp_choices, network_type='MLP', pop_size=10, 
+                 selection_perc=0.5, random_selection_chance=0.1, 
+                 mutation_chance=0.1):
         
         """
         Class constructor: gidven the hyperparameter space, a network type, a
@@ -71,9 +73,12 @@ class GeneticTuner():
                 size of the population.
             - selection_perc (float, default: 0.5):
                 percentage of individuals to to be considered in order to 
-                generate the offsprings for the next population.
+                generate the offsprings for the next population (parents).
                 The individuals are considered w.r.t. their performance.
-            - mutation_chance (float, default: 0.2):
+            - random_selection_chance (float, default: 0.1):
+                probability of selectin a bad-perfoming individual as parent for
+                the next population.
+            - mutation_chance (float, default: 0.1):
                 probability of having a mutation during the generation of an
                 offspring.
         """
@@ -82,6 +87,7 @@ class GeneticTuner():
         self._pop_size = pop_size
         self._hp_choices = hp_choices
         self._selection_perc = selection_perc
+        self._random_selection_chance = random_selection_chance
         self._mutation_chance = mutation_chance
     
     
@@ -135,19 +141,24 @@ class GeneticTuner():
             performance.
             The tuples are sorted w.r.t. the performance (best to worst).
         """
-
+        
+        # Define a set of callbacks for the models
+        cb = {'es': True,
+              'reduceLR': True}
+        
+        # Train and evaluate the population
         fitness_values = []
         for i, individual in enumerate(pop):
             print(f'Training individual {i+1}/{self._pop_size}...')
             
             individual.build_model()
-            individual.train_model(x_train, 
-                                   y_train, 
-                                   epochs=epochs,
-                                   cb=True,
-                                   validate=True,
-                                   x_val=x_val, 
-                                   y_val=y_val)
+            _ = individual.train_model(x_train, 
+                                       y_train, 
+                                       epochs=epochs,
+                                       cb=cb,
+                                       validate=True,
+                                       x_val=x_val, 
+                                       y_val=y_val)
             val_acc = individual.evaluate(x_val, y_val)
             fitness_values.append(val_acc) 
         
@@ -159,9 +170,12 @@ class GeneticTuner():
     def select(self, evaluation):
 
         """
-        Selects only a subset of individuals, the ones with best performance.
-        The number of selections is defined in the initialization phase as a 
-        percentage.
+        Selects the parents for the next population as best-performing individuals
+        of the current population and some randomly-chosen bad-performing 
+        individuals.
+        The number of best-performing individuals to be selected and the chance
+        to select a bad-performing individual are defined in the initialization
+        phase.
 
         Parameters:
             - evaluation (tuple list):
@@ -169,17 +183,24 @@ class GeneticTuner():
                 performance (best to worst).
         
         Returns:
-            Individual list containing the best-performing individuals of the
-            population.
+            Individual list representing the parents for the next population 
+            (individuals that will produce offsprings).
         """
-
-        num_selected = int(self._selection_perc * self._pop_size)
-        evaluation.sort(key=lambda x: -x[1]) # Sort the individuals w.r.t. 
-                                             # their accuracy (the higher the 
-                                             # better, so the "-" is needed)
+        
+        # Sort the individuals w.r.t. their val accuracy (the higher the better)
+        evaluation.sort(key=lambda x: -x[1])
         sorted_pop = [individual for individual, _ in evaluation]
+        
+        # Select the best-perfoming individuals as parents for the next population
+        num_selected = int(self._selection_perc * self._pop_size)
         parents = sorted_pop[:num_selected]
         
+        # Select also some bad-perfoming individuals to add diversity in the 
+        # next population
+        for i in sorted_pop[num_selected:]:
+            if self._random_selection_chance > random.random():
+                parents.append(i)
+
         return parents
         
     

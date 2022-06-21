@@ -17,7 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, BatchNormalization
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 # Custom modules in utils/
 sys.path.insert(0, '../utils')
@@ -142,22 +142,34 @@ class Network():
 
     
     @staticmethod
-    def _create_callbacks():
+    def _create_callbacks(cb):
 
         """
-        Generates a set of default callbacks for the network.
+        Generates a set of callbacks for the network considering the provided
+        ones (fixed parameters).
+
+        Parameters:
+            - cb (dict):
+                set of callbacks to include.
 
         Returns:
             keras.callbacks.Callback list containing all the specified callbacks.
         """
 
         callbacks = []
-        callbacks.append(EarlyStopping(monitor='val_loss', patience=5))
+        if len(cb) != 0:
+            if cb['es']:
+                callbacks.append(EarlyStopping(monitor='val_loss', patience=5))
+            if cb['reduceLR']:
+                callbacks.append(ReduceLROnPlateau(monitor='val_loss', 
+                                                   factor=0.2,
+                                                   patience=3, 
+                                                   min_lr=1e-6))
     
         return callbacks
 
 
-    def train_model(self, x_train, y_train, epochs, cb=False, validate=False, x_val=None, y_val=None):
+    def train_model(self, x_train, y_train, epochs, verbose=0, cb={}, validate=False, x_val=None, y_val=None):
 
         """
         Trains and eventually validates the network.
@@ -170,8 +182,10 @@ class Network():
                 in position i to represent label i).
             - epochs (int):
                 number of epochs of the training phase.
-            - cb (bool, default: False):
-                whether or not including callbacks in the training.
+            - verbose (0 or 1, default:0):
+                whether or not printing training status.
+            - cb (dict, default: {}):
+                which callback to add to the model.
             - validate (bool, default: False):
                 whether or not performing validation during training.
             - x_val (float np.ndarray, default: None):
@@ -179,27 +193,38 @@ class Network():
             - y_val (0/1 list, default: None):
                 one-hot-encoding of the val labels (all 0s but a single 1 
                 in position i to represent label i).
+
+        Raises:
+            Exception in the particular case of validate=True and x_val/y_val
+            still None.
+
+        Returns
+            tensorflow.keras.callbacks.History object relative to the performed
+            training.
         """
 
-        callbacks = []
-        if cb:
-            callbacks += self._create_callbacks()
+        callbacks = self._create_callbacks(cb)
 
         if not validate:
-            self._model.fit(x_train,
-                            y_train,
-                            epochs=epochs, 
-                            batch_size=self._hp['batch_size'],
-                            callbacks=callbacks,
-                            verbose=0)
+            history = self._model.fit(x_train,
+                                      y_train,
+                                      epochs=epochs, 
+                                      batch_size=self._hp['batch_size'],
+                                      callbacks=callbacks,
+                                      verbose=verbose)
         else:
-            self._model.fit(x_train,
-                            y_train,
-                            validation_data=(x_val, y_val),
-                            epochs=epochs,
-                            batch_size=self._hp['batch_size'],
-                            callbacks=callbacks,
-                            verbose=0)
+            try:
+                history = self._model.fit(x_train,
+                                          y_train,
+                                          validation_data=(x_val, y_val),
+                                          epochs=epochs,
+                                          batch_size=self._hp['batch_size'],
+                                          callbacks=callbacks,
+                                          verbose=verbose)
+            except:
+                raise Exception('ERROR: x_val or y_val is None while validate=True')
+
+        return history
 
 
     def save_model(self, path):

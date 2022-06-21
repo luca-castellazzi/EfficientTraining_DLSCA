@@ -23,7 +23,7 @@ def main():
                 ['8c', 'a1', '89', '0d', 'bf', 'e6', '42', '68', '41', '99', '2d', '0f', 'b0', '54', 'bb', '16']]
 
     int_sbox = np.zeros((16, 16), dtype=int)
-    r_int_sbox = np.zeros((16, 16), dtype=int)
+    inv_int_sbox = np.zeros((16, 16), dtype=int)
 
     for i in range(16):
         for j in range(16):
@@ -32,11 +32,11 @@ def main():
             int_val = int(hex_val, 16)
             int_sbox[i, j] = int_val
 
-            r_row = int(hex_val[0], 16)
-            r_col = int(hex_val[1], 16)
-            r_hex_val = hex(i)[2:] + hex(j)[2:]
-            r_int_val = int(r_hex_val, 16)
-            r_int_sbox[r_row, r_col] = r_int_val
+            inv_row = int(hex_val[0], 16)
+            inv_col = int(hex_val[1], 16)
+            inv_hex_val = hex(i)[2:] + hex(j)[2:]
+            inv_int_val = int(inv_hex_val, 16)
+            inv_int_sbox[inv_row, inv_col] = inv_int_val
 
     print('int SBox')
     print(int_sbox)
@@ -44,7 +44,7 @@ def main():
     print()
 
     print('REV int SBox')
-    print(r_int_sbox)
+    print(inv_int_sbox)
 
 
 if __name__ == '__main__':
