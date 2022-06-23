@@ -41,44 +41,39 @@ def labels_from_key(plaintext, key, target):
         pass # Future implementations (target = HW, target = KEY, ...)
 
 
-def key_from_labels(plaintext, byte_idx, labels, target):
+def key_from_labels(plaintext, target):
 
     """ 
-    Generates the key-bytes that produced the given labels during the encryption
-    of the given plaintext, w.r.t. the given target.
+    Generates the key-bytes relative to each possible value of the sbox-output
+    w.r.t. the plaintext and the given target.
 
     Parameters: 
-        - plaintext (int np.array):
-            plaintext considered as list of int values, each one relative to 
-            a single byte of the hex version.
-        - labels (int np.array): 
-            leakage (target) values produced during the encryption of the given
-            plaintext.
-        - target (str, default: 'SBOX_OUT'):
-            target of the attack ('SBOX_OUTPUT' for SBox Output).
+        - plaintext (int):
+            plaintext byte considered as int value.
+        - target (str):
+            target of the attack ('SBOX_OUT' for SBox Output).
             More targets in future (e.g. Hamming Weights, Key, ...).
 
     Returns:
-        int np.ndarray containing the key-bytes that produced the given labels
-        as leakage during the encryption of the given plaintext.
+        int np.ndarray containing the key-bytes relative to each possible value 
+        of the sbox-output w.r.t. the given plaintext.
         The np.ndarray contains NUM_LABELS array for each byte of the given 
         plaintext.
-    """
+    """ 
 
-    # Consider the correct byte of the plaintext
-    plaintext_byte = plaintext[byte_idx] 
+    sboxout_values = range(256)
 
     if target == 'SBOX_OUT':
         
         # The provided labels are sbox_out values
 
         # Inverse-SubBytes (for each possible label)
-        rows, cols = to_coords(labels)
+        rows, cols = to_coords(sboxout_values)
         sbox_in = constants.INV_SBOX_DEC[rows, cols]
 
         # Inverse-AddRoundKey (for each possible label)
-        key_bytes = sbox_in ^ plaintext_byte
-
-        return np.array(key_bytes)
+        key_bytes = sbox_in ^ plaintext
     else:
         pass # Future implementations (target = HW, target = KEY, ...)
+
+    return np.array(key_bytes)
