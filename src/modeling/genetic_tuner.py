@@ -76,7 +76,7 @@ class GeneticTuner():
                 generate the offsprings for the next population (parents).
                 The individuals are considered w.r.t. their performance.
             - random_selection_chance (float, default: 0.1):
-                probability of selectin a bad-perfoming individual as parent for
+                probability of selecting a bad-perfoming individual as parent for
                 the next population.
             - mutation_chance (float, default: 0.1):
                 probability of having a mutation during the generation of an

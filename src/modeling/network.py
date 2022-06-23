@@ -1,4 +1,4 @@
-################################################################################                                      2 #                                                                              #
+################################################################################
 #                                                                              # 
 # This code is based on the Genetic Algorithm for Hyperparameter Tuning        #
 # implementation from harvitronix.                                             #
@@ -142,7 +142,7 @@ class Network():
 
     
     @staticmethod
-    def _create_callbacks(cb):
+    def create_callbacks(cb):
 
         """
         Generates a set of callbacks for the network considering the provided
@@ -203,7 +203,7 @@ class Network():
             training.
         """
 
-        callbacks = self._create_callbacks(cb)
+        callbacks = self.create_callbacks(cb)
 
         if not validate:
             history = self._model.fit(x_train,
