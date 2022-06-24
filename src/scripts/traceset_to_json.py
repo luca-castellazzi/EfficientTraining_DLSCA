@@ -1,3 +1,19 @@
+# Generation of a JSON file containing all trace-values and trace-metadata
+
+# JSON structure:
+# {
+#     'traces': [    
+#		    [
+#		        'samples': [...] (1 x 1237)
+#			'pltxt':   [...] (1 x 16)
+#			'labels':  [...] (1 x 16)
+#  		    ]    
+#                   ...
+#               ]
+# 
+#     'key':    [...] (1 x 16)
+# }
+
 import numpy as np
 import trsfile
 import json
