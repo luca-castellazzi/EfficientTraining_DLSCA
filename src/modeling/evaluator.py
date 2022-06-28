@@ -34,8 +34,6 @@ class Evaluator():
             converts sbox-out probabilities into key-byte probabilities.
         - guessing_entropy:
             computes the GE over a given number of experiments.
-
-
     """
 
 
@@ -99,7 +97,6 @@ class Evaluator():
             ouput for trace i.
         """
 
-
         key_probs = []
 
         # For each element in the association between key-bytes and sbox-probs...
@@ -120,7 +117,7 @@ class Evaluator():
         return np.array(key_probs)
 
 
-    def guessing_entropy(self, n_exp, hp, x_train, y_train, epochs):
+    def guessing_entropy(self, n_exp, hp, x_train, y_train, epochs, single_model=True):
 
         """
         Computes the Guessing Entropy (GE) of the model w.r.t. an incremental 
@@ -150,30 +147,47 @@ class Evaluator():
             in position i there is the value of GE for i+1 test traces (i from 0).
         """
 
-        # Define and train the model under test
-        net = Network(self._model_type)
-        net.set_hp(hp)
-        net.build_model()
+        # If the chosen approach is to consider a single model...
+        if single_model:
+            # ...then define the model and train it once
+            net = Network(self._model_type)
+            net.set_hp(hp)
+            net.build_model()
 
-        print('Training the model...')
-        net.train_model(x_train, 
-                        y_train, 
-                        epochs=epochs, 
-                        verbose=0)
-        print('Model successfully trained.')
+            print('Training the model...')
+            net.train_model(x_train, 
+                            y_train, 
+                            epochs=epochs, 
+                            verbose=0)
+            print('Model successfully trained.')
 
         # Compute the ranks of the correct key-byte over different experiments
         ranks_per_exp = []
-        for _ in tqdm(range(n_exp), desc='Computing GE: '):
-            # Associate the attack traces with the relative key-bytes
+        for i in tqdm(range(n_exp), desc='Computing GE: '):
+
+            # If the chosen approach is to consider independent models...
+            if not single_model:
+                # ...then define the current model and train it
+                net = Network(self._model_type)
+                net.set_hp(hp)
+                net.build_model()
+
+                print(f'Training model {i+1}/{n_exp}...')
+                net.train_model(x_train, 
+                                y_train, 
+                                epochs=epochs, 
+                                verbose=0)
+                print(f'Model {i+1}/{n_exp} successfully trained.')
+
+            # Associate the attack traces with the relative key-bytes and 
+            # generate a permutation
             shuffled_data = list(zip(self._x_test, self._key_bytes))
-            # Generate a permutation of the attack set
             random.shuffle(shuffled_data)
             x_test_shuffled, key_bytes_shuffled = list(zip(*shuffled_data))
             
             # Generate the sbox-output predictions for the given permutation
+            # and convert them into key-byte predictions
             probs = net.predict(np.array(x_test_shuffled))
-            # Convert sbox-output predictions into key-byte predictions
             key_probs = self.compute_key_probs(probs, key_bytes_shuffled)
         
             # Compute the total probabilities

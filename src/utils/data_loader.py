@@ -94,38 +94,29 @@ class DataLoader():
         return self._true_key_byte
     
 
-    def gen_train(self):
+    def gen_set(self, train=True):
 
         """
-        Generates the train set w.r.t. the percentage of traces specified in the
+        Generates a train set or a test set w.r.t. the percentage of train traces specified in the
         constructor.
 
-        Returns:
-            2-element tuple containing train-traces values and train-traces
-            labels (labels are one-hot-encoded).
-        """
-            
-        x_train = self._x[:self._train_len]
-        y_train = self._y[:self._train_len]
-        #pltxt_train = self._pltxt_bytes[:self._train_len]
-
-        return x_train, y_train#, pltxt_train
-
-
-    def gen_test(self):
-
-        """
-        Generates the test set w.r.t. the percentage of train-traces specified 
-        in the constructor.
+        Parameters:
+            - train (bool, default: True):
+                whether or not generate a train set.
+                If it is false, a test set is generated.
 
         Returns:
-            3-element tuple containing test-traces values, test-traces labels
-            and test-traces plaintexts (labels are one-hot-encoded and 
-            plaintexts relate only to a specific byte).
+            3-element tuple containing traces values, labels and plaintexts
+            (labels are one-hot-encoded).
         """
         
-        x_test = self._x[self._train_len:]
-        y_test = self._y[self._train_len:]
-        pltxt_test = self._pltxt_bytes[self._train_len:]
+        if train:
+            x = self._x[:self._train_len]
+            y = self._y[:self._train_len]
+            pltxt = self._pltxt_bytes[:self._train_len]
+        else:
+            x = self._x[self._train_len:]
+            y = self._y[self._train_len:]
+            pltxt = self._pltxt_bytes[self._train_len:]
 
-        return x_test, y_test, pltxt_test
+        return x, y, pltxt

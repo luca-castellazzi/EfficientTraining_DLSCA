@@ -52,7 +52,9 @@ class Network():
             generation of a file containing all network's info.
         - predict:
             prediction of the labels of a given test set.
-         """
+        - reset:
+            resets the network.
+        """
 
 
     def __init__(self, network_type):
@@ -159,12 +161,12 @@ class Network():
         callbacks = []
         if len(cb) != 0:
             if cb['es']:
-                callbacks.append(EarlyStopping(monitor='val_loss', patience=5))
+                callbacks.append(EarlyStopping(monitor='val_loss', patience=15))
             if cb['reduceLR']:
                 callbacks.append(ReduceLROnPlateau(monitor='val_loss', 
                                                    factor=0.2,
-                                                   patience=3, 
-                                                   min_lr=1e-6))
+                                                   patience=8, 
+                                                   min_lr=1e-7))
     
         return callbacks
 
@@ -227,6 +229,34 @@ class Network():
         return history
 
 
+    def reset(self):
+        
+        """
+        Resets the network.
+        """
+
+        self._model = Sequential()
+
+
+    def evaluate_model(self, x_val, y_val):
+
+        """
+        Evaluates the performance of the network w.r.t. unseen data.
+
+        Parameters:
+            - x_val (float np.ndarray):
+                values of the val traces.
+            - y_val (0/1 list):
+                one-hot-encoding of the val labels (all 0s but a single 1 
+                in position i to represent label i).
+
+        Returns:
+            tuple containing validation loss and accuracy.
+        """ 
+
+        return self._model.evaluate(x_val, y_val, verbose=0)
+
+
     def save_model(self, path):
         
         """
@@ -261,7 +291,32 @@ class Network():
 
 class Individual(Network):
 
+    """
+    Class used to represent a single hyperparameter configuration during the 
+    execution of a Genetic Algorithm.
+
+    Superclass: Network
+
+    Attributes:
+        - _hp_choices (dict):
+            hyperparameter space.
+    
+    Methods:
+        - select_random_hp:
+            Initializes randomly the individual's hyperparameters w.r.t. the 
+            hyperparameter space.
+        - evaluate:
+            Evaluates the individual over a validation set (w.r.t. accuracy).
+    """ 
+
+
     def __init__(self, network_type, hp_choices):
+        
+        """
+        Class constructor: initializes an individual as a Network object with 
+        an hyperparameter space as additional attribute.
+        """
+
         super().__init__(network_type)
         self._hp_choices = hp_choices
 
