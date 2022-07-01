@@ -4,7 +4,7 @@
 # {
 #     'traces': [    
 #		    [
-#		        'samples': [...] (1 x 1237)
+#		        'samples': [...] (1 x 1183)
 #			'pltxt':   [...] (1 x 16)
 #			'labels':  [...] (1 x 16)
 #  		    ]    
@@ -34,8 +34,8 @@ def main():
 
             print(f'----- {d}-{k} -----')
 
-            trace_path = constants.DEFAULT_TRACE_DIR_PATH + f'CURR/{d}-{k}_50k_500MHz + Resampled at 168MHz.trs'
-            json_path = f'/prj/side_channel/PinataTraces/datasets/{target}/{d}-{k}.json'
+            trace_path = constants.CURR_TRACES_PATH + f'/{d}-{k}_50k_500MHz + Resampled at 168MHz.trs'
+            json_path = constants.CURR_DATASES_PATH + f'/{target}/{d}-{k}.json'
 
             traces = []
             plaintexts = []

@@ -17,6 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, BatchNormalization
+from tensorflow.keras.optimizers import SGD, Adam, RMSprop
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 # Custom modules in utils/
@@ -44,6 +45,8 @@ class Network():
             setter for the actual hyperparameters.
         - get_hp:
             getter for the actual hyperparameters.
+        - get_model:
+            getter for the model.
         - build_model:
             construction of the network.
         - train_model:
@@ -99,6 +102,17 @@ class Network():
 
         return self._hp
 
+    def get_model(self):
+        
+        """
+        Getter for the network's model.
+
+        Returns:
+            keras.models.Model relative to the implementation of the network.
+        """ 
+
+        return self._model
+
 
     def build_model(self):
 
@@ -136,97 +150,18 @@ class Network():
             self._model.add(Dense(256, activation='softmax')) ########################### 256 to be changed if the target is changed (HW, ...)
 
             # Compilation
-            self._model.compile(optimizer=self._hp['optimizer'](learning_rate=self._hp['learning_rate']),
+            lr = self._hp['learning_rate']
+            if self._hp['optimizer'] == 'sgd':
+                opt = SGD(learning_rate=lr)
+            elif self._hp['optimizer'] == 'adam':
+                opt = Adam(learning_rate=lr)
+            else:
+                opt = RMSprop(learning_rate=lr)
+            self._model.compile(optimizer=opt,
                                 loss='categorical_crossentropy',
                                 metrics=['accuracy'])
         else:
             pass # In future there will be CNN
-
-    
-    @staticmethod
-    def create_callbacks(cb):
-
-        """
-        Generates a set of callbacks for the network considering the provided
-        ones (fixed parameters).
-
-        Parameters:
-            - cb (dict):
-                set of callbacks to include.
-
-        Returns:
-            keras.callbacks.Callback list containing all the specified callbacks.
-        """
-
-        callbacks = []
-        if len(cb) != 0:
-            if cb['es']:
-                callbacks.append(EarlyStopping(monitor='val_loss', patience=15))
-            if cb['reduceLR']:
-                callbacks.append(ReduceLROnPlateau(monitor='val_loss', 
-                                                   factor=0.2,
-                                                   patience=8, 
-                                                   min_lr=1e-7))
-    
-        return callbacks
-
-
-    def train_model(self, x_train, y_train, epochs, verbose=0, cb={}, validate=False, x_val=None, y_val=None):
-
-        """
-        Trains and eventually validates the network.
-        
-        Parameters:
-            - x_train (float np.ndarray):
-                values of the train traces.
-            - y_train (0/1 list):
-                one-hot-encoding of the train labels (all 0s but a single 1 
-                in position i to represent label i).
-            - epochs (int):
-                number of epochs of the training phase.
-            - verbose (0 or 1, default:0):
-                whether or not printing training status.
-            - cb (dict, default: {}):
-                which callback to add to the model.
-            - validate (bool, default: False):
-                whether or not performing validation during training.
-            - x_val (float np.ndarray, default: None):
-                values of the val traces.
-            - y_val (0/1 list, default: None):
-                one-hot-encoding of the val labels (all 0s but a single 1 
-                in position i to represent label i).
-
-        Raises:
-            Exception in the particular case of validate=True and x_val/y_val
-            still None.
-
-        Returns
-            tensorflow.keras.callbacks.History object relative to the performed
-            training.
-        """
-
-        callbacks = self.create_callbacks(cb)
-
-        if not validate:
-            history = self._model.fit(x_train,
-                                      y_train,
-                                      epochs=epochs, 
-                                      batch_size=self._hp['batch_size'],
-                                      callbacks=callbacks,
-                                      verbose=verbose)
-        else:
-            try:
-                history = self._model.fit(x_train,
-                                          y_train,
-                                          validation_data=(x_val, y_val),
-                                          epochs=epochs,
-                                          batch_size=self._hp['batch_size'],
-                                          callbacks=callbacks,
-                                          verbose=verbose)
-            except:
-                raise Exception('ERROR: x_val or y_val is None while validate=True')
-
-        return history
 
 
     def reset(self):
@@ -236,25 +171,6 @@ class Network():
         """
 
         self._model = Sequential()
-
-
-    def evaluate_model(self, x_val, y_val):
-
-        """
-        Evaluates the performance of the network w.r.t. unseen data.
-
-        Parameters:
-            - x_val (float np.ndarray):
-                values of the val traces.
-            - y_val (0/1 list):
-                one-hot-encoding of the val labels (all 0s but a single 1 
-                in position i to represent label i).
-
-        Returns:
-            tuple containing validation loss and accuracy.
-        """ 
-
-        return self._model.evaluate(x_val, y_val, verbose=0)
 
 
     def save_model(self, path):
@@ -271,22 +187,6 @@ class Network():
         print('Saving the model...')
         self._model.save(path)
 
-
-    def predict(self, x_test):
-        
-        """
-        Gives probabilities for each possible output label, given a test set.
-
-        Parameters:
-            - x_test (float np.ndarray):
-                values of the test traces.
-        
-        Returns:
-            float np.array containing the probabilities relative to each possible
-            output label.
-        """
-
-        return self._model.predict(x_test)
     
 
 class Individual(Network):

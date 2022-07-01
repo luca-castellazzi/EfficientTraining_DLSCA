@@ -16,9 +16,6 @@ KEYS = {'K1': ['c4', '55', '2e', '06', '3b', 'fb', 'ff', '50', '26', '6d', '23',
         'K2': ['5d', '63', '4d', 'e1', '0e', 'e3', '2b', 'a7', 'bb', 'a1', '9f', '4e', '88', '2f', '49', '65'], 
         'K3': ['6f', '56', '91', 'ef', '56', '9b', '82', '9c', '11', 'ad', '31', 'fa', '8c', 'fd', 'a6', '43']}
 
-# Default location of CURR traces
-DEFAULT_TRACE_DIR_PATH = '/prj/side_channel/PinataTraces/'
-
 # Number of samples per trace
 TRACE_LEN = 1237
 
@@ -57,3 +54,11 @@ INV_SBOX_DEC = np.array([[ 82,   9, 106, 213,  48,  54, 165,  56, 191,  64, 163,
                          [ 96,  81, 127, 169,  25, 181,  74,  13,  45, 229, 122, 159, 147, 201, 156, 239],
                          [160, 224,  59,  77, 174,  42, 245, 176, 200, 235, 187,  60, 131,  83, 153,  97],
                          [ 23,  43,   4, 126, 186, 119, 214,  38, 225, 105,  20,  99,  85,  33,  12, 125]])
+
+# Default paths
+CURR_TRACES_PATH = '/prj/side_channel/Pinata/CURR/traces'
+CURR_DATASETS_PATH = '/prj/side_channel/Pinata/CURR/datasets'
+EM_TRACES_PATH = '/prj/side_channel/Pinata/EM/traces'
+EM_DATASETS_PATH = '/prj/side_channel/Pinata/CURR/datasets'
+RESULTS_PATH = '/prj/side_channel/Pinata/results'
+
