@@ -136,10 +136,10 @@ def main():
     attack_net.save_model(constants.RESULTS_PATH + f'/models/model_{date}')
 
     # Save GE values
-    np.savetxt(constants.RESULTS_PATH + f'/ge_files/ge_{date}.csv', ge_per_testset, delimiter=',')
+    np.savetxt(constants.RESULTS_PATH + f'/ge/ge_files/ge_{date}.csv', ge_per_testset, delimiter=',')
 
     # Save GE scores
-    np.savetxt(constants.RESULTS_PATH + f'/score_files/scores_{date}.csv', scores, delimiter=',')
+    np.savetxt(constants.RESULTS_PATH + f'/scores/score_files/scores_{date}.csv', scores, delimiter=',')
 
 
     # Plot the results

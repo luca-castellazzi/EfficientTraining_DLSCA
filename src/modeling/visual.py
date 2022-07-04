@@ -65,7 +65,7 @@ def plot_ges(ges, n, metadata, subplots=False):
 
         filename = f'{metric}SUB{n}_{date}.png'
     
-    f.savefig(constants.RESULTS_PATH + f'/ge_plots/{filename}', 
+    f.savefig(constants.RESULTS_PATH + f'/ge/ge_plots/{filename}', 
               bbox_inches='tight', 
               dpi=600)
 
