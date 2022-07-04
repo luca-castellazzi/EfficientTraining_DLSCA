@@ -30,7 +30,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 
 # Global variables (constants)
 BYTE_IDX = 0
-N_FOLDS = 10
+N_FOLDS = 2#10
 N_MODELS = 30
 TRAIN_EPOCHS = 1#300
 TEST_EPOCHS = 1#200

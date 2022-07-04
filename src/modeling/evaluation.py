@@ -245,7 +245,7 @@ def xval_ge(kf, networks, train_data, hp_space):
 # k iterations)                                                     #
 # ----------------------------------------------------------------- #
 def xval_ge_iter(kf, networks, train_data, hp_space):
-
+    
     # Unpack the train data
     x, y, kbs, true_kb, epochs, ge_tr = train_data
 
@@ -267,8 +267,6 @@ def xval_ge_iter(kf, networks, train_data, hp_space):
 
         random_hp = {k: random.choice(hp_space[k]) for k in hp_space}
         net.set_hp(random_hp)
-        #with open('/home/lcastellazzi/tmp.json','a') as j_file:
-            #j_file.write(json.dumps(random_hp, indent=4))
 
         ranks_per_exp = []
         for t_idx, v_idx in tqdm(kf.split(x)):
@@ -300,7 +298,7 @@ def xval_ge_iter(kf, networks, train_data, hp_space):
 
             net.reset()
             keras_backend.clear_session()
-
+        
         ranks_per_exp = np.array(ranks_per_exp)
         ge = np.mean(ranks_per_exp, axis=0) 
             

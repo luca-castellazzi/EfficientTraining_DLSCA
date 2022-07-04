@@ -61,8 +61,6 @@ class DataLoader():
         print(f'Dataset successfully loaded ({end_time-start_time:.2f} seconds).')
 
         traces = dataset['traces']
-
-        random.seed(24)
         random.shuffle(traces)
 
         # Samples
