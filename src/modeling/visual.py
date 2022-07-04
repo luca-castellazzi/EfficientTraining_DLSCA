@@ -70,43 +70,27 @@ def plot_ges(ges, n, metadata, subplots=False):
               dpi=600)
 
 
-def plot_nicv(dl_group, date):
+def plot_nicv(nicvs, configs, metadata):
 
-    # Unpack dl data
-    dls, cmap, scenario = dl_group
-
-    
-    # Compute and plot all NICV scenarios
-    
-    nicvs = []
-    colors = cmap(range(len(dls)))
-
+    scenario, cmap, date = metadata
+    colors = cmap(range(len(configs)))
+ 
     f, ax = plt.subplots(4, 4, figsize=(25,25))
-    row = 0
-    for b in range(16):
-        col = b % 4
+    
+    for i, c in enumerate(configs):
+        row = 0
+        for b in range(16):
+            col = b % 4
 
-        ax[row, col].set_prop_cycle('color', colors)
-
-        for k, dl in dls.items():
-            traces, _, plaintexts = dl.gen_set()
-        
-            nicv_val = nicv(traces, plaintexts, b)
-            nicvs.append(nicvs)
-        
-            ax[row, col].plot(nicv_val, label=k)
+            ax[row, col].plot(nicvs[i][b], label=c, color=colors[i])
             ax[row, col].legend()
             ax[row, col].set_title(f'Byte {b}')
             ax[row, col].set_xlabel('Samples')
             ax[row, col].set_ylabel('NICV')
 
-        if col == 3:
-            row += 1
+            if col == 3:
+                row += 1
 
-    f.savefig(constants.RESULTS_PATH + f'/nicv/nicv_{scenario}_{date}.png', 
+    f.savefig(constants.RESULTS_PATH + f'/nicv/nicv_plots/nicv_{scenario}_{date}.png', 
               bbox_inches='tight', 
               dpi=600)
-
-    nicvs = np.array(nicvs)
-
-    return nicvs 
