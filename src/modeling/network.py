@@ -23,7 +23,6 @@ from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 # Custom modules in utils/
 sys.path.insert(0, '../utils')
 import constants
-from single_byte_evaluator import SingleByteEvaluator
 
 
 class Network():

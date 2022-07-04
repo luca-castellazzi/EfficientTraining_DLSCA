@@ -267,6 +267,8 @@ def xval_ge_iter(kf, networks, train_data, hp_space):
 
         random_hp = {k: random.choice(hp_space[k]) for k in hp_space}
         net.set_hp(random_hp)
+        #with open('/home/lcastellazzi/tmp.json','a') as j_file:
+            #j_file.write(json.dumps(random_hp, indent=4))
 
         ranks_per_exp = []
         for t_idx, v_idx in tqdm(kf.split(x)):

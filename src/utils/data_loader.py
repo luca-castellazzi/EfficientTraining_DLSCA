@@ -26,14 +26,12 @@ class DataLoader():
     Methods:
         - get_true_key_byte:
             getter for the correct key-byte.
-        - gen_train:
-            generates the train set.
-        - gen_test:
-            generates the test set.
+        - gen_set:
+            generates the train set or the test set.
     """
     
     
-    def __init__(self, json_path, byte_idx, train_perc=0.8):
+    def __init__(self, json_path, byte_idx=None, train_perc=0.8):
         
         """
         Class constructor: given the path of the traceset JSON file, a
@@ -44,9 +42,10 @@ class DataLoader():
         Parameters:
             - json_path (str):
                 path of the traceset JSON file storing a tracest.
-            - byte_idx (int):
+            - byte_idx (int, default: None):
                 specific byte to consider to retrieve plaintexts bytes and
                 correct key-byte.
+                If None, allows to have all bytes of plaintext and key at once.
             - train_perc (float, default: 0.8):
                 value in [0, 1] representing the percentage of traces to be 
                 considered as train set.
@@ -71,14 +70,26 @@ class DataLoader():
         
         # Labels
         labels = [tr['labels'] for tr in traces]
-        self._y = np.array([l[byte_idx] for l in labels])
-        self._y = to_categorical(self._y)
+        if byte_idx is not None:
+            self._y = np.array([l[byte_idx] for l in labels])
+            self._y = to_categorical(self._y)
+        else:
+            self._y = np.array([]) # Never used if byte_idx is None
 
         # Plaintexts
         plaintexts = [tr['pltxt'] for tr in traces]
-        self._pltxt_bytes = np.array([pltxt[byte_idx] for pltxt in plaintexts])
+        if byte_idx is not None:
+            self._pltxt_bytes = np.array([pltxt[byte_idx] for pltxt in plaintexts])
+        else:
+            self._pltxt_bytes = np.array(plaintexts)
 
-        self._true_key_byte = dataset['key'][byte_idx]
+        # True key byte
+        if byte_idx is not None:
+            self._true_key_byte = dataset['key'][byte_idx]
+        else:
+            self._true_key_byte = np.array(dataset['key'])
+
+        # Train len
         self._train_len = int(train_perc * len(traces))
 
 

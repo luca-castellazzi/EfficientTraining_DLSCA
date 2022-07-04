@@ -9,7 +9,7 @@ import numpy as np
 
 
 # All devices
-DEVICES = ['D1', 'D2']
+DEVICES = ['D1', 'D2', 'D3']
 
 # All keys (generated with key_gen.py script)
 KEYS = {'K1': ['c4', '55', '2e', '06', '3b', 'fb', 'ff', '50', '26', '6d', '23', '7d', '91', '65', '4e', 'f5'],
@@ -17,7 +17,7 @@ KEYS = {'K1': ['c4', '55', '2e', '06', '3b', 'fb', 'ff', '50', '26', '6d', '23',
         'K3': ['6f', '56', '91', 'ef', '56', '9b', '82', '9c', '11', 'ad', '31', 'fa', '8c', 'fd', 'a6', '43']}
 
 # Number of samples per trace
-TRACE_LEN = 1237
+TRACE_LEN = 1183
 
 # Int-version of AES SBox
 SBOX_DEC = np.array([[ 99, 124, 119, 123, 242, 107, 111, 197,  48,   1, 103,  43, 254, 215, 171, 118],

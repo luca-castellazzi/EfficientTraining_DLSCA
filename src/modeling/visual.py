@@ -1,12 +1,13 @@
 import numpy as np
 import matplotlib
-matplotlib.use('pdf') # Avoid interactive mode
+matplotlib.use('Agg') # Avoid interactive mode (and save files as .PNG as default)
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
 import sys
 sys.path.insert(0, '../utils')
 import constants
+from nicv import nicv
 
 
 def plot_ges(ges, n, metadata, subplots=False):
@@ -67,3 +68,45 @@ def plot_ges(ges, n, metadata, subplots=False):
     f.savefig(constants.RESULTS_PATH + f'/ge_plots/{filename}', 
               bbox_inches='tight', 
               dpi=600)
+
+
+def plot_nicv(dl_group, date):
+
+    # Unpack dl data
+    dls, cmap, scenario = dl_group
+
+    
+    # Compute and plot all NICV scenarios
+    
+    nicvs = []
+    colors = cmap(range(len(dls)))
+
+    f, ax = plt.subplots(4, 4, figsize=(25,25))
+    row = 0
+    for b in range(16):
+        col = b % 4
+
+        ax[row, col].set_prop_cycle('color', colors)
+
+        for k, dl in dls.items():
+            traces, _, plaintexts = dl.gen_set()
+        
+            nicv_val = nicv(traces, plaintexts, b)
+            nicvs.append(nicvs)
+        
+            ax[row, col].plot(nicv_val, label=k)
+            ax[row, col].legend()
+            ax[row, col].set_title(f'Byte {b}')
+            ax[row, col].set_xlabel('Samples')
+            ax[row, col].set_ylabel('NICV')
+
+        if col == 3:
+            row += 1
+
+    f.savefig(constants.RESULTS_PATH + f'/nicv/nicv_{scenario}_{date}.png', 
+              bbox_inches='tight', 
+              dpi=600)
+
+    nicvs = np.array(nicvs)
+
+    return nicvs 
