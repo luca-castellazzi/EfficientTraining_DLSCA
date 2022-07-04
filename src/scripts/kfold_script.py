@@ -31,9 +31,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 # Global variables (constants)
 BYTE_IDX = 0
 N_FOLDS = 10
-N_MODELS = 10
-TRAIN_EPOCHS = 300
-TEST_EPOCHS = 200
+N_MODELS = 30
+TRAIN_EPOCHS = 1#300
+TEST_EPOCHS = 1#200
 GE_VAL_TR = 500
 HP_CHOICES = {#'kernel_initializer': ['random_normal', 'random_uniform', 
               #                       'truncated_normal', 
