@@ -4,6 +4,10 @@ from tqdm import tqdm
 import tensorflow.keras.backend as keras_backend
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau 
 
+import sys
+sys.path.insert(0, '../utils')
+import aes
+
 
 def compute_key_probs(probs, key_bytes):
     key_probs = []
@@ -48,10 +52,11 @@ def compute_true_kb_ranks(probs, key_bytes, true_kb):
 # ------------------------------- #
 # Guessing Entropy implementation #
 # ------------------------------- #
-def guessing_entropy(model, n_exp, test_data, n_traces):
+def guessing_entropy(model, test_dl, n_exp, n_traces):
 
-    # Unpack test data
-    x, kbs, true_kb = test_data
+    # Load the test-set data
+    x, y, pltxt_bytes, true_kb = test_dl.load_data()
+    kbs = np.array([aes.key_from_labels(pb, 'SBOX_OUT') for pb in pltxt_bytes])
     
     x_kbs = list(zip(x, kbs))
     
@@ -68,7 +73,7 @@ def guessing_entropy(model, n_exp, test_data, n_traces):
                                               true_kb)
         ranks_per_exp.append(true_kb_ranks)
 
-    
+    ranks_per_exp = np.array(ranks_per_exp) 
     ge = np.mean(ranks_per_exp, axis=0)
 
     return ge
@@ -79,7 +84,7 @@ def guessing_entropy(model, n_exp, test_data, n_traces):
 # Min number of traces to have GE=0 consistently (for at least N consecutiv  #
 # steps)                                                                     #
 # -------------------------------------------------------------------------- #
-def ge_score(ge, n_consecutive_zeros, zero_threshold=0.3):
+def ge_score(ge, n_zeros, zero_threshold=0.3):
     
     iszero = (ge <= zero_threshold)
     score = len(ge) - 1
@@ -93,7 +98,7 @@ def ge_score(ge, n_consecutive_zeros, zero_threshold=0.3):
 
         zero_slices = np.where(start_end_zeros==1)[0].reshape(-1, 2)
         for el in zero_slices:
-            if (el[1] - el[0]) >= n_consecutive_zeros:
+            if (el[1] - el[0]) >= n_zeros:
                 score = el[0]
     
     return score
@@ -102,10 +107,10 @@ def ge_score(ge, n_consecutive_zeros, zero_threshold=0.3):
 # -------------------------------- #
 # Classic KFold XVal with Accuracy #
 # -------------------------------- #
-def xval_acc(kf, networks, train_data, hp_space):
+def xval_acc(kf, networks, train_dl, train_data):
 
     # Unpack the train data
-    x, y, _, _, epochs, _ = train_data
+    hp_space, epochs = train_data
 
     # Set the callbacks to use for the train (they are common to all models)
     callbacks = []
@@ -115,6 +120,9 @@ def xval_acc(kf, networks, train_data, hp_space):
                                        factor=0.2,
                                        patience=8,
                                        min_lr=1e-7))
+
+    # Load the train-set data
+    x, y, _, _ = train_dl.load_data()
 
     # Iteratively evaluate all models
     results = []
@@ -129,22 +137,21 @@ def xval_acc(kf, networks, train_data, hp_space):
         acc_per_exp = []
         for t_idx, v_idx in tqdm(kf.split(x)):
             net.build_model()
-            model = net.get_model()
-
+            
             x_t = x[t_idx]
             y_t = y[t_idx]
             
             x_v = x[v_idx]
             y_v = y[v_idx]
 
-            model.fit(x_t,
-                      y_t,
-                      validation_data=(x_v, y_v),
-                      epochs=epochs,
-                      callbacks=callbacks,
-                      verbose=0)
+            net.model.fit(x_t,
+                          y_t,
+                          validation_data=(x_v, y_v),
+                          epochs=epochs,
+                          callbacks=callbacks,
+                          verbose=0)
 
-            _, acc = model.evaluate(x_v, y_v, verbose=0)
+            _, acc = net.model.evaluate(x_v, y_v, verbose=0)
 
             acc_per_exp.append(acc)
 
@@ -170,10 +177,14 @@ def xval_acc(kf, networks, train_data, hp_space):
 # ---------------------------------------------------------------- #
 # Custom KFold XVal with GE as metric (computed for each val fold) #
 # ---------------------------------------------------------------- #
-def xval_ge(kf, networks, train_data, hp_space):
+def xval_ge(kf, networks, train_dl, train_data):
 
     # Unpack the train data
-    x, y, kbs, true_kb, epochs, ge_tr = train_data
+    hp_space, epochs, ge_tr = train_data
+    
+    # Load the train-set data
+    x, y, pltxt_bytes, true_kb = train_dl.load_data()
+    kbs = np.array([aes.key_from_labels(pb, 'SBOX_OUT') for pb in pltxt_bytes])
 
     # Set the callbacks to use for the train (they are common to all models)
     callbacks = []
@@ -197,7 +208,6 @@ def xval_ge(kf, networks, train_data, hp_space):
         score_per_exp = []
         for t_idx, v_idx in tqdm(kf.split(x)):
             net.build_model()
-            model = net.get_model()
 
             x_t = x[t_idx]
             y_t = y[t_idx]
@@ -206,14 +216,14 @@ def xval_ge(kf, networks, train_data, hp_space):
             y_v = y[v_idx]
             kbs_v = kbs[v_idx]
 
-            model.fit(x_t,
-                      y_t,
-                      validation_data=(x_v, y_v),
-                      epochs=epochs,
-                      callbacks=callbacks,
-                      verbose=0)
+            net.model.fit(x_t,
+                          y_t,
+                          validation_data=(x_v, y_v),
+                          epochs=epochs,
+                          callbacks=callbacks,
+                          verbose=0)
             
-            ge = guessing_entropy(model, 
+            ge = guessing_entropy(net.model, 
                                   n_exp=10, 
                                   test_data=(x_v, kbs_v, true_kb), 
                                   n_traces=ge_tr)
@@ -244,10 +254,14 @@ def xval_ge(kf, networks, train_data, hp_space):
 # Custom KFold XVal with GE as metric (computed as average over the #
 # k iterations)                                                     #
 # ----------------------------------------------------------------- #
-def xval_ge_iter(kf, networks, train_data, hp_space):
+def xval_ge_iter(kf, networks, train_dl, train_data):
     
     # Unpack the train data
-    x, y, kbs, true_kb, epochs, ge_tr = train_data
+    hp_space, epochs, ge_tr = train_data
+    
+    # Load the train-set data
+    x, y, pltxt_bytes, true_kb = train_dl.load_data()
+    kbs = np.array([aes.key_from_labels(pb, 'SBOX_OUT') for pb in pltxt_bytes])
 
     # Set the callbacks to use for the train (they are common to all models)
     callbacks = []
@@ -271,7 +285,6 @@ def xval_ge_iter(kf, networks, train_data, hp_space):
         ranks_per_exp = []
         for t_idx, v_idx in tqdm(kf.split(x)):
             net.build_model()
-            model = net.get_model()
 
             x_t = x[t_idx]
             y_t = y[t_idx]
@@ -280,14 +293,14 @@ def xval_ge_iter(kf, networks, train_data, hp_space):
             y_v = y[v_idx]
             kbs_v = kbs[v_idx]
 
-            model.fit(x_t,
-                      y_t,
-                      validation_data=(x_v, y_v),
-                      epochs=epochs,
-                      callbacks=callbacks,
-                      verbose=0)
+            net.model.fit(x_t,
+                          y_t,
+                          validation_data=(x_v, y_v),
+                          epochs=epochs,
+                          callbacks=callbacks,
+                          verbose=0)
             
-            probs = model.predict(x_v)
+            probs = net.model.predict(x_v)
             
             random_idx = random.sample(range(len(probs)), ge_tr)
             true_kb_ranks = compute_true_kb_ranks(probs[random_idx], 

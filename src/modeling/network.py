@@ -31,11 +31,11 @@ class Network():
     Class used to represent a single individual of a population of networks.
 
     Attributes:
-        - _network_type:
+        - network_type:
             type of the network.
-        - _hp:
+        - hp:
             hyperparameters of the network.
-        - _model:
+        - model:
             implementation of the network (keras.models.Sequential), built with 
             the hyperparameters stored in _hp.
 
@@ -72,9 +72,9 @@ class Network():
                 Convolutional Neural Network).
         """
 
-        self._network_type = network_type
-        self._hp = {}
-        self._model = Sequential()
+        self.network_type = network_type
+        self.hp = {}
+        self.model = Sequential()
 
 
     def set_hp(self, hp):
@@ -87,7 +87,7 @@ class Network():
                 structure containing all the specific hyperparameters.
         """
 
-        self._hp = hp
+        self.hp = hp
 
 
     def get_hp(self):
@@ -99,7 +99,7 @@ class Network():
             dict containing all the hyperparameters of the model.
         """
 
-        return self._hp
+        return self.hp
 
     def get_model(self):
         
@@ -110,7 +110,7 @@ class Network():
             keras.models.Model relative to the implementation of the network.
         """ 
 
-        return self._model
+        return self.model
 
 
     def build_model(self):
@@ -124,39 +124,39 @@ class Network():
                 * BatchNormalization before output;
         """
 
-        if self._network_type == 'MLP':
+        if self.network_type == 'MLP':
             # Input
-            self._model.add(Dense(constants.TRACE_LEN,
-                            kernel_initializer=self._hp['kernel_initializer'],
-                            activation=self._hp['activation']))
+            self.model.add(Dense(constants.TRACE_LEN,
+                            kernel_initializer=self.hp['kernel_initializer'],
+                            activation=self.hp['activation']))
 
             # First BatchNorm
-            self._model.add(BatchNormalization())
+            self.model.add(BatchNormalization())
 
             # Hidden
-            for _ in range(self._hp['hidden_layers']):
-                self._model.add(Dense(self._hp['hidden_neurons'],
-                                kernel_initializer=self._hp['kernel_initializer'],
-                                activation=self._hp['activation']))
+            for _ in range(self.hp['hidden_layers']):
+                self.model.add(Dense(self.hp['hidden_neurons'],
+                                kernel_initializer=self.hp['kernel_initializer'],
+                                activation=self.hp['activation']))
 
                 # Dropout
-                self._model.add(Dropout(self._hp['dropout_rate']))
+                self.model.add(Dropout(self.hp['dropout_rate']))
 
             # Second BatchNorm
-            self._model.add(BatchNormalization())
+            self.model.add(BatchNormalization())
 
             # Output
-            self._model.add(Dense(256, activation='softmax')) ########################### 256 to be changed if the target is changed (HW, ...)
+            self.model.add(Dense(256, activation='softmax')) ########################### 256 to be changed if the target is changed (HW, ...)
 
             # Compilation
-            lr = self._hp['learning_rate']
-            if self._hp['optimizer'] == 'sgd':
+            lr = self.hp['learning_rate']
+            if self.hp['optimizer'] == 'sgd':
                 opt = SGD(learning_rate=lr)
-            elif self._hp['optimizer'] == 'adam':
+            elif self.hp['optimizer'] == 'adam':
                 opt = Adam(learning_rate=lr)
             else:
                 opt = RMSprop(learning_rate=lr)
-            self._model.compile(optimizer=opt,
+            self.model.compile(optimizer=opt,
                                 loss='categorical_crossentropy',
                                 metrics=['accuracy'])
         else:
@@ -169,7 +169,7 @@ class Network():
         Resets the network.
         """
 
-        self._model = Sequential()
+        self.model = Sequential()
 
 
     def save_model(self, path):
@@ -184,7 +184,7 @@ class Network():
         """
 
         print('Saving the model...')
-        self._model.save(path)
+        self.model.save(path)
 
     
 
@@ -197,7 +197,7 @@ class Individual(Network):
     Superclass: Network
 
     Attributes:
-        - _hp_choices (dict):
+        - hp_choices (dict):
             hyperparameter space.
     
     Methods:
@@ -217,7 +217,7 @@ class Individual(Network):
         """
 
         super().__init__(network_type)
-        self._hp_choices = hp_choices
+        self.hp_choices = hp_choices
 
     
     def select_random_hp(self):
@@ -227,8 +227,8 @@ class Individual(Network):
         hyperparameter space.
         """
 
-        for hp_name in self._hp_choices:
-            self._hp[hp_name] = random.choice(self._hp_choices[hp_name])
+        for hp_name in self.hp_choices:
+            self.hp[hp_name] = random.choice(self.hp_choices[hp_name])
 
 
     def evaluate(self, x_val, y_val):
@@ -247,7 +247,7 @@ class Individual(Network):
             float value representing the overall validation accuracy.
         """
 
-        val_loss, val_acc = self._model.evaluate(x_val,
-                                                 y_val,
-                                                 verbose=0)
+        val_loss, val_acc = self.model.evaluate(x_val,
+                                                y_val,
+                                                verbose=0)
         return val_acc

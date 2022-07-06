@@ -8,6 +8,7 @@ import json
 
 # Tensorflow/Keras
 from tensorflow.keras.backend import clear_session
+from tensorflow.keras.utils import to_categorical
 
 # sklearn
 from sklearn.model_selection import KFold
@@ -15,7 +16,7 @@ from sklearn.model_selection import KFold
 # Custom
 import sys
 sys.path.insert(0, '../utils')
-from data_loader import DataLoader
+from lazy_data_loader import DataLoader
 import constants
 import aes
 sys.path.insert(0, '../modeling')
@@ -30,10 +31,10 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 
 # Global variables (constants)
 BYTE_IDX = 0
-N_FOLDS = 2#10
-N_MODELS = 3#30
-TRAIN_EPOCHS = 1#300
-TEST_EPOCHS = 1#200
+N_FOLDS = 10
+N_MODELS = 10
+TRAIN_EPOCHS = 100
+TEST_EPOCHS = 100
 GE_VAL_TR = 500
 HP_CHOICES = {#'kernel_initializer': ['random_normal', 'random_uniform', 
               #                       'truncated_normal', 
@@ -57,48 +58,49 @@ def main():
     model_type = sys.argv[2].upper() # ['MLP', 'CNN']
     val_metric = sys.argv[3] # ['acc', 'ge', 'geiter']
 
+    # Create the train DataLoader
+    path = constants.CURR_DATASETS_PATH + f'/SBOX_OUT/{train_dk}_train.json'
+    train_dl = DataLoader(path, BYTE_IDX)
     
-    # Load Train Dataset
-    train_dl = DataLoader(constants.CURR_DATASETS_PATH + f'/SBOX_OUT/{train_dk}.json', BYTE_IDX)
-    x_train, y_train, pltxt_train = train_dl.gen_set(train=True) # Default 80% train (40,000 train traces)
-    key_bytes_train = np.array([aes.key_from_labels(pb, 'SBOX_OUT') for pb in pltxt_train])
-    true_kb_train = train_dl.get_true_key_byte()
-
-    train_data = (x_train, y_train, key_bytes_train, true_kb_train, TRAIN_EPOCHS, GE_VAL_TR)
-
-    
-    # Generate the networks
+    # Create the Networks
     networks = [Network(model_type) for _ in range(N_MODELS)]
-
     
-    # KFold Crossvalidation
+    # Create KFold
     kf = KFold(n_splits=N_FOLDS)
 
+    # Build a "metadata package" for training
+    train_data = [HP_CHOICES, TRAIN_EPOCHS]
+
     if val_metric == 'acc':
-        best_hp = ev.xval_acc(kf, networks, train_data, HP_CHOICES)
-    elif val_metric == 'ge':
-        best_hp = ev.xval_ge(kf, networks, train_data, HP_CHOICES)
-    elif val_metric == 'geiter':
-        best_hp = ev.xval_ge_iter(kf, networks, train_data, HP_CHOICES)
+        best_hp = ev.xval_acc(kf, networks, train_dl, train_data)
     else:
-        print('ERROR: wrong val metric value')
-        return
+        train_data.append(GE_VAL_TR)
+        key_bytes_train = np.array([aes.key_from_labels(pb, 'SBOX_OUT') for pb in pltxt_train])
+        train_data.append(key_bytes_train)
+        if val_metric == 'ge':
+            best_hp = ev.xval_ge(kf, networks, train_dl, train_data) ################## to modify
+        elif val_metric == 'geiter':
+            best_hp = ev.xval_ge_iter(kf, networks, train_dl, train_data) ################# to modify
+        else:
+            print('ERROR: wrong val metric value')
+            return
 
 
     # Attack with the best hyperparameters
     ge_per_testset = []
     
+    x_train, y_train, _, _ = train_dl.load_data()
+
     attack_net = Network(model_type)
     attack_net.set_hp(best_hp)
     attack_net.build_model()
-    model = attack_net.get_model()
             
     print()
     print('Training the attack model...')
-    model.fit(x_train,
-              y_train,
-              epochs=TEST_EPOCHS,
-              verbose=0)
+    attack_net.model.fit(x_train,
+                         y_train,
+                         epochs=TEST_EPOCHS,
+                         verbose=0)
     print('Training completed.')
 
     for d in constants.DEVICES:
@@ -106,21 +108,18 @@ def main():
             print()        
             print(f'----- Attack set {d}-{k} -----')
         
-            path = constants.CURR_DATASETS_PATH + f'/SBOX_OUT/{d}-{k}.json'
-
+            # Define the current test DataLoader
+            path = constants.CURR_DATASETS_PATH + f'/SBOX_OUT/{d}-{k}_test.json'
             test_dl = DataLoader(path, BYTE_IDX)
-            x_test, y_test, pltxt_test = test_dl.gen_set(train=False)
-            kbs_test = np.array([aes.key_from_labels(pb, 'SBOX_OUT') for pb in pltxt_test])
-            true_kb_test = test_dl.get_true_key_byte()
             
-            ge = ev.guessing_entropy(model, 
+            ge = ev.guessing_entropy(attack_net.model, 
+                                     test_dl=test_dl,
                                      n_exp=10,
-                                     test_data=(x_test, kbs_test, true_kb_test),
                                      n_traces=2000)
             ge_per_testset.append(ge)
 
     ge_per_testset = np.array(ge_per_testset)
-    scores = np.array([ev.ge_score(ge, n_consecutive_zeros=10) 
+    scores = np.array([ev.ge_score(ge, n_zeros=10) 
                        for ge in ge_per_testset])
 
 

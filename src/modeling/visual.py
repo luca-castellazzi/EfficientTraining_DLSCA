@@ -3,6 +3,7 @@ import matplotlib
 matplotlib.use('Agg') # Avoid interactive mode (and save files as .PNG as default)
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+import seaborn as sns
 
 import sys
 sys.path.insert(0, '../utils')
@@ -92,5 +93,43 @@ def plot_nicv(nicvs, configs, metadata):
                 row += 1
 
     f.savefig(constants.RESULTS_PATH + f'/nicv/nicv_plots/nicv_{scenario}_{date}.png', 
+              bbox_inches='tight', 
+              dpi=600)
+
+
+def plot_ge_per_trainConfig(ges, scores, train_configs, test_config, date, n=100):
+
+    # Sort the GEs w.r.t. their scores from the highest to the lowest
+    # (to have the right color more easily)
+    ges = ges.tolist()
+    scores = scores.tolist()
+    ges_scores = list(zip(ges, scores))
+    ges_scores.sort(key=lambda x: x[1], reverse=True)
+
+    ges, _ = list(zip(*ges_scores))
+    ges = np.array(ges) + np.ones_like(ges)
+    # Get the colorset
+    #cmap = sns.color_palette('Blues', as_cmap=True)
+    #cmap = sns.color_palette("Spectral", as_cmap=True)
+    cmap = sns.color_palette("coolwarm", as_cmap=True)
+    #cmap = sns.color_palette("ch:s=.25,rot=-.25", as_cmap=True)
+    colors = cmap(range(0, cmap.N, int(cmap.N/len(ges))))
+    
+    # Plot
+    f, ax = plt.subplots(figsize=(10,5))
+
+    for i, ge in enumerate(ges):
+        ax.plot(ge[:n], label=train_configs[i], color=colors[i], marker='o')
+        ax.set_xlim([1, n])
+        ax.set_ylim([1, 256])
+        ax.set_xscale('log', base=10)
+        ax.set_yscale('log', base=2)
+        ax.legend()
+        ax.set_title(f'GE per train config (Attack config: {test_config})')
+        ax.set_xlabel('Number of traces')
+        ax.set_ylabel('GE')
+        ax.grid()
+
+    f.savefig(constants.RESULTS_PATH + f'/ge/ge_plots/ge_per_trainConfig_{date}.png', 
               bbox_inches='tight', 
               dpi=600)
