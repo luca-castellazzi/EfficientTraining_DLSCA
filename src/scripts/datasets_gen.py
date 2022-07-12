@@ -12,13 +12,12 @@ sys.path.insert(0, '../utils')
 import aes
 import constants
 
+TRAIN_PERC = 0.8
 
 def main():
     
     tr_type = sys.argv[1].upper() # CURR or EM
     target = sys.argv[2].upper() # SBOX_OUT or HW or KEY
-    train_perc = float(sys.argv[3])
-    keys = [el.upper() for el in sys.argv[4:]]
 
     if tr_type == 'CURR':
         tr_path = constants.CURR_TRACES_PATH
@@ -27,28 +26,29 @@ def main():
         tr_path = constants.EM_TRACES_PATH
         dset_path = constants.EM_DATASETS_PATH + f'/{target}'
 
-    train_size = int(train_perc * constants.TRACE_NUM)
+    train_size = int(TRAIN_PERC * constants.TRACE_NUM)
 
 
     # Get all the names of the traces whose key has been specified
     new_traces = []
     for tr_name in os.listdir(tr_path):
-        if ('Resampled' in tr_name) and (tr_name[3:5] in keys):
-            new_traces.append(tr_name)
+        if 'Resampled' in tr_name:
+            tmp_substr = tr_name.replace('_500MHz + Resampled.trs', '')
+            if not any([tmp_substr in dset for dset in os.listdir(dset_path)]):
+                new_traces.append(tr_name)
 
 
     # Save all info as JSON file
     columns = ['samples', 'pltxt', 'labels', 'key']
     
     for tr_name in new_traces:
-        
-        if 'NICV' in tr_name:
-            config = tr_name[:10] # Di-K0_NICV
-        else:    
-            config = tr_name[:5] # Di-Kj
+    
+        config = tr_name.replace('_500MHz + Resampled.trs', '') # Di-Kj or D3-K0_NICV
             
-        df = pd.DataFrame(data=np.zeros((constants.TRACE_NUM, len(columns)), dtype=object),
-                              columns=columns)
+        df = pd.DataFrame(
+            data=np.zeros((constants.TRACE_NUM, len(columns)), dtype=object),
+            columns=columns
+        )
             
         with trsfile.open(f'{tr_path}/{tr_name}', 'r') as tr_set:
 
@@ -73,10 +73,10 @@ def main():
         print(f'Creating TRAIN {config} JSON file...')
         train_df.to_json(f'{dset_path}/{config}_train.json')
 
-        print(f'Saving TEST {config} JSON file...')
+        print(f'Creating TEST {config} JSON file...')
         test_df.to_json(f'{dset_path}/{config}_test.json')
             
-        print(f'{config} CSV file successfully created.')
+        print(f'{config} JSON files successfully created.')
         print()
 
 
