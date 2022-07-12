@@ -13,10 +13,11 @@ from nicv import nicv
 
 def plot_ges(ges, n, metadata, subplots=False):
     
-    metric, train_dk, date = metadata
+    metric, train_scenario, date = metadata
     
     if not subplots:
         f, ax = plt.subplots(figsize=(10,5))
+        ax.plot(np.zeros(n), color='r', ls='--', linewidth=0.8)
 
         d = 1
         for i in range(len(ges)):
@@ -31,8 +32,7 @@ def plot_ges(ges, n, metadata, subplots=False):
             if k == 2:
                 d += 1
 
-        ax.plot(np.zeros(n), color='r', ls='--')
-        ax.set_title(f'GEs ({train_dk} for training)')
+        ax.set_title(f'Training scenario: {train_scenario}')
         ax.set_xlabel('Number of Traces')
         ax.set_ylabel('Guessing Entropy')
         if n <= 100:
@@ -54,7 +54,7 @@ def plot_ges(ges, n, metadata, subplots=False):
             else:
                 ax[row, col].plot(ges[i][:n], color=list(colors.TABLEAU_COLORS.keys())[i])
             ax[row, col].plot(np.zeros(n), color='r', ls='--')
-            ax[row, col].set_title(f'D{row+1}-K{col+1} ({train_dk} for training)')
+            ax[row, col].set_title(f'D{row+1}-K{col+1} (Training scenario {train_scenario})')
             ax[row, col].set_xlabel('Number of Traces')
             ax[row, col].set_ylabel('Guessing Entropy')
             if n <= 100:
@@ -64,7 +64,7 @@ def plot_ges(ges, n, metadata, subplots=False):
             if col == 2:
                 row += 1
 
-        filename = f'{metric}SUB{n}_{date}.png'
+        filename = f'{metric}SUB{n}_{train_scenario}_{date}.png'
     
     f.savefig(constants.RESULTS_PATH + f'/ge/ge_plots/{filename}', 
               bbox_inches='tight', 
@@ -97,39 +97,36 @@ def plot_nicv(nicvs, configs, metadata):
               dpi=600)
 
 
-def plot_ge_per_trainConfig(ges, scores, train_configs, test_config, date, n=100):
+def plot_ge_per_trainConfig(ges, scores, train_configs, test_config, n=30):
 
     # Sort the GEs w.r.t. their scores from the highest to the lowest
     # (to have the right color more easily)
     ges = ges.tolist()
-    scores = scores.tolist()
     ges_scores = list(zip(ges, scores))
     ges_scores.sort(key=lambda x: x[1], reverse=True)
 
     ges, _ = list(zip(*ges_scores))
-    ges = np.array(ges) + np.ones_like(ges)
+        
     # Get the colorset
-    #cmap = sns.color_palette('Blues', as_cmap=True)
-    #cmap = sns.color_palette("Spectral", as_cmap=True)
-    cmap = sns.color_palette("coolwarm", as_cmap=True)
-    #cmap = sns.color_palette("ch:s=.25,rot=-.25", as_cmap=True)
+    cmap = plt.cm.jet # Google Turbo
     colors = cmap(range(0, cmap.N, int(cmap.N/len(ges))))
     
     # Plot
     f, ax = plt.subplots(figsize=(10,5))
+    ax.plot(np.zeros(n), color='r', ls='--', linewidth=0.5)
 
     for i, ge in enumerate(ges):
-        ax.plot(ge[:n], label=train_configs[i], color=colors[i], marker='o')
-        ax.set_xlim([1, n])
-        ax.set_ylim([1, 256])
-        ax.set_xscale('log', base=10)
-        ax.set_yscale('log', base=2)
+        if n<= 100:
+            ax.plot(ge[:n], label=train_configs[i], color=colors[i], marker='o')
+            ax.set_xticks(range(n), labels=range(1, n+1))
+            ax.grid()
+        else:
+            ax.plot(ge[:n], label=train_configs[i], color=colors[i])
         ax.legend()
-        ax.set_title(f'GE per train config (Attack config: {test_config})')
+        ax.set_title(f'Attack config: {test_config}')
         ax.set_xlabel('Number of traces')
         ax.set_ylabel('GE')
-        ax.grid()
 
-    f.savefig(constants.RESULTS_PATH + f'/ge/ge_plots/ge_per_trainConfig_{date}.png', 
+    f.savefig(constants.RESULTS_PATH + f'/ge/ge_plots/ge_{train_configs[0][:2]}only_{n}.png', 
               bbox_inches='tight', 
               dpi=600)

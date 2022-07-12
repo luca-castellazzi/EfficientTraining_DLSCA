@@ -1,8 +1,13 @@
-import json
+# Basics
+import pandas as pd
 import time
 import numpy as np
 from tensorflow.keras.utils import to_categorical
 import random
+from tqdm import tqdm
+
+# Custom
+import constants
 
 
 class DataLoader():
@@ -31,7 +36,7 @@ class DataLoader():
     """
     
     
-    def __init__(self, json_path, byte_idx=None, train_perc=0.8):
+    def __init__(self, paths, byte_idx=None):
         
         """
         Class constructor: given the path of the traceset JSON file, a
@@ -51,81 +56,51 @@ class DataLoader():
                 considered as train set.
         """
 
-        print('Loading the dataset... ')
+        self.paths = paths
+        self.byte_idx = byte_idx
 
-        start_time = time.time()
-        with open(json_path, 'r') as j_file:
-            dataset = json.load(j_file)
-        end_time = time.time()
-
-        print(f'Dataset successfully loaded ({end_time-start_time:.2f} seconds).')
-
-        traces = dataset['traces']
-        random.shuffle(traces)
-
-        # Samples
-        self._x = np.array([tr['samples'] for tr in traces])
-        
-        # Labels
-        labels = [tr['labels'] for tr in traces]
-        if byte_idx is not None:
-            self._y = np.array([l[byte_idx] for l in labels])
-            self._y = to_categorical(self._y)
-        else:
-            self._y = np.array([]) # Never used if byte_idx is None
-
-        # Plaintexts
-        plaintexts = [tr['pltxt'] for tr in traces]
-        if byte_idx is not None:
-            self._pltxt_bytes = np.array([pltxt[byte_idx] for pltxt in plaintexts])
-        else:
-            self._pltxt_bytes = np.array(plaintexts)
-
-        # True key byte
-        if byte_idx is not None:
-            self._true_key_byte = dataset['key'][byte_idx]
-        else:
-            self._true_key_byte = np.array(dataset['key'])
-
-        # Train len
-        self._train_len = int(train_perc * len(traces))
-
-
-    def get_true_key_byte(self):
-
-        """
-        Getter for the correct key-byte for the retrieved traces.
-
-        Returns:
-            int value representing the correct key-byte.
-        """
-
-        return self._true_key_byte
     
+    @staticmethod
+    def gen_data(df, byte_idx):
+    
+        # X
+        x = np.array([df.at[i, 'samples'] 
+                      for i in range(df.shape[0])])
 
-    def gen_set(self, train=True):
-
-        """
-        Generates a train set or a test set w.r.t. the percentage of train traces specified in the
-        constructor.
-
-        Parameters:
-            - train (bool, default: True):
-                whether or not generate a train set.
-                If it is false, a test set is generated.
-
-        Returns:
-            3-element tuple containing traces values, labels and plaintexts
-            (labels are one-hot-encoded).
-        """
-        
-        if train:
-            x = self._x[:self._train_len]
-            y = self._y[:self._train_len]
-            pltxt = self._pltxt_bytes[:self._train_len]
+        # Labels
+        labels = np.array([df.at[i, 'labels'] 
+                           for i in range(df.shape[0])])
+        if byte_idx is not None:
+            y = [l[byte_idx] for l in labels]
+            y = to_categorical(y)
         else:
-            x = self._x[self._train_len:]
-            y = self._y[self._train_len:]
-            pltxt = self._pltxt_bytes[self._train_len:]
+            y = [] # Not considered
+        
+        # Plaintexts
+        pltxts = [df.at[i, 'pltxt'] 
+                  for i in range(df.shape[0])]
+        if byte_idx is not None:
+            pltxts_bytes = np.array([p[byte_idx] for p in pltxts])   
+        else:
+            pltxts_bytes = pltxts
 
-        return x, y, pltxt
+        # True key-byte
+        true_kb = df.at[0, 'key'][byte_idx]
+
+        return x, y, pltxts_bytes, true_kb
+
+
+    def load_data(self):
+
+        dfs = []
+
+        for path in tqdm(self.paths, desc='Loading data: '):
+            tmp_df = pd.read_json(path)
+            tmp_df = tmp_df.sample(frac=1).reset_index(drop=True)
+            idx = int(tmp_df.shape[0] / len(self.paths))
+            dfs.append(tmp_df.iloc[:idx])
+
+        df = pd.concat(dfs).sample(frac=1).reset_index(drop=True)
+        x, y, pltxts_bytes, true_kb = self.gen_data(df, self.byte_idx)
+            
+        return x, y, pltxts_bytes, true_kb
