@@ -41,7 +41,7 @@ HP = {
     'activation':         'relu',
     'hidden_layers':      3,
     'hidden_neurons':     400,
-    'dropout_rate':       0.0,
+    'dropout_rate':       0.4,
     'optimizer':          'adam',
     'learning_rate':      1e-4,
     'batch_size':         100
@@ -59,7 +59,7 @@ def create_model(hp):
                     activation=hp['activation']))
 
     # First BatchNorm
-    # model.add(BatchNormalization())
+    model.add(BatchNormalization())
 
     # Hidden
     for _ in range(hp['hidden_layers']):
@@ -72,7 +72,7 @@ def create_model(hp):
         # model.add(Dropout(hp['dropout_rate']))
 
     # Second BatchNorm
-    # model.add(BatchNormalization())
+    model.add(BatchNormalization())
 
     # Output
     model.add(Dense(256, activation='softmax'))
@@ -190,11 +190,11 @@ def main():
     
     start = time.time()
     res = []
-    for i, tmp_hp in enumerate([50, 100, 400, 1000]):
+    for i, tmp_hp in enumerate([3, 4, 5, 6]):
            
         print(f'Trying {tmp_hp}...')
         
-        HP['batch_size'] = tmp_hp
+        HP['hidden_layers'] = tmp_hp
 
         model = create_model(HP)
         

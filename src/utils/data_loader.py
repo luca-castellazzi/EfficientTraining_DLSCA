@@ -94,7 +94,7 @@ class DataLoader():
 
         dfs = []
 
-        for path in tqdm(self.paths, desc='Loading data: '):
+        for path in self.paths:
             tmp_df = pd.read_json(path)
             tmp_df = tmp_df.sample(frac=1).reset_index(drop=True)
             idx = int(tmp_df.shape[0] / len(self.paths))
