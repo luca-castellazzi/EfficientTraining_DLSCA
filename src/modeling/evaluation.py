@@ -101,8 +101,8 @@ def ge_score(ge, n_zeros, zero_threshold=0.3):
             if (el[1] - el[0]) >= n_zeros:
                 score = el[0]
     
-    return score
-
+    return score + 1
+ 
 
 # -------------------------------- #
 # Classic KFold XVal with Accuracy #

@@ -90,29 +90,6 @@ class Network():
         self.hp = hp
 
 
-    def get_hp(self):
-
-        """
-        Getter for the hyperparameters of the network.
-
-        Returns:
-            dict containing all the hyperparameters of the model.
-        """
-
-        return self.hp
-
-    def get_model(self):
-        
-        """
-        Getter for the network's model.
-
-        Returns:
-            keras.models.Model relative to the implementation of the network.
-        """ 
-
-        return self.model
-
-
     def build_model(self):
 
         """
@@ -125,29 +102,26 @@ class Network():
         """
 
         if self.network_type == 'MLP':
+    
             # Input
-            self.model.add(Dense(constants.TRACE_LEN,
-                            kernel_initializer=self.hp['kernel_initializer'],
-                            activation=self.hp['activation']))
+            self.model.add(Dense(constants.TRACE_LEN, activation='relu'))
 
             # First BatchNorm
             self.model.add(BatchNormalization())
 
             # Hidden
             for _ in range(self.hp['hidden_layers']):
-                self.model.add(Dense(self.hp['hidden_neurons'],
-                                kernel_initializer=self.hp['kernel_initializer'],
-                                activation=self.hp['activation']))
+                self.model.add(Dense(self.hp['hidden_neurons'], activation='relu'))
 
                 # Dropout
-                self.model.add(Dropout(self.hp['dropout_rate']))
+                # self.model.add(Dropout(self.hp['dropout_rate']))
 
             # Second BatchNorm
-            self.model.add(BatchNormalization())
+            # self.model.add(BatchNormalization())
 
             # Output
-            self.model.add(Dense(256, activation='softmax')) ########################### 256 to be changed if the target is changed (HW, ...)
-
+            self.model.add(Dense(256, activation='softmax'))
+            
             # Compilation
             lr = self.hp['learning_rate']
             if self.hp['optimizer'] == 'sgd':
@@ -156,9 +130,13 @@ class Network():
                 opt = Adam(learning_rate=lr)
             else:
                 opt = RMSprop(learning_rate=lr)
-            self.model.compile(optimizer=opt,
-                                loss='categorical_crossentropy',
-                                metrics=['accuracy'])
+            
+            self.model.compile(
+                optimizer=opt, 
+                loss='categorical_crossentropy',
+                metrics=['accuracy']#, 'recall']
+            )
+    
         else:
             pass # In future there will be CNN
 
@@ -170,21 +148,6 @@ class Network():
         """
 
         self.model = Sequential()
-
-
-    def save_model(self, path):
-        
-        """
-        Saves the implementation of the network as a SavedModel file at the 
-        specified path.
-
-        Parameters:
-            - path (str):
-                path where to save the network.
-        """
-
-        print('Saving the model...')
-        self.model.save(path)
 
     
 
