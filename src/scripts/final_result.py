@@ -27,11 +27,12 @@ def main():
     
     all_ges = []
     for filename in os.listdir(res_folder_path):
-        if '.csv' in filename:
-            csv_file = res_folder_path + f'/{filename}'
-            df = pd.read_csv(csv_file)
-            ges = df.iloc[:, :-1].values
-            all_ges.append(ges)
+        if 'csv' in filename:
+            if not 'avg' in filename: # Avoid to consider avg_ge CSV file if already present
+                csv_file = res_folder_path + f'/{filename}'
+                df = pd.read_csv(csv_file)
+                ges = df.iloc[:, :-1].values
+                all_ges.append(ges)
     
     train_configs = list(df['train_config'])
     labels = [c.split('_')[1] for c in train_configs]
@@ -46,7 +47,7 @@ def main():
     ges_to_csv(avg_ges, train_configs, avg_ges_file_path)
    
     # Plot Avg GEs
-    title = f'Avg GE - {n_train_dev} train devices'
+    title = f'Avg GE - Number of Train Devices: {n_train_dev}'
     path = constants.RESULTS_PATH + f'/{n_train_dev}d/avg_ge-{n_train_dev}d.png'
     vis.plot_ges(avg_ges, len(avg_ges[0]), labels, title, path)
     

@@ -1,13 +1,38 @@
 # Basics
 import numpy as np
 import matplotlib
-matplotlib.use('Agg') # Avoid interactive mode (and save files as .PNG as default)
+matplotlib.use('agg') # Avoid interactive mode (and save files as .PNG as default)
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Custom
 import constants
 from nicv import nicv
+
+def plot_nicv(nicvs, configs, metadata):
+
+    scenario, cmap = metadata
+    colors = cmap(range(len(configs)))
+ 
+    f, ax = plt.subplots(4, 4, figsize=(25,25))
+    
+    for i, c in enumerate(configs):
+        row = 0
+        for b in range(16):
+            col = b % 4
+
+            ax[row, col].plot(nicvs[i][b], label=c, color=colors[i])
+            ax[row, col].legend()
+            ax[row, col].set_title(f'Byte {b}')
+            ax[row, col].set_xlabel('Samples')
+            ax[row, col].set_ylabel('NICV')
+
+            if col == 3:
+                row += 1
+
+    f.savefig(constants.RESULTS_PATH + f'/nicv/nicv_plots/nicv_{scenario}.png', 
+              bbox_inches='tight', 
+              dpi=600)
 
 def plot_history(history, output_path):
 

@@ -1,9 +1,11 @@
 # Basics
 import numpy as np
 import os
+import matplotlib
+matplotlib.use('Agg') # Avoid interactive mode (and use .PNG as default)
+import matplotlib.pyplot as plt
 from datetime import datetime
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 # Custom
 import sys 
@@ -11,7 +13,8 @@ sys.path.insert(0, '../utils')
 from data_loader import DataLoader
 import constants
 from nicv import nicv
-import visualization as vis
+sys.path.insert(0, '../modeling')
+import visual as vis
 
 
 def main():
@@ -23,46 +26,50 @@ def main():
         dset_path = constants.CURR_DATASETS_PATH + f'/{target}'
     else:
         dset_path = constants.EM_DATASETS_PATH + f'/{target}'
-    
 
     
     # Compute NICVs for all scenarios and save them
     nicv_dict = {}
     for d in constants.DEVICES:
-        for k in tqdm(constants.KEYS, desc=f'Dev {d}: '):
-            config = f'{d}-{k}'
-            path = dset_path + f'/{config}_train.json'
-            dl = DataLoader([path])
+        for k in constants.KEYS:
+            config = f'/{d}-{k}'
+            paths = [dset_path + f'/{config}_train.json',
+                     dset_path + f'/{config}_test.json']
+            dl = DataLoader(paths)
             trs, _, pltxts, _ = dl.load_data()
 
             nicv_dict[config] = np.array([nicv(trs, pltxts, b) for b in range(16)])
         
-            #np.savetxt(constants.RESULTS_PATH + f'/nicv/nicv_files/nicv_{config}.csv',
-            #           nicv_dict[config],
-            #           delimiter=',')
+            np.savetxt(constants.RESULTS_PATH + f'/nicv/nicv_files/nicv_{config}.csv',
+                       nicv_dict[config],
+                       delimiter=',')
     
     # Compute NICV for particular case "same config"
-    config = f'D3-K3_nicv'
-    path = dset_path + f'/{config}_train.json'
-    dl = DataLoader([path])
+    config = f'D1-K1_NICV'
+    paths = [dset_path + f'/{config}_train.json',
+             dset_path + f'/{config}_test.json']
+    dl = DataLoader(paths)
     trs, _, pltxts, _ = dl.load_data()
 
     nicv_dict[config] = np.array([nicv(trs, pltxts, b) for b in range(16)])
         
-    #np.savetxt(constants.RESULTS_PATH + f'/nicv/nicv_files/nicv_{config}.csv',
-    #           nicv_dict[config],
-    #           delimiter=',')
+    np.savetxt(constants.RESULTS_PATH + f'/nicv/nicv_files/nicv_{config}.csv',
+               nicv_dict[config],
+               delimiter=',')
+
+
+    date = datetime.now().strftime("%m%d%Y-%I%M%p") 
     
 
     # Plot NICVs for all scenarios
     print()
     print('Computing NICV for "same config"...')
-    same_config = ['D3-K3', 'D3-K3_nicv']
+    same_config = ['D1-K1', 'D1-K1_NICV']
     same_config_cmap = plt.cm.Set1
     nicvs = [nicv_dict[c] for c in same_config]
     vis.plot_nicv(nicvs, 
                   same_config, 
-                  ('same-config', same_config_cmap))
+                  ('same-config', same_config_cmap, date))
 
 
     print()
@@ -74,7 +81,7 @@ def main():
         nicvs = [nicv_dict[c] for c in configs]
         vis.plot_nicv(nicvs, 
                       configs, 
-                      (f'same-device-{d}', same_device_cmap))
+                      (f'same-device-{d}', same_device_cmap, date))
 
  
     print()
@@ -86,7 +93,7 @@ def main():
         nicvs = [nicv_dict[c] for c in configs] 
         vis.plot_nicv(nicvs, 
                       configs, 
-                      (f'same-key-{k}', same_key_cmap))
+                      (f'same-key-{k}', same_key_cmap, date))
     
     
     print()
@@ -98,7 +105,8 @@ def main():
     nicvs = [nicv_dict[c] for c in all_config] 
     vis.plot_nicv(nicvs, 
                   all_config, 
-                  ('all-config', all_config_cmap))
+                  ('all-config', all_config_cmap, date))
+
 
 
 if __name__ == '__main__':

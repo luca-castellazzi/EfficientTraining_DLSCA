@@ -3,6 +3,7 @@ import pandas as pd
 import time
 import numpy as np
 from tensorflow.keras.utils import to_categorical
+from sklearn.preprocessing import StandardScaler
 import random
 from tqdm import tqdm
 
@@ -66,6 +67,8 @@ class DataLoader():
         # X
         x = np.array([df.at[i, 'samples'] 
                       for i in range(df.shape[0])])
+        #scaler = StandardScaler()
+        #x = scaler.fit_transform(x)
 
         # Labels
         labels = np.array([df.at[i, 'labels'] 
@@ -82,11 +85,13 @@ class DataLoader():
         if byte_idx is not None:
             pltxts_bytes = np.array([p[byte_idx] for p in pltxts])   
         else:
-            pltxts_bytes = pltxts
+            pltxts_bytes = np.array(pltxts)
 
         # True key-byte
-        true_kb = df.at[0, 'key'][byte_idx]
-
+        if byte_idx is not None:
+            true_kb = df.at[0, 'key'][byte_idx]
+        else:
+            true_kb = [] # Not considered
         return x, y, pltxts_bytes, true_kb
 
 
