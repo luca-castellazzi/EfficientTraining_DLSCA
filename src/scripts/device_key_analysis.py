@@ -27,7 +27,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 # Global variables (constants)
 BYTE_IDX = 0
 TRAIN_EPOCHS = 300
-GE_TEST_TRACES = 20
+GE_TEST_TRACES = 10
 N_ZEROS = 5
 HP = {
     'hidden_layers':      5,

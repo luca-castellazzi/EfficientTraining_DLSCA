@@ -36,6 +36,7 @@ def main():
     same_dev_d1 = ['D1-K1', 'D1-K0', 'D1-K5', 'D1-K9']
     same_dev_d2 = ['D2-K1', 'D2-K0', 'D2-K5', 'D2-K9']
     same_dev_d3 = ['D3-K1', 'D3-K0', 'D3-K5', 'D3-K9']
+    diff = ['D1-K1', 'D2-K5', 'D3-K9']
     
     # Compute NICVs for all scenarios and save them
     nicv_dict = {}
@@ -92,6 +93,15 @@ def main():
         nicvs, 
         same_dev_d3, 
         (f'same-dev-D3', cmap))
+        
+        
+    print()
+    print('Plotting NICV for "diff"...')
+    nicvs = [nicv_dict[c] for c in diff]
+    vis.plot_nicv(
+        nicvs, 
+        diff, 
+        (f'diff', cmap))
 
 
 if __name__ == '__main__':
