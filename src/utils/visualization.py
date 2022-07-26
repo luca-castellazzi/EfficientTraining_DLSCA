@@ -75,6 +75,7 @@ def plot_ges(ges, n_traces, labels, title, output_path):
         if n_traces <= 100:
             ax.plot(ge[:n_traces], label=labels[i], color=colors[i], marker='o')
             ax.set_xticks(range(n_traces), labels=range(1, n_traces+1))
+            ax.set_yticks(range(0, 50, 5))
             ax.grid()
         else:
             ax.plot(ge[:n_traces], label=labels[i], color=colors[i])
@@ -82,7 +83,6 @@ def plot_ges(ges, n_traces, labels, title, output_path):
         ax.set_title(title)
         ax.set_xlabel('Number of traces')
         ax.set_ylabel('GE')
-        ax.grid()
     
     f.savefig(
         output_path, 
