@@ -61,7 +61,7 @@ def guessing_entropy(model, test_dl, n_exp, n_traces):
     x_kbs = list(zip(x, kbs))
     
     ranks_per_exp = []
-    for _ in range(10):
+    for _ in range(n_exp):
         random.shuffle(x_kbs)
         shuffled_x, shuffled_kbs = list(zip(*x_kbs))
         shuffled_x = np.array(shuffled_x)
@@ -70,6 +70,31 @@ def guessing_entropy(model, test_dl, n_exp, n_traces):
 
         true_kb_ranks = compute_true_kb_ranks(probs[:n_traces], 
                                               shuffled_kbs[:n_traces], 
+                                              true_kb)
+        ranks_per_exp.append(true_kb_ranks)
+
+    ranks_per_exp = np.array(ranks_per_exp) 
+    ge = np.mean(ranks_per_exp, axis=0)
+
+    return ge
+    
+    
+def NEW_guessing_entropy(model, test_dl, n_exp, n_traces):
+
+    # Load the test-set data
+    x, _, pltxt_bytes, true_kb = test_dl.load_data()
+    kbs = np.array([aes.key_from_labels(pb, 'SBOX_OUT') for pb in pltxt_bytes])
+    
+    probs = model.predict(x)
+    probs_kbs = list(zip(probs, kbs))
+    
+    ranks_per_exp = []
+    for _ in range(n_exp):
+        sampled_probs_kbs = random.sample(probs_kbs, n_traces)
+        sampled_probs, sampled_kbs = zip(*sampled_probs_kbs)
+
+        true_kb_ranks = compute_true_kb_ranks(sampled_probs, 
+                                              sampled_kbs, 
                                               true_kb)
         ranks_per_exp.append(true_kb_ranks)
 

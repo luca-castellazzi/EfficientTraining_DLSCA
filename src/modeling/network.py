@@ -19,6 +19,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import SGD, Adam, RMSprop
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.regularizers import L1, L2, L1L2
 
 # Custom modules in utils/
 sys.path.insert(0, '../utils')
@@ -59,7 +60,7 @@ class Network():
         """
 
 
-    def __init__(self, network_type):
+    def __init__(self, model_type):
 
         """
         Class constructor: initialization of a network, given a network type.
@@ -67,12 +68,12 @@ class Network():
         are initialized as empty.
 
         Parameters:
-            - network_type (str):
+            - model_type (str):
                 type of network ('MLP' for Multi-Layer Perceptron, 'CNN' for
                 Convolutional Neural Network).
         """
 
-        self.network_type = network_type
+        self.model_type = model_type
         self.hp = {}
         self.model = Sequential()
 
@@ -101,23 +102,29 @@ class Network():
                 * BatchNormalization before output;
         """
 
-        if self.network_type == 'MLP':
+        if self.model_type == 'MLP':
     
             # Input
             self.model.add(Dense(constants.TRACE_LEN, activation='relu'))
 
             # First BatchNorm
-            self.model.add(BatchNormalization())
+            if self.hp['first_batch_norm']:
+                self.model.add(BatchNormalization())
 
             # Hidden
             for _ in range(self.hp['hidden_layers']):
-                self.model.add(Dense(self.hp['hidden_neurons'], activation='relu'))
+                self.model.add(Dense(
+                    self.hp['hidden_neurons'], 
+                    activation='relu',
+                    kernel_regularizer=L1L2(l1=self.hp['l1'], l2=self.hp['l2']))
+                )
 
                 # Dropout
-                # self.model.add(Dropout(self.hp['dropout_rate']))
+                self.model.add(Dropout(self.hp['dropout_rate']))
 
             # Second BatchNorm
-            # self.model.add(BatchNormalization())
+            if self.hp['second_batch_norm']:
+                self.model.add(BatchNormalization())
 
             # Output
             self.model.add(Dense(256, activation='softmax'))
@@ -141,13 +148,13 @@ class Network():
             pass # In future there will be CNN
 
 
-    def reset(self):
+    #def reset(self):
         
         """
         Resets the network.
         """
 
-        self.model = Sequential()
+        #self.model = Sequential()
 
     
 
@@ -172,24 +179,24 @@ class Individual(Network):
     """ 
 
 
-    def __init__(self, network_type, hp_choices):
+    def __init__(self, model_type, hp_space):
         
         """
         Class constructor: initializes an individual as a Network object with 
         an hyperparameter space as additional attribute.
         """
 
-        super().__init__(network_type)
-        self.hp_choices = hp_choices
+        super().__init__(model_type)
+        self.hp_space = hp_space
 
     
-    def select_random_hp(self):
+    def set_random_hp(self):
 
         """
         Initializes randomly the individual's hyperparameters w.r.t. the 
         hyperparameter space.
         """
-
+        
         for hp_name in self.hp_choices:
             self.hp[hp_name] = random.choice(self.hp_choices[hp_name])
 
