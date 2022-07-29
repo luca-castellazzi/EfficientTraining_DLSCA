@@ -41,14 +41,14 @@ def labels_from_key(plaintext, key, target):
         pass # Future implementations (target = HW, target = KEY, ...)
 
 
-def key_from_labels(plaintext, target):
+def key_from_labels(pltxt_byte, target):
 
     """ 
     Generates the key-bytes relative to each possible value of the sbox-output
-    w.r.t. the plaintext and the given target.
+    w.r.t. the plaintext byte and the given target.
 
     Parameters: 
-        - plaintext (int):
+        - pltxt_byte (int):
             plaintext byte considered as int value.
         - target (str):
             target of the attack ('SBOX_OUT' for SBox Output).
@@ -56,9 +56,7 @@ def key_from_labels(plaintext, target):
 
     Returns:
         int np.ndarray containing the key-bytes relative to each possible value 
-        of the sbox-output w.r.t. the given plaintext.
-        The np.ndarray contains NUM_LABELS array for each byte of the given 
-        plaintext.
+        of the sbox-output w.r.t. the given plaintext byte.
     """ 
 
     sboxout_values = range(256)
@@ -72,7 +70,7 @@ def key_from_labels(plaintext, target):
         sbox_in = constants.INV_SBOX_DEC[rows, cols]
 
         # Inverse-AddRoundKey (for each possible label)
-        key_bytes = sbox_in ^ plaintext
+        key_bytes = sbox_in ^ pltxt_byte
     else:
         pass # Future implementations (target = HW, target = KEY, ...)
 

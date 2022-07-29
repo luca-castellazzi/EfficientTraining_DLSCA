@@ -1,13 +1,15 @@
+# Basics
 import random
 from tensorflow.keras.backend import clear_session
 from tqdm import tqdm
 
+# Custom
 from network import Network
 
 
 class GeneticTuner():
 
-    def __init__(self, model_type, hp_space, pop_size, selection_perc, second_chance_prob, mutation_prob):
+    def __init__(self, model_type, hp_space, pop_size, selection_perc, second_chance_prob, mutation_prob, eval_metric='loss'):
     
         self.model_type = model_type
         self.hp_space = hp_space
@@ -30,8 +32,7 @@ class GeneticTuner():
         res = []
         for hp_config in tqdm(pop, desc='Training the population: '):
             
-            net = Network(self.model_type)
-            net.set_hp(hp_config)
+            net = Network(self.model_type, hp_config)
             net.build_model()
             model = net.model
             history = model.fit(
@@ -43,14 +44,27 @@ class GeneticTuner():
                 callbacks=callbacks,
                 verbose=0
             ).history
-                    
-            _, val_acc = model.evaluate(x_val, y_val, verbose=0)
-                    
-            res.append((val_acc, hp_config, history))
+            
+            eval_metric = 'acc' ###################################
+            
+            if eval_metric == 'rank':
+                pass
+                #score = net.rank_key_byte(x_val) ##############################################################################
+            else:
+                val_loss, val_acc = model.evaluate(x_val, y_val, verbose=0) # Acc
+                if eval_metric == 'loss':
+                    score = val_loss
+                else:
+                    score = val_acc
+            res.append((score, hp_config, history)
             
             clear_session()
-            
-        res.sort(key=lambda x: x[0], reverse=True)
+        
+        if eval_metric == 'acc':
+            reverse = True
+        else: 
+            reverse = False
+        res.sort(key=lambda x: x[0], reverse=reverse)
         
         return res
         

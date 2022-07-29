@@ -28,6 +28,9 @@ KEYS = {'K0': ['95', '30', 'fc', 'd9', 'd6', 'fd', '1d', '9b', '62', '03', '28',
 TRACE_LEN = 1183
 TRACE_NUM = 50000
 
+# Number of classes per target
+N_CLASSES = {'SBOX_OUT': 256,
+             'HW': 9}
 
 # Int-version of AES SBox
 SBOX_DEC = np.array([[ 99, 124, 119, 123, 242, 107, 111, 197,  48,   1, 103,  43, 254, 215, 171, 118],

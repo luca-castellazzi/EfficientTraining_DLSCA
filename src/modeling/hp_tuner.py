@@ -1,12 +1,12 @@
+# Basics
 from tqdm import tqdm
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.backend import clear_session
 import random
 
+# Custom
 from network import Network
 from genetic_tuner import GeneticTuner
-import sys
-#sys.path.insert('')
 
 class HPTuner():
     
@@ -53,9 +53,9 @@ class HPTuner():
             
         res.sort(key=lambda x: x[0], reverse=True)
         
-        self.best_val_acc, self.best_hp, self.best_history = res[0] # Take track of the best results
+        self.best_metric, self.best_hp, self.best_history = res[0] # Take track of the best results
         
-        print(f'Best val_acc: {self.best_val_acc}')
+        print(f'Best result: {self.best_metric}')
         
         return self.best_hp
         
@@ -92,13 +92,13 @@ class HPTuner():
                 callbacks=self.callbacks
             )
             
-            print(f'Results: {[val_acc for val_acc, _, _ in evaluation]}')
+            print(f'Results: {[metric for metric, _, _ in evaluation]}')
             
             parents = gt.select(evaluation)
             
             if gen != n_gen-1:
                 pop = gt.evolve(parents)
         
-        self.best_val_acc, self.best_hp, self.best_history = evaluation[0]
+        self.best_metric, self.best_hp, self.best_history = evaluation[0]
     
         return self.best_hp

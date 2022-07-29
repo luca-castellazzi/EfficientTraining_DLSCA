@@ -10,9 +10,8 @@
 ################################################################################
 
 
-import sys
+# Basic
 import random
-from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential
@@ -21,86 +20,23 @@ from tensorflow.keras.optimizers import SGD, Adam, RMSprop
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.regularizers import L1, L2, L1L2
 
-# Custom modules in utils/
+# Custom
+import sys
 sys.path.insert(0, '../utils')
+import aes
 import constants
 
 
 class Network():
 
-    """
-    Class used to represent a single individual of a population of networks.
-
-    Attributes:
-        - network_type:
-            type of the network.
-        - hp:
-            hyperparameters of the network.
-        - model:
-            implementation of the network (keras.models.Sequential), built with 
-            the hyperparameters stored in _hp.
-
-    Methods:
-        - set_hp:
-            setter for the actual hyperparameters.
-        - get_hp:
-            getter for the actual hyperparameters.
-        - get_model:
-            getter for the model.
-        - build_model:
-            construction of the network.
-        - train_model:
-            train and eventual validation of the network.
-        - save_model:
-            generation of a file containing all network's info.
-        - predict:
-            prediction of the labels of a given test set.
-        - reset:
-            resets the network.
-        """
-
-
-    def __init__(self, model_type):
-
-        """
-        Class constructor: initialization of a network, given a network type.
-        In addition, the actual hyperparameters and the network implementation
-        are initialized as empty.
-
-        Parameters:
-            - model_type (str):
-                type of network ('MLP' for Multi-Layer Perceptron, 'CNN' for
-                Convolutional Neural Network).
-        """
+    def __init__(self, model_type, hp):
 
         self.model_type = model_type
-        self.hp = {}
-        self.model = Sequential()
-
-
-    def set_hp(self, hp):
-
-        """
-        Setter for the hyperparameters of the network.
-
-        Parameters:
-            - hp (dict):
-                structure containing all the specific hyperparameters.
-        """
-
         self.hp = hp
-
+        self.model = Sequential()
+        
 
     def build_model(self):
-
-        """
-        Builds the actual implementation of the model (either an MLP or a CNN).
-        The following layers are hardcoded due to experimental evidence of good
-        performance:
-            - MLP:  
-                * BatchNormalization after input;
-                * BatchNormalization before output;
-        """
 
         if self.model_type == 'MLP':
     
@@ -148,76 +84,85 @@ class Network():
             pass # In future there will be CNN
 
 
-    #def reset(self):
+    def _target_to_key(self, preds, key_bytes, process='ge'):
         
-        """
-        Resets the network.
-        """
-
-        #self.model = Sequential()
-
-    
-
-class Individual(Network):
-
-    """
-    Class used to represent a single hyperparameter configuration during the 
-    execution of a Genetic Algorithm.
-
-    Superclass: Network
-
-    Attributes:
-        - hp_choices (dict):
-            hyperparameter space.
-    
-    Methods:
-        - select_random_hp:
-            Initializes randomly the individual's hyperparameters w.r.t. the 
-            hyperparameter space.
-        - evaluate:
-            Evaluates the individual over a validation set (w.r.t. accuracy).
-    """ 
-
-
-    def __init__(self, model_type, hp_space):
+        # Associate each sbox-out prediction with its relative key-byte
+        association = list(zip(key_bytes, preds))
         
-        """
-        Class constructor: initializes an individual as a Network object with 
-        an hyperparameter space as additional attribute.
-        """
-
-        super().__init__(model_type)
-        self.hp_space = hp_space
-
-    
-    def set_random_hp(self):
-
-        """
-        Initializes randomly the individual's hyperparameters w.r.t. the 
-        hyperparameter space.
-        """
+        if process == 'ge':
+            # Sort the association w.r.t. key-bytes (alignment for all traces)
+            association.sort(key=lambda x: x[0])
+            # Consider the sorted sbox-out predictons as key-byte predictons
+            key_preds = list(zip(*association))[1]
+            res = key_preds
+        else:
+            # Sort the association w.r.t. sbox-out predictions (higher to lower)
+            association.sort(key=lambda x: x[1], reverse=True)
+            # Get the rank of the true key-byte
+            key_ranking = list(zip(*association))[0]
+            res = key_ranking
         
-        for hp_name in self.hp_choices:
-            self.hp[hp_name] = random.choice(self.hp_choices[hp_name])
+        return res
+        
+
+    #def true_rank(self, preds, pltxt_byte, true_key_byte, target='SBOX_OUT'):
+    #
+    #    key_bytes = aes.key_from_labels(pltxt_byte, target)
+    #    
+    #    # Retrieve key-byte predicitons
+    #    key_ranking = self._target_to_key(preds, key_bytes, process='ranking')
+    #    
+    #    # Get the rank of the true key-byte
+    #    tkb_rank = key_ranking.index(true_key_byte)
+    #    
+    #    return tkb_rank
+        
+        
+    def _compute_final_ranking(self, key_preds):
+    
+        log_probs = np.log10(key_preds + 1e-22)
+        cum_tot_probs = np.cumsum(log_probs, axis=0)
+        
+        indexed_cum_tot_probs = [list(zip(range(256), tot_probs))
+                                 for tot_probs in cum_tot_probs]
+                                
+        sorted_cum_tot_probs = [sorted(el, key=lambda x: x[1], reverse=True)
+                                for el in indexed_cum_tot_probs]
+                                
+        sorted_kbs = [[el[0] for el in tot_probs]
+                      for tot_probs in sorted_cum_tot_probs]
+                      
+        return sorted_kbs
 
 
-    def evaluate(self, x_val, y_val):
-
-        """
-        Evaluates the individual over a validation set (w.r.t. accuracy).
-
-        Parameters:
-            - x_val (np.array):
-                values of the val traces.
-            - y_val (0/1 list):
-                one-hot-encoding of the val labels (all 0s but a single 1
-                in position i to represent label i).
-
-        Returns:
-            float value representing the overall validation accuracy.
-        """
-
-        val_loss, val_acc = self.model.evaluate(x_val,
-                                                y_val,
-                                                verbose=0)
-        return val_acc
+    def ge(self, preds, pltxt_bytes, true_key_byte, n_exp, n_traces, target='SBOX_OUT'):
+        
+        # Consider all couples (predicitons, plaintext byte)
+        # During each experiment, sample n_traces couples
+        # Perform all GE-related computations w.r.t. the sampled couples only
+        
+        
+        all_preds_pltxt = list(zip(preds, pltxt_bytes))
+        
+        ranks_per_exp = []
+        for _ in range(n_exp):
+            
+            sampled = random.sample(all_preds_pltxt, n_traces)
+            sampled_preds, sampled_pltxt_bytes = list(zip(*sampled))
+            
+            key_bytes = [aes.key_from_labels(pb, target) for pb in sampled_pltxt_bytes]
+        
+            key_preds = np.array([self._target_to_key(ps, kbs, process='ge') 
+                                  for ps, kbs in zip(sampled_preds, key_bytes)])
+                                
+            final_ranking = self._compute_final_ranking(key_preds)
+            
+            true_kb_ranks = np.array([kbs.index(true_key_byte)
+                                      for kbs in final_ranking])
+            
+            ranks_per_exp.append(true_kb_ranks)
+            
+        ranks_per_exp = np.array(ranks_per_exp)
+        ge = np.mean(ranks_per_exp, axis=0)
+        
+        return ge

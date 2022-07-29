@@ -34,7 +34,7 @@ HP = {
     'second_batch_norm': [True, False],
     'hidden_layers':     [1, 2, 3, 4, 5],
     'hidden_neurons':    [100, 200, 300, 400, 500],
-    'dropout_rate':      [0.0, 0.25, 0.5],
+    'dropout_rate':      [0.0, 0.1, 0.3, 0.5],
     'l1':                [0.0, 1e-2, 1e-3, 1e-4],
     'l2':                [0.0, 1e-2, 1e-3, 1e-4],
     'optimizer':         ['adam', 'rmsprop', 'sgd'],
@@ -53,16 +53,13 @@ def main():
     n_keys = int(sys.argv[3])
     
     train_configs = [f'{dev}-{k}' for k in list(constants.KEYS)[1:n_keys+1]
-                         for dev in train_devs]
-        
-    train_paths = [constants.CURR_DATASETS_PATH + f'/SBOX_OUT/{c}_train.json' for c in train_configs]
-    val_paths = [constants.CURR_DATASETS_PATH + f'/SBOX_OUT/{c}_test.json' for c in train_configs]
-
-    train_dl = DataLoader(train_paths, BYTE_IDX)
-    x_train, y_train, _, _ = train_dl.load_data()
-
-    val_dl = DataLoader(val_paths, BYTE_IDX)
-    x_val, y_val, _, _ = val_dl.load_data()
+                     for dev in train_devs]
+                     
+    train_dl = DataLoader(train_configs, byte_idx=BYTE_IDX)
+    x_train, y_train, _, _ = train_dl.load()
+    
+    val_dl = DataLoader(train_configs, byte_idx=BYTE_IDX)
+    x_val, y_val, _, _ = val_dl.load()
     
     hp_tuner = HPTuner('MLP', HP, N_MODELS, EPOCHS)
     
