@@ -30,9 +30,11 @@ def plot_nicv(nicvs, configs, metadata):
             if col == 3:
                 row += 1
 
-    f.savefig(constants.RESULTS_PATH + f'/nicv/nicv_plots/nicv_{scenario}.png', 
-              bbox_inches='tight', 
-              dpi=600)
+    f.savefig(
+        constants.RESULTS_PATH + f'/nicv/nicv_plots/nicv_{scenario}.png', 
+        bbox_inches='tight', 
+        dpi=600
+    )
 
 def plot_history(history, output_path):
 
