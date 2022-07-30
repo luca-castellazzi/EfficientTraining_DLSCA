@@ -1,23 +1,17 @@
 # Basics
 import numpy as np
-from tqdm import tqdm
 import random
-import time
-from datetime import datetime
-import json
 from tensorflow.keras.backend import clear_session
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 # Custom
 import sys
 sys.path.insert(0, '../../src/utils')
-from data_loader import DataLoader
+from data_loader import SplitDataLoader
 import constants
 import visualization as vis
 sys.path.insert(0, '../../src/modeling')
 from hp_tuner import HPTuner
 from network import Network
-import evaluation as ev
 
 # Suppress TensorFlow messages
 import os
@@ -55,11 +49,15 @@ def main():
     train_configs = [f'{dev}-{k}' for k in list(constants.KEYS)[1:n_keys+1]
                      for dev in train_devs]
                      
-    train_dl = DataLoader(train_configs, byte_idx=BYTE_IDX)
-    x_train, y_train, _, _ = train_dl.load()
-    
-    val_dl = DataLoader(train_configs, byte_idx=BYTE_IDX)
-    x_val, y_val, _, _ = val_dl.load()
+    train_dl = SplitDataLoader(
+        train_configs, 
+        n_tr_per_config=10000,
+        train_size=0.9,
+        byte_idx=BYTE_IDX
+    )
+    train_data, val_data = train_dl.load()
+    x_train, y_train, _, _ = train_data
+    x_val, y_val, _, _ = val_data
     
     hp_tuner = HPTuner('MLP', HP, N_MODELS, EPOCHS)
     

@@ -114,7 +114,7 @@ class SplitDataLoader(DataLoader):
         self.shuffle = shuffle
         
     
-    def _split_train_test(self):
+    def load(self):
         
         samples, labels, pltxt_bytes, true_key_bytes = self._get_data_from_traces()
 
@@ -141,22 +141,10 @@ class SplitDataLoader(DataLoader):
         
         # train_test_data is a list of np.ndarrays of different shapes:
         # in order to cast it to np.array, "dtype=object" is needed
-        self.train_data = np.array(train_test_data, dtype=object)[even_indices]
-        self.test_data = np.array(train_test_data, dtype=object)[odd_indices]
+        train_data = np.array(train_test_data, dtype=object)[even_indices]
+        test_data = np.array(train_test_data, dtype=object)[odd_indices]
     
-    
-    def load(self, train=True):
-    
-        self._split_train_test()
-        
-        if train:
-            data = self.train_data
-        else:
-            data = self.test_data
-            
-        x, y, pbs, tkbs = data
-    
-        return x, y, pbs, tkbs
+        return train_data, test_data
         
 
     # class AllDataLoader(DataLoader):

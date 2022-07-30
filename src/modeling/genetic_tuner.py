@@ -45,18 +45,19 @@ class GeneticTuner():
                 verbose=0
             ).history
             
-            eval_metric = 'acc' ###################################
+            eval_metric = 'loss' ###################################
             
             if eval_metric == 'rank':
                 pass
                 #score = net.rank_key_byte(x_val) ##############################################################################
             else:
-                val_loss, val_acc = model.evaluate(x_val, y_val, verbose=0) # Acc
+                val_loss, val_acc = model.evaluate(x_val, y_val, verbose=0)
                 if eval_metric == 'loss':
                     score = val_loss
                 else:
                     score = val_acc
-            res.append((score, hp_config, history)
+                    
+            res.append((score, hp_config, history))
             
             clear_session()
         
