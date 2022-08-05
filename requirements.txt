@@ -32,6 +32,7 @@ keras-tuner==1.1.2
 kiwisolver==1.4.2
 kt-legacy==1.0.4
 libclang==13.0.0
+logger==1.4
 Markdown==3.3.6
 matplotlib==3.5.1
 matplotlib-inline==0.1.3
