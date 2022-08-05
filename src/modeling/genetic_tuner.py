@@ -9,7 +9,7 @@ from network import Network
 
 class GeneticTuner():
 
-    def __init__(self, model_type, hp_space, pop_size, selection_perc, second_chance_prob, mutation_prob, eval_metric='loss'):
+    def __init__(self, model_type, hp_space, pop_size, selection_perc, second_chance_prob, mutation_prob, metric):
     
         self.model_type = model_type
         self.hp_space = hp_space
@@ -17,7 +17,7 @@ class GeneticTuner():
         self.selection_perc = selection_perc
         self.second_chance_prob = second_chance_prob
         self.mutation_prob = mutation_prob
-        
+        self.metric=metric
         
     def populate(self):
     
@@ -27,7 +27,7 @@ class GeneticTuner():
         return pop
         
         
-    def evaluate(self, pop, x_train, y_train, x_val, y_val, n_epochs, callbacks):
+    def evaluate(self, pop, x_train, y_train, x_val, y_val, n_epochs):
         
         res = []
         for hp_config in tqdm(pop, desc='Training the population: '):
@@ -41,18 +41,16 @@ class GeneticTuner():
                 validation_data=(x_val, y_val),
                 epochs=n_epochs,
                 batch_size=net.hp['batch_size'],
-                callbacks=callbacks,
+                callbacks=net.callbacks,
                 verbose=0
             ).history
             
-            eval_metric = 'loss' ###################################
-            
-            if eval_metric == 'rank':
+            if self.metric == 'rank':
                 pass
                 #score = net.rank_key_byte(x_val) ##############################################################################
             else:
                 val_loss, val_acc = model.evaluate(x_val, y_val, verbose=0)
-                if eval_metric == 'loss':
+                if self.metric == 'loss':
                     score = val_loss
                 else:
                     score = val_acc
@@ -61,7 +59,7 @@ class GeneticTuner():
             
             clear_session()
         
-        if eval_metric == 'acc':
+        if self.metric == 'acc':
             reverse = True
         else: 
             reverse = False

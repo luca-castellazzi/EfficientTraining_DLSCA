@@ -10,21 +10,13 @@ from genetic_tuner import GeneticTuner
 
 class HPTuner():
     
-    def __init__(self, model_type, hp_space, n_models, n_epochs):
+    def __init__(self, model_type, hp_space, n_models, n_epochs, metric='loss'):
         
         self.model_type = model_type
         self.hp_space = hp_space
         self.n_models = n_models
         self.n_epochs = n_epochs
-        
-        self.callbacks = [EarlyStopping(
-                                monitor='val_loss', 
-                                patience=35),
-                          ReduceLROnPlateau(
-                                monitor='val_loss',
-                                factor=0.2,
-                                patience=10,
-                                min_lr=1e-8)]
+        self.metric = metric
                                 
     
     def random_search(self, x_train, y_train, x_val, y_val):
@@ -32,8 +24,7 @@ class HPTuner():
         res = []
         for m in tqdm(range(self.n_models), desc='Random Search: '):
             random_hp = {k: random.choice(self.hp_space[k]) for k in self.hp_space.keys()}
-            net = Network(self.model_type)
-            net.set_hp(random_hp)
+            net = Network(self.model_type, random_hp)
             net.build_model()
             model = net.model
             history = model.fit(
@@ -42,16 +33,29 @@ class HPTuner():
                 validation_data=(x_val, y_val),
                 epochs=self.n_epochs,
                 batch_size=net.hp['batch_size'],
-                callbacks=self.callbacks,
+                callbacks=net.callbacks,
                 verbose=0
             ).history
             
-            _, val_acc = model.evaluate(x_val, y_val, verbose=0)
-            res.append((val_acc, random_hp, history))
+            if self.metric == 'rank':
+                pass
+                #score = net.rank_key_byte(x_val) ##############################################################################
+            else:
+                val_loss, val_acc = model.evaluate(x_val, y_val, verbose=0)
+                if self.metric == 'loss':
+                    score = val_loss
+                else:
+                    score = val_acc
+                    
+            res.append((score, random_hp, history))
             
             clear_session()
             
-        res.sort(key=lambda x: x[0], reverse=True)
+        if self.metric == 'acc':
+            reverse = True
+        else: 
+            reverse = False
+        res.sort(key=lambda x: x[0], reverse=reverse)
         
         self.best_metric, self.best_hp, self.best_history = res[0] # Take track of the best results
         
@@ -74,12 +78,12 @@ class HPTuner():
             pop_size=self.n_models, 
             selection_perc=selection_perc, 
             second_chance_prob=second_chance_prob, 
-            mutation_prob=mutation_prob
+            mutation_prob=mutation_prob,
+            metric=self.metric
         )
         
         pop = gt.populate()
         
-        #for gen in (range(n_gen), desc='Genetic Algorithm: '):
         for gen in range(n_gen):
             print(f'=====  Gen {gen+1}/{n_gen}  =====')
             evaluation = gt.evaluate(
@@ -88,11 +92,10 @@ class HPTuner():
                 y_train=y_train, 
                 x_val=x_val, 
                 y_val=y_val, 
-                n_epochs=self.n_epochs, 
-                callbacks=self.callbacks
+                n_epochs=self.n_epochs
             )
             
-            print(f'Results: {[metric for metric, _, _ in evaluation]}')
+            print(f'Top 5: {[metric for metric, _, _ in evaluation[:5]]}')
             
             parents = gt.select(evaluation)
             

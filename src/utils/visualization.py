@@ -9,6 +9,7 @@ import seaborn as sns
 import constants
 from nicv import nicv
 
+
 def plot_nicv(nicvs, configs, metadata):
 
     scenario, cmap = metadata
@@ -63,28 +64,98 @@ def plot_history(history, output_path):
     )
     
     
-def plot_ges(ges, n_traces, labels, title, output_path):
+# def plot_ges(ges, n_traces, labels, title, output_path):
 
     # Get the colors
+    # cmap = plt.cm.jet # Google Turbo
+    # colors = cmap(range(0, cmap.N, int(cmap.N/len(ges))))
+    
+    # Plot
+    # f, ax = plt.subplots(figsize=(10,5))
+    # ax.plot(np.zeros(n_traces), color='r', ls='--', linewidth=0.5)
+
+    # for i, ge in enumerate(ges):
+        # if n_traces <= 100:
+            # ax.plot(ge[:n_traces], label=labels[i], color=colors[i], marker='o')
+            # ax.set_xticks(range(n_traces), labels=range(1, n_traces+1))
+            # ax.set_yticks(range(0, 50, 5))
+            # ax.grid()
+        # else:
+            # ax.plot(ge[:n_traces], label=labels[i], color=colors[i])
+        # ax.legend()
+        # ax.set_title(title)
+        # ax.set_xlabel('Number of traces')
+        # ax.set_ylabel('GE')
+    
+    # f.savefig(
+        # output_path, 
+        # bbox_inches='tight', 
+        # dpi=600
+    # )
+    
+
+def plot_avg_ges(ges, n_devs, output_path):
+    
+    # Set the color palette
     cmap = plt.cm.jet # Google Turbo
     colors = cmap(range(0, cmap.N, int(cmap.N/len(ges))))
     
-    # Plot
+    # Plot the GEs
     f, ax = plt.subplots(figsize=(10,5))
-    ax.plot(np.zeros(n_traces), color='r', ls='--', linewidth=0.5)
-
     for i, ge in enumerate(ges):
-        if n_traces <= 100:
-            ax.plot(ge[:n_traces], label=labels[i], color=colors[i], marker='o')
-            ax.set_xticks(range(n_traces), labels=range(1, n_traces+1))
-            ax.set_yticks(range(0, 50, 5))
-            ax.grid()
-        else:
-            ax.plot(ge[:n_traces], label=labels[i], color=colors[i])
-        ax.legend()
-        ax.set_title(title)
-        ax.set_xlabel('Number of traces')
-        ax.set_ylabel('GE')
+        
+        label = f'{i+1} key'
+        if i != 0:
+            label += 's' # Plural
+            
+        ax.plot(ge, label=label, marker='o', color=colors[i])
+        
+    ax.set_title(f'Number of Train-Devices: {n_devs}')
+    ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
+    ax.set_ylim([-3, 50])
+    ax.set_xlabel('Number of traces')
+    ax.set_ylabel('Avg GE')
+    ax.legend()
+    ax.grid()
+
+    f.savefig(
+        output_path, 
+        bbox_inches='tight', 
+        dpi=600
+    )
+    
+    
+def plot_conf_matrix(conf_matrix, output_path):
+    
+    cmap = plt.cm.Blues
+    
+    f = plt.figure(figsize=(10,8))
+    plt.imshow(conf_matrix, cmap=cmap)
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted Labels')
+    plt.ylabel('True Labels')
+    
+    plt.colorbar()
+    
+    f.savefig(
+        output_path,
+        bbox_inches='tight',
+        dpi=600
+    )
+    
+
+def plot_attack_losses(losses, output_path):
+
+    f = plt.figure(figsize=(10,5))
+    plt.plot(losses, marker='o')
+    plt.title('Attack Loss')
+    plt.xlabel('Number of keys')
+    plt.ylabel('Loss')
+    
+    plt.xticks(range(len(losses)), labels=range(1, len(losses)+1))
+    plt.ylim(2, 5)
+    
+    plt.grid()
     
     f.savefig(
         output_path, 
@@ -93,15 +164,15 @@ def plot_ges(ges, n_traces, labels, title, output_path):
     )
     
 
-def plot_scores(scores_dict, title, output_path):
+# def plot_scores(scores_dict, title, output_path):
 
-    f, ax = plt.subplots(figsize=(10,5))
-    ax.bar(scores_dict.keys(), scores_dict.values())
-    ax.set_title(title)
+    # f, ax = plt.subplots(figsize=(10,5))
+    # ax.bar(scores_dict.keys(), scores_dict.values())
+    # ax.set_title(title)
     
-    f.savefig(
-        output_path, 
-        bbox_inches='tight', 
-        dpi=600
-    )
+    # f.savefig(
+        # output_path, 
+        # bbox_inches='tight', 
+        # dpi=600
+    # )
     
