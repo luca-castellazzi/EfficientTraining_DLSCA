@@ -2,10 +2,8 @@
 import trsfile
 import numpy as np
 from tensorflow.keras.utils import to_categorical
-# from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 import random
-from tqdm import tqdm
 
 # Custom
 import aes
@@ -15,32 +13,19 @@ import constants
 class DataLoader():
 
 
-    def __init__(self, dev_key_configs, n_tr_per_config, byte_idx=None, target='SBOX_OUT'):
+    def __init__(self, configs, n_tot_traces, byte_idx=None, target='SBOX_OUT'):
         
         self.trace_files = [f'{constants.CURR_TRACES_PATH}/{c}_500MHz + Resampled.trs' 
-                            for c in dev_key_configs]
+                            for c in configs]
                             
-        self.n_tr_per_config = n_tr_per_config
+        self.n_tr_per_config = int(n_tot_traces / len(configs))
         
         self.byte_idx = byte_idx
         
         self.target = target
         self.n_classes = constants.N_CLASSES[target]
-
-    # def __init__(self, dev_key_configs, train_perc=0.8, target='SBOX_OUT'):
-    
-        # self.trace_files = [f'{constants.CURR_TRACES_PATH}/{c}_500MHz + Resampled.trs' 
-                            # for c in dev_key_configs]
-                            
-        # n_train_traces = int(train_perc * constants.TRACE_NUM)
-        # self.n_train_traces_per_dev = int(n_train_traces / len(dev_key_configs))
-        # self.n_train_traces_per_dev = 10000
         
-        # # Assumption: the test-config is always with ONLY 1 DEVICE
-        # self.n_test_traces_per_dev = constants.TRACE_NUM - n_train_traces
-        
-        # self.target = target
-        # self.n_classes = constants.N_CLASSES[target]
+        self.scaler = StandardScaler()
         
     
     def _retrieve_metadata(self, tr):
@@ -59,14 +44,29 @@ class DataLoader():
         return l, p, k
         
         
-    def _get_data_from_traces(self):
+    @staticmethod
+    def _shuffle(x, y, pbs, tkbs):
+        
+        to_shuffle = list(zip(x, y, pbs, tkbs))
+        random.shuffle(to_shuffle)
+        x, y, pbs, tkbs = zip(*to_shuffle)
+        
+        x = np.array(x)
+        y = np.array(y)
+        pbs = np.array(pbs)
+        tkbs = np.array(tkbs)
+        
+        return x, y, pbs, tkbs
+        
+        
+    def load(self):
     
         samples = []
         labels = []
         pltxt_bytes = []
         true_key_bytes = []
         
-        for tfile in tqdm(self.trace_files, desc='Loading data: '):
+        for tfile in self.trace_files:
             with trsfile.open(tfile, 'r') as traces:
                 for tr in traces[:self.n_tr_per_config]:
                     s = tr.samples
@@ -76,194 +76,99 @@ class DataLoader():
                     pltxt_bytes.append(p)
                     true_key_bytes.append(k)
                     
-        samples = np.array(samples) # (n_tr_per_config*len(train_configs) x trace_len)
-        labels = np.array(labels) # (n_traces_per_config*len(train_configs) x n_classes)
-        pltxt_bytes = np.array(pltxt_bytes) # (n_traces_per_config*len(train_configs) x 1)
-        true_key_bytes = np.array(true_key_bytes) # (n_traces_per_config*len(train_configs) x 1)
+        x = np.array(samples) # (n_tot_traces x trace_len)
+        x = self.scaler.fit_transform(x)
+        y = np.array(labels) # (n_tot_traces x n_classes)
+        pbs = np.array(pltxt_bytes) # (n_tot_traces x 1)
+        tkbs = np.array(true_key_bytes) # (n_tot_traces x 1)
         
-        return samples, labels, pltxt_bytes, true_key_bytes
+        x, y, pbs, tkbs = self._shuffle(x, y, pbs, tkbs)
         
-        
-    def load(self):
-        
-        x, y, pbs, tkbs = self._get_data_from_traces()
-        
-        to_shuffle = list(zip(x, y, pbs, tkbs))
-        random.shuffle(to_shuffle)
-        x, y, pbs, tkbs = zip(*to_shuffle)
-        
-        x = np.array(x)
-        y = np.array(y)
-        pbs = np.array(pbs)
         if len(self.trace_files) == 1:
-            tkbs = tkbs[0] # All true_key_bytes are equal because the train_config is unique 
-        else:
-            tkbs = np.array(tkbs)
+            tkbs = tkbs[0] # All true_key_bytes are equal because the config is unique 
             
         return x, y, pbs, tkbs
         
         
-        
 class SplitDataLoader(DataLoader):
    
-    def __init__(self, dev_key_configs, n_tr_per_config, train_size, byte_idx, target='SBOX_OUT', shuffle=True):
+    def __init__(self, configs, n_tot_traces, train_size, byte_idx, target='SBOX_OUT'):
         
-        super().__init__(dev_key_configs, n_tr_per_config, byte_idx, target)
+        super().__init__(configs, n_tot_traces, byte_idx, target)
         
-        self.train_size = train_size
-        self.shuffle = shuffle
+        self.n_train_tr_per_config = int(train_size * self.n_tr_per_config)
         
-    
+        
     def load(self):
-        
-        samples, labels, pltxt_bytes, true_key_bytes = self._get_data_from_traces()
-
-        train_test_data = train_test_split(
-                        samples,
-                        labels,
-                        pltxt_bytes,
-                        true_key_bytes,
-                        train_size=self.train_size,
-                        shuffle=self.shuffle)
-                        
-        # train_test_data = [
-        #    samples_train, samples_test,
-        #    labels_train,  labels_test,
-        #    pbs_train,     pbs_test,
-        #    tkbs_train,    tkbs_test
-        # ]
-        #
-        # Even indices = Train data (0, 2, 4, ...)
-        # Odd indices = Test data (1, 3, 5, ...)
-        
-        even_indices = range(0, len(train_test_data), 2)
-        odd_indices = range(1, len(train_test_data), 2)
-        
-        # train_test_data is a list of np.ndarrays of different shapes:
-        # in order to cast it to np.array, "dtype=object" is needed
-        train_data = np.array(train_test_data, dtype=object)[even_indices]
-        test_data = np.array(train_test_data, dtype=object)[odd_indices]
     
-        return train_data, test_data
+        x_train = []
+        y_train = []
+        pbs_train = []
+        tkbs_train = []
         
-
-    # class AllDataLoader(DataLoader):
+        x_val = []
+        y_val = []
+        pbs_val = []
+        tkbs_val = []
         
-        # def __init__(self, dev_key_configs, n_tr_per_config, byte_idx=None, target='SBOX_OUT')
-            # super().__init__(dev_key_configs, n_tr_per_config, byte_idx, target)
-    
-    # def get_train_data(self):
-    
-        # x_train, y_train, pbs_train, tkbs_train = self.train_data
-        
-        # return x_train, y_train, pbs_train, tkbs_train
-        
-        
-    # def get_test_data(self):
-    
-        # x_test, y_test, pbs_test, tkbs_test = self.test_data
-        
-        # return x_test, y_test, pbs_test, tkbs_test
-        
-        
-    # def load_all(self):
-        
-        # samples = []
-        # labels = []
-        # pltxt_bytes = []
-        # true_key_bytes = []
-        
-        # for tfile in tqdm(self.trace_files):
-            # with trsfile.open(tfile, 'r') as traces:
-                # for tr in traces[:self.n_tr_per_config]:
-                    # s, l, p, k = self._retrieve_data(tr, None)
-                    # samples.append(s)
-                    # labels.append(l)
-                    # pltxt_bytes.append(p)
-                    # true_key_bytes.append(k)
-                    
-        # samples = np.array(samples)
-        # labels = np.array(labels)
-        # pltxt_bytes = np.array(pltxt_bytes)
-        # true_key_bytes = np.array(true_key_bytes)
-        
-        # return samples, labels, pltxt_bytes, true_key_bytes
-                                                            
-        
-
-
-    # def load_train(self, byte_idx):
-        
-        # samples = []
-        # labels = []
+        for tfile in self.trace_files:
             
-        # for tfile in self.trace_files:
-            # with trsfile.open(tfile, 'r') as traces:
-                # for tr in tqdm(traces[:self.n_train_traces_per_dev]):
-                    # s, l, _, _ = self._retrieve_data(tr, byte_idx)
-                    # samples.append(s)
-                    # labels.append(l)
-                
-        # train_data = list(zip(samples, labels))
-        # random.shuffle(train_data)
+            config_s = []
+            config_l = []
+            config_p = []
+            config_k = []
+            
+            with trsfile.open(tfile, 'r') as traces:
+                for tr in traces[:self.n_tr_per_config]:
+                    s = tr.samples
+                    l, p, k = self._retrieve_metadata(tr)
+                    
+                    config_s.append(s)
+                    config_l.append(l)
+                    config_p.append(p)
+                    config_k.append(k)
+            
+            x_train.append(config_s[:self.n_train_tr_per_config])
+            x_val.append(config_s[self.n_train_tr_per_config:])
+            
+            y_train.append(config_l[:self.n_train_tr_per_config])
+            y_val.append(config_l[self.n_train_tr_per_config:])
+            
+            pbs_train.append(config_p[:self.n_train_tr_per_config])
+            pbs_val.append(config_p[self.n_train_tr_per_config:])
+            
+            tkbs_train.append(config_k[:self.n_train_tr_per_config])
+            tkbs_val.append(config_k[self.n_train_tr_per_config:])
         
-        # samples, labels = zip(*train_data)
-        # samples = np.array(samples)
-        # labels = np.array(labels)
-
-        # return samples, labels
+        # Reduce the lists of arrays to a single np.ndarray
+        x_train = np.concatenate(x_train)
+        y_train = np.concatenate(y_train)
+        pbs_train = np.concatenate(pbs_train)
+        tkbs_train = np.concatenate(tkbs_train)
         
+        x_val = np.concatenate(x_val)
+        y_val = np.concatenate(y_val)
+        pbs_val = np.concatenate(pbs_val)
+        tkbs_val = np.concatenate(tkbs_val)
         
-    # def load_test(self, byte_idx):
+        # Scale the whole train-set (train + val) with the same scaler
+        n_tot_train = x_train.shape[0] # train_size * n_tot_traces
+        x_tot = np.concatenate([x_train, x_val])
+        x_tot = self.scaler.fit_transform(x_tot)
+        x_train = x_tot[:n_tot_train]
+        x_val = x_tot[n_tot_train:]
         
-        # samples = []
-        # labels = []
-        # pltxt_bytes = []
-		
-        # for tfile in self.trace_files:
-            # with trsfile.open(tfile, 'r') as traces:
-                # for tr in tqdm(traces[-self.n_test_traces_per_dev:]):
-                    # s, l, p, k = self._retrieve_data(tr, byte_idx)
-                    # samples.append(s)
-                    # labels.append(l)
-                    # pltxt_bytes.append(p)
+        # Reduce the array of true-key-byte to a single int if there is only one config
+        if len(self.trace_files) == 1:
+            tkbs_train = tkbs_train[0]
+            tkbs_val = tkbs_val[0]
         
-        # # Assumption: the test-config is always with ONLY 1 DEVICE
-        # # Meaning that the key is ALWAYS ONE (key-byte never changes)
-        # test_data = list(zip(samples, labels, pltxt_bytes))
-        # random.shuffle(test_data)
-        
-        # samples, labels, pltxt_bytes = zip(*test_data)
-        # samples = np.array(samples)
-        # labels = np.array(labels)
-        # pltxt_bytes = np.array(pltxt_bytes)
-
-        # return samples, labels, pltxt_bytes, k
-	
-        
-    # def load_all(self, byte_idx=None):
-        
-        # samples = []
-        # labels = []
-        # pltxt_bytes = []
-        # true_key_bytes = []
-		
-        # for tfile in self.trace_files:
-            # with trsfile.open(tfile, 'r') as traces:
-                # for tr in tqdm(traces):
-                    # s, l, p, k = self._retrieve_data(tr, byte_idx)
-                    # samples.append(s)
-                    # labels.append(l)
-                    # pltxt_bytes.append(p)
-                    # true_key_bytes.append(k)
-        
-        # all_data = list(zip(samples, labels, pltxt_bytes, true_key_bytes))
-        # random.shuffle(all_data)
-        
-        # samples, labels, pltxt_bytes, true_key_bytes = zip(*all_data)
-        # samples = np.array(samples)
-        # labels = np.array(labels)
-        # pltxt_bytes = np.array(pltxt_bytes)
-        # true_key_bytes = np.array(true_key_bytes)
-        
-        # return samples, labels, pltxt_bytes, true_key_bytes
+        # Shuffle the sets
+        x_train, y_train, pbs_train, tkbs_train = self._shuffle(x_train, y_train, pbs_train, tkbs_train)
+        x_val, y_val, pbs_val, tkbs_val = self._shuffle(x_val, y_val, pbs_val, tkbs_val) 
+            
+        # Create train and test packages
+        train_data = (x_train, y_train, pbs_train, tkbs_train)
+        val_data = (x_val, y_val, pbs_val, tkbs_val)
+            
+        return train_data, val_data

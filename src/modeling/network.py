@@ -15,9 +15,9 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, BatchNormalization
+from keras.layers import Dense, Dropout, BatchNormalization, Activation
 from tensorflow.keras.optimizers import SGD, Adam, RMSprop
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from tensorflow.keras.regularizers import L1, L2, L1L2
 
 # Custom
@@ -35,49 +35,87 @@ class Network():
         self.hp = hp
         self.model = Sequential()
         
+        self.callbacks = [
+            EarlyStopping(
+                monitor='val_loss', 
+                patience=15
+            ),
+            ReduceLROnPlateau(
+                monitor='val_loss',
+                factor=0.2,
+                patience=7,
+                min_lr=1e-7),
+        ]
+        
+
+    def add_checkpoint_callback(self, model_path):
+        
+        self.callbacks.append(
+            ModelCheckpoint(
+                model_path,
+                monitor='val_loss',
+                save_best_only=True
+            )
+        )
 
     def build_model(self):
 
         if self.model_type == 'MLP':
+        
+            #### Architecture: ####
+            # Input Dense         #
+            # Input BatchNorm     #
+            #                     #
+            # repeat(             #
+            #   Hidden Dropout    #
+            #   Hidden Dense      #
+            #   Hidden BatchNorm  #
+            # )                   # 
+            #                     #
+            # Output Dropout      #
+            # Output Dense        #
+            # Output BatchNorm    #
+            #######################
     
-            # Input
+            # Input Dense
             self.model.add(Dense(constants.TRACE_LEN, activation='relu'))
-
-            # First BatchNorm
-            if self.hp['first_batch_norm']:
-                self.model.add(BatchNormalization())
+            # Input BatchNorm
+            self.model.add(BatchNormalization())
 
             # Hidden
             for _ in range(self.hp['hidden_layers']):
+                # Hidden Dropout
+                self.model.add(Dropout(self.hp['dropout_rate']))
+                # Hidden Dense
                 self.model.add(Dense(
                     self.hp['hidden_neurons'], 
                     activation='relu',
-                    kernel_regularizer=L1L2(l1=self.hp['l1'], l2=self.hp['l2']))
+                    kernel_regularizer=L2(self.hp['l2']))
                 )
-
-                # Dropout
-                self.model.add(Dropout(self.hp['dropout_rate']))
-
-            # Second BatchNorm
-            if self.hp['second_batch_norm']:
+                # Hidden BatchNorm
                 self.model.add(BatchNormalization())
 
             # Output
-            self.model.add(Dense(256, activation='softmax'))
+            # Output Dropout
+            self.model.add(Dropout(self.hp['dropout_rate']))
+            # Output Dense with BatchNorm before activation
+            self.model.add(Dense(256))
+            self.model.add(BatchNormalization())
+            self.model.add(Activation('softmax'))
             
             # Compilation
             lr = self.hp['learning_rate']
-            if self.hp['optimizer'] == 'sgd':
-                opt = SGD(learning_rate=lr)
-            elif self.hp['optimizer'] == 'adam':
+            if self.hp['optimizer'] == 'adam':
                 opt = Adam(learning_rate=lr)
-            else:
+            elif self.hp['optimizer'] == 'rmsprop':
                 opt = RMSprop(learning_rate=lr)
+            else:
+                opt = SGD(learning_rate=lr)
             
             self.model.compile(
                 optimizer=opt, 
                 loss='categorical_crossentropy',
-                metrics=['accuracy']#, 'recall']
+                metrics=['accuracy']
             )
     
         else:
