@@ -158,11 +158,6 @@ class SplitDataLoader(DataLoader):
         x_train = x_tot[:n_tot_train]
         x_val = x_tot[n_tot_train:]
         
-        # Reduce the array of true-key-byte to a single int if there is only one config
-        if len(self.trace_files) == 1:
-            tkbs_train = tkbs_train[0]
-            tkbs_val = tkbs_val[0]
-        
         # Shuffle the sets
         x_train, y_train, pbs_train, tkbs_train = self._shuffle(x_train, y_train, pbs_train, tkbs_train)
         x_val, y_val, pbs_val, tkbs_val = self._shuffle(x_val, y_val, pbs_val, tkbs_val) 

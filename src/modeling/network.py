@@ -29,6 +29,10 @@ import constants
 
 class Network():
 
+    """
+    
+    """
+
     def __init__(self, model_type, hp):
 
         self.model_type = model_type

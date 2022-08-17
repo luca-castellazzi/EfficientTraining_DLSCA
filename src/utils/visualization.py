@@ -162,8 +162,40 @@ def plot_attack_losses(losses, output_path):
         bbox_inches='tight', 
         dpi=600
     )
-    
 
+
+def plot_overlap(avg_ges, output_path):
+    
+    colors = ['r', 'b', 'g']
+    
+    f, ax = plt.subplots(figsize=(10,5))
+    
+    for i, ges in enumerate(avg_ges): # i used for color and num devices
+        
+        for j, ge in enumerate(ges): # j used for label
+            
+            if j == len(ges) - 1: # Label only the last element of each group
+                label = f'{i+1} device'
+                if i != 0:
+                    label += 's' # Plural
+                ax.plot(ge, color=colors[i], marker='o', label=label)
+            else:
+                ax.plot(ge, color=colors[i], marker='o')
+                
+                
+    ax.set_title(f'Avg GEs - Comparison')
+    ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
+    ax.set_ylim([-3, 40])
+    ax.set_xlabel('Number of traces')
+    ax.set_ylabel('Avg GE')
+    ax.legend()
+    ax.grid()
+    
+    f.savefig(
+        output_path, 
+        bbox_inches='tight', 
+        dpi=600
+    )
 # def plot_scores(scores_dict, title, output_path):
 
     # f, ax = plt.subplots(figsize=(10,5))

@@ -24,7 +24,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 
 BYTE_IDX = 0
 TARGET = 'SBOX_OUT'
-TOT_TRAIN_TRACES = 100000
+TOT_TRAIN_TRACES = 50000 # 50,000 for 1 dev,  100,000 for 2 devs
 EPOCHS = 100
 
 def main():
@@ -37,7 +37,8 @@ def main():
     The script generates and trains a model for each possible number of keys (1 to 10).
     Each model will have its own training, but all models will have the same hyperparameters.
     
-    At the end, each GE is stored as NPY file.
+    At the end, each GE is stored as NPY file and the confusion matrix of each attack and 
+    the attack losses are plotted.
     """
 
     train_devs = sys.argv[1].upper().split(',')
@@ -76,7 +77,7 @@ def main():
                
         attack_net = Network(model_type, hp)
         attack_net.build_model()
-        saved_model_path = f'{constants.RESULTS_PATH}/DKTA/{n_devs}d/{n_keys}k/best_model_{"".join(train_devs)}__{used_tuning_method}.h5'
+        saved_model_path = f'{constants.RESULTS_PATH}/DKTA/{n_devs}d/{n_keys}k/best_model_{"".join(train_devs)}vs{test_dev}__{used_tuning_method}.h5'
         attack_net.add_checkpoint_callback(saved_model_path)
         train_model = attack_net.model
         
@@ -129,19 +130,19 @@ def main():
         conf_matrix = confusion_matrix(y_true, y_pred)
         vis.plot_conf_matrix(
             conf_matrix, 
-            f'{constants.RESULTS_PATH}/DKTA/{n_devs}d/{n_keys}k/conf_matrix_{"".join(train_devs)}__{used_tuning_method}.png'
+            f'{constants.RESULTS_PATH}/DKTA/{n_devs}d/{n_keys}k/conf_matrix_{"".join(train_devs)}vs{test_dev}__{used_tuning_method}.png'
         )
         #################################################################################################
         
         clear_session()
     
     ges = np.array(ges)
-    np.save(f'{constants.RESULTS_PATH}/DKTA/{n_devs}d/ges_{"".join(train_devs)}__{used_tuning_method}.npy', ges)
+    np.save(f'{constants.RESULTS_PATH}/DKTA/{n_devs}d/ges_{"".join(train_devs)}vs{test_dev}__{used_tuning_method}.npy', ges)
     
     # Plot attack losses
     vis.plot_attack_losses(
         test_losses, 
-        f'{constants.RESULTS_PATH}/DKTA/{n_devs}d/attack_loss_{"".join(train_devs)}__{used_tuning_method}.png'
+        f'{constants.RESULTS_PATH}/DKTA/{n_devs}d/attack_loss_{"".join(train_devs)}vs{test_dev}__{used_tuning_method}.png'
     )
         
         

@@ -9,6 +9,16 @@ import visualization as vis
 
 
 def main():
+
+    """
+    This script averages the values of the GEs obtained at the end of the DKTA process 
+    in order to generalize the results.
+    
+    The number of train-devices used during the DKTA  and the used hyperparameter 
+    tuning method must be provided via command line in this order.
+    
+    The average GE is plotted.
+    """
     
     n_train_devs = int(sys.argv[1]) # Number of training devices (to access the right results folder)
     used_tuning_method = sys.argv[2]
