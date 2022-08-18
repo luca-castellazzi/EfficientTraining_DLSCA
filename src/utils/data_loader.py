@@ -13,7 +13,7 @@ import constants
 class DataLoader():
 
 
-    def __init__(self, configs, n_tot_traces, byte_idx=None, target='SBOX_OUT'):
+    def __init__(self, configs, n_tot_traces, target, byte_idx=None):
         
         self.trace_files = [f'{constants.CURR_TRACES_PATH}/{c}_500MHz + Resampled.trs' 
                             for c in configs]
@@ -92,9 +92,9 @@ class DataLoader():
         
 class SplitDataLoader(DataLoader):
    
-    def __init__(self, configs, n_tot_traces, train_size, byte_idx, target='SBOX_OUT'):
+    def __init__(self, configs, n_tot_traces, train_size, target, byte_idx=None):
         
-        super().__init__(configs, n_tot_traces, byte_idx, target)
+        super().__init__(configs, n_tot_traces, target, byte_idx)
         
         self.n_train_tr_per_config = int(train_size * self.n_tr_per_config)
         

@@ -11,25 +11,28 @@ import visualization as vis
 def main():
 
     """
-    This script averages the values of the GEs obtained at the end of the DKTA process 
-    in order to generalize the results.
-    
-    The number of train-devices used during the DKTA  and the used hyperparameter 
-    tuning method must be provided via command line in this order.
-    
-    The average GE is plotted.
+    Averages the values of the GEs obtained from DKTA_2_attacks.py, in order to
+    generalize the results.
+    Settings parameters (provided in order via command line):
+        - n_devs: Number of train devices
+        - tuning_method: HP searching method (Random Search (rs) or Genetic Algorithm (ga))
+        - target: Target of the attack (SBOX_IN or SBOX_OUT)
+        
+    The result is a PNG file containing the average GE.
     """
     
-    n_train_devs = int(sys.argv[1]) # Number of training devices (to access the right results folder)
-    used_tuning_method = sys.argv[2]
+    _, n_devs, tuning_method, target = sys.argv
     
-    res_folder_path = f'{constants.RESULTS_PATH}/DKTA/{n_train_devs}d'
+    n_devs = int(n_devs) # Number of training devices (to access the right results folder)
+    target = target.upper()
+    
+    res_path = f'{constants.RESULTS_PATH}/DKTA/{target}/{n_devs}d'
     
     all_ges = []
-    for filename in os.listdir(res_folder_path):
-        if f'{used_tuning_method}.npy' in filename:
+    for filename in os.listdir(res_path):
+        if f'{tuning_method}.npy' in filename:
             if not 'avg' in filename: # Avoid to consider avg_ge NPY file if already present
-                npy_file = f'{res_folder_path}/{filename}'
+                npy_file = f'{res_path}/{filename}'
                 ges = np.load(npy_file)
                 all_ges.append(ges)
     
@@ -43,14 +46,14 @@ def main():
         avg_ges.append(avg_ge)
         
     avg_ges = np.array(avg_ges)
-    np.save(f'{res_folder_path}/avg_ge__{used_tuning_method}.npy', avg_ges)
+    np.save(f'{res_path}/avg_ge__{tuning_method}.npy', avg_ges)
     
     
     # Plot Avg GEs
     vis.plot_avg_ges(
         avg_ges, 
-        n_train_devs, 
-        f'{res_folder_path}/avg_ge__{used_tuning_method}.png'
+        n_devs, 
+        f'{res_path}/avg_ge__{tuning_method}.png'
     )
     
 

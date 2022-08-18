@@ -36,6 +36,8 @@ def plot_nicv(nicvs, configs, metadata):
         bbox_inches='tight', 
         dpi=600
     )
+    
+    plt.close(f)
 
 def plot_history(history, output_path):
 
@@ -62,6 +64,8 @@ def plot_history(history, output_path):
         bbox_inches='tight', 
         dpi=600
     )
+    
+    plt.close(f)
     
     
 # def plot_ges(ges, n_traces, labels, title, output_path):
@@ -112,7 +116,7 @@ def plot_avg_ges(ges, n_devs, output_path):
         
     ax.set_title(f'Number of Train-Devices: {n_devs}')
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
-    ax.set_ylim([-3, 50])
+    ax.set_ylim([-3, 40])
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()
@@ -123,6 +127,8 @@ def plot_avg_ges(ges, n_devs, output_path):
         bbox_inches='tight', 
         dpi=600
     )
+    
+    plt.close(f)
     
     
 def plot_conf_matrix(conf_matrix, output_path):
@@ -143,6 +149,8 @@ def plot_conf_matrix(conf_matrix, output_path):
         dpi=600
     )
     
+    plt.close(f)
+    
 
 def plot_attack_losses(losses, output_path):
 
@@ -162,6 +170,8 @@ def plot_attack_losses(losses, output_path):
         bbox_inches='tight', 
         dpi=600
     )
+    
+    plt.close(f)
 
 
 def plot_overlap(avg_ges, output_path):
@@ -196,6 +206,10 @@ def plot_overlap(avg_ges, output_path):
         bbox_inches='tight', 
         dpi=600
     )
+    
+    plt.close(f)
+    
+    
 # def plot_scores(scores_dict, title, output_path):
 
     # f, ax = plt.subplots(figsize=(10,5))

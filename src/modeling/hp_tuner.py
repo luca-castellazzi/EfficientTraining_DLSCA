@@ -1,6 +1,5 @@
 # Basics
 from tqdm import tqdm
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.backend import clear_session
 import random
 
@@ -10,13 +9,12 @@ from genetic_tuner import GeneticTuner
 
 class HPTuner():
     
-    def __init__(self, model_type, hp_space, n_models, n_epochs, metric='loss'):
+    def __init__(self, model_type, hp_space, n_models, n_epochs):
         
         self.model_type = model_type
         self.hp_space = hp_space
         self.n_models = n_models
         self.n_epochs = n_epochs
-        self.metric = metric
                                 
     
     def random_search(self, x_train, y_train, x_val, y_val):
@@ -37,29 +35,16 @@ class HPTuner():
                 verbose=0
             ).history
             
-            if self.metric == 'rank':
-                pass
-                #score = net.rank_key_byte(x_val) ##############################################################################
-            else:
-                val_loss, val_acc = model.evaluate(x_val, y_val, verbose=0)
-                if self.metric == 'loss':
-                    score = val_loss
-                else:
-                    score = val_acc
-                    
-            res.append((score, random_hp, history))
+            val_loss, _ = model.evaluate(x_val, y_val, verbose=0)                    
+            res.append((val_loss, random_hp, history))
             
             clear_session()
             
-        if self.metric == 'acc':
-            reverse = True
-        else: 
-            reverse = False
-        res.sort(key=lambda x: x[0], reverse=reverse)
+        res.sort(key=lambda x: x[0])
         
-        self.best_metric, self.best_hp, self.best_history = res[0] # Take track of the best results
+        self.best_val_loss, self.best_hp, self.best_history = res[0] # Take track of the best results
         
-        print(f'Best result: {self.best_metric}')
+        print(f'Best result: {self.best_val_loss}')
         
         return self.best_hp
         
@@ -78,8 +63,7 @@ class HPTuner():
             pop_size=self.n_models, 
             selection_perc=selection_perc, 
             second_chance_prob=second_chance_prob, 
-            mutation_prob=mutation_prob,
-            metric=self.metric
+            mutation_prob=mutation_prob
         )
         
         pop = gt.populate()
@@ -95,13 +79,13 @@ class HPTuner():
                 n_epochs=self.n_epochs
             )
             
-            print(f'Top 5: {[metric for metric, _, _ in evaluation[:5]]}')
+            print(f'Top 5: {[val_loss for val_loss, _, _ in evaluation[:5]]}')
             
             parents = gt.select(evaluation)
             
             if gen != n_gen-1:
                 pop = gt.evolve(parents)
         
-        self.best_metric, self.best_hp, self.best_history = evaluation[0]
+        self.best_val_loss, self.best_hp, self.best_history = evaluation[0]
     
         return self.best_hp

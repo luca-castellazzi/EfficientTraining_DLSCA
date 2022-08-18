@@ -35,7 +35,9 @@ def labels_from_key(plaintext, key, target):
     sbox_out = constants.SBOX_DEC[rows, cols]
 
     # Labeling
-    if target == 'SBOX_OUT':
+    if target == 'SBOX_IN':
+        return sbox_in
+    elif target == 'SBOX_OUT':
         return sbox_out
     else:
         pass # Future implementations (target = HW, target = KEY, ...)
@@ -59,19 +61,17 @@ def key_from_labels(pltxt_byte, target):
         of the sbox-output w.r.t. the given plaintext byte.
     """ 
 
-    sboxout_values = range(256)
-
-    if target == 'SBOX_OUT':
-        
-        # The provided labels are sbox_out values
-
-        # Inverse-SubBytes (for each possible label)
-        rows, cols = to_coords(sboxout_values)
+    possible_values = range(256)
+    
+    if target == 'SBOX_IN': # Directly sbox-in values
+        sbox_in = np.array(possible_values)
+    elif target == 'SBOX_OUT': # Sbox-out values: inverse-SubBytes needed
+        rows, cols = to_coords(possible_values)
         sbox_in = constants.INV_SBOX_DEC[rows, cols]
-
-        # Inverse-AddRoundKey (for each possible label)
-        key_bytes = sbox_in ^ pltxt_byte
     else:
         pass # Future implementations (target = HW, target = KEY, ...)
+
+    # Inverse-AddRoundKey
+    key_bytes = sbox_in ^ pltxt_byte # Shape: (1 x 256)
 
     return np.array(key_bytes)

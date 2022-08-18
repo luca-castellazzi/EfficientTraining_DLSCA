@@ -1,15 +1,3 @@
-################################################################################
-#                                                                              # 
-# This code is based on the Genetic Algorithm for Hyperparameter Tuning        #
-# implementation from harvitronix.                                             #
-#                                                                              #
-# The reference project is                                                     # 
-# https://github.com/harvitronix/neural-network-genetic-algorithm,             # 
-# which is licensed under MIT License.                                         #
-#                                                                              #
-################################################################################
-
-
 # Basic
 import random
 import numpy as np
@@ -126,38 +114,18 @@ class Network():
             pass # In future there will be CNN
 
 
-    def _target_to_key(self, preds, key_bytes, process='ge'):
+    def _compute_key_preds(self, preds, key_bytes):
         
         # Associate each sbox-out prediction with its relative key-byte
         association = list(zip(key_bytes, preds))
         
-        if process == 'ge':
-            # Sort the association w.r.t. key-bytes (alignment for all traces)
-            association.sort(key=lambda x: x[0])
-            # Consider the sorted sbox-out predictons as key-byte predictons
-            key_preds = list(zip(*association))[1]
-            res = key_preds
-        else:
-            # Sort the association w.r.t. sbox-out predictions (higher to lower)
-            association.sort(key=lambda x: x[1], reverse=True)
-            # Get the rank of the true key-byte
-            key_ranking = list(zip(*association))[0]
-            res = key_ranking
+        # Sort the association w.r.t. key-bytes (alignment for all traces)
+        association.sort(key=lambda x: x[0])
         
-        return res
+        # Consider the sorted sbox-out predictons as key-byte predictons
+        key_preds = list(zip(*association))[1]
         
-
-    #def true_rank(self, preds, pltxt_byte, true_key_byte, target='SBOX_OUT'):
-    #
-    #    key_bytes = aes.key_from_labels(pltxt_byte, target)
-    #    
-    #    # Retrieve key-byte predicitons
-    #    key_ranking = self._target_to_key(preds, key_bytes, process='ranking')
-    #    
-    #    # Get the rank of the true key-byte
-    #    tkb_rank = key_ranking.index(true_key_byte)
-    #    
-    #    return tkb_rank
+        return key_preds
         
         
     def _compute_final_ranking(self, key_preds):
@@ -177,7 +145,7 @@ class Network():
         return sorted_kbs
 
 
-    def ge(self, preds, pltxt_bytes, true_key_byte, n_exp, n_traces, target='SBOX_OUT'):
+    def ge(self, preds, pltxt_bytes, true_key_byte, n_exp, n_traces, target):
         
         # Consider all couples (predicitons, plaintext byte)
         # During each experiment, sample n_traces couples
@@ -194,7 +162,7 @@ class Network():
             
             key_bytes = [aes.key_from_labels(pb, target) for pb in sampled_pltxt_bytes]
         
-            key_preds = np.array([self._target_to_key(ps, kbs, process='ge') 
+            key_preds = np.array([self._compute_key_preds(ps, kbs) 
                                   for ps, kbs in zip(sampled_preds, key_bytes)])
                                 
             final_ranking = self._compute_final_ranking(key_preds)

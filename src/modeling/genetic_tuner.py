@@ -52,7 +52,7 @@ class GeneticTuner():
 
 
     def __init__(self, model_type, hp_space, pop_size, selection_perc, 
-                 second_chance_prob, mutation_prob, metric):
+                 second_chance_prob, mutation_prob):
     
         """
         Class constructor: takes as input all class attributes and generates 
@@ -65,7 +65,6 @@ class GeneticTuner():
         self.selection_perc = selection_perc
         self.second_chance_prob = second_chance_prob
         self.mutation_prob = mutation_prob
-        self.metric=metric
         
         
     def populate(self):
@@ -129,25 +128,12 @@ class GeneticTuner():
                 verbose=0
             ).history
             
-            if self.metric == 'rank':
-                pass
-                #score = net.rank_key_byte(x_val) ##############################################################################
-            else:
-                val_loss, val_acc = model.evaluate(x_val, y_val, verbose=0)
-                if self.metric == 'loss':
-                    score = val_loss
-                else:
-                    score = val_acc
-                    
-            res.append((score, hp_config, history))
+            val_loss, _ = model.evaluate(x_val, y_val, verbose=0)        
+            res.append((val_loss, hp_config, history))
             
             clear_session()
-        
-        if self.metric == 'acc':
-            reverse = True
-        else: 
-            reverse = False
-        res.sort(key=lambda x: x[0], reverse=reverse)
+            
+        res.sort(key=lambda x: x[0])
         
         return res
         
