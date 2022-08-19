@@ -38,6 +38,7 @@ def plot_nicv(nicvs, configs, output_path):
     )
     
     plt.close(f)
+    
 
 def plot_history(history, output_path):
 

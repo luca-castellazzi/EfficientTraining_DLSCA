@@ -18,11 +18,40 @@ import constants
 class Network():
 
     """
+    Neural Network implementation.
     
+    Attributes:
+        - model_type (str):
+            Type of Neural Network to implement.
+        - hp (dict):
+            Neural Network hyperparameters.
+        - model (keras.models.Sequential):
+            Neural Network model.
+            By default, it is an empty Sequential object.
+        - callbacks (keras.callbacks list):
+            List of callbacks to use during model training.
+            By default, EarlyStopping and ReduceLROnPlateau are considered.
+            
+    Methods:
+        - add_checkpoint_callback:
+            Adds ModelCheckpoint to the list of callbacks.
+        - build model:
+            Generates the Neural Network model.
+        - _compute_key_preds:
+            Converts target-predictions into key-predictions.
+        - _compute_final_ranking:
+            Generates the final ranking of all possible key-bytes.
+        - ge:
+            Computes the Guessing Entropy of an attack.
     """
 
     def __init__(self, model_type, hp):
 
+        """
+        Class constructor: takes as input all class attributes and generates a
+        Network object.
+        """
+    
         self.model_type = model_type
         self.hp = hp
         self.model = Sequential()
@@ -41,6 +70,17 @@ class Network():
         
 
     def add_checkpoint_callback(self, model_path):
+    
+        """
+        Adds ModelCheckpoint to the list of callbacks.
+        
+        ModelCheckpoint allows to save the best-performing model during training
+        (performance is given by the validation loss (the lower, the better)).
+        
+        Parameters:
+            - model_path (str):
+                Path to where to store the model (model is a H5 file).
+        """
         
         self.callbacks.append(
             ModelCheckpoint(
@@ -50,7 +90,16 @@ class Network():
             )
         )
 
+
     def build_model(self):
+    
+        """
+        Generates the Neural Network model adding layer to the default empty
+        Sequential object.
+        
+        Different models can be generated: MultiLayer Perceptron (MLP) or 
+        Convolutional Neural Network (CNN).
+        """
 
         if self.model_type == 'MLP':
         
@@ -115,6 +164,22 @@ class Network():
 
 
     def _compute_key_preds(self, preds, key_bytes):
+    
+        """
+        Converts target-predictions into key-predictions (key-byte).
+
+        Parameters:
+            - preds (np.ndarray):
+                Target-predictions (probabilities for each possible target value).
+            - key_bytes (np.array):
+                Key-bytes relative to each possible value in the target-predictions.
+                Target-predictions cover all possible values (1 to 255), and
+                each value leads to a differnt key-byte.
+        
+        Returns:
+            - key_preds (np.array):
+               Key-predictions (probabilities for each possible key-byte value).
+        """
         
         # Associate each sbox-out prediction with its relative key-byte
         association = list(zip(key_bytes, preds))
@@ -129,6 +194,20 @@ class Network():
         
         
     def _compute_final_ranking(self, key_preds):
+    
+        """
+        Generates the ranking of the key-bytes starting from key-predictions.
+        
+        Parameters:
+            - key_preds (np.ndarray):
+                Predictions relative to the key-byte (probabilities relative to
+                each possible key-byte).
+                
+        Returns:
+            - sorted_kbs (np.array):
+                Ranking of the possible key-bytes (from the most probable to the 
+                least probable).
+        """
     
         log_probs = np.log10(key_preds + 1e-22)
         cum_tot_probs = np.cumsum(log_probs, axis=0)
@@ -146,16 +225,42 @@ class Network():
 
 
     def ge(self, preds, pltxt_bytes, true_key_byte, n_exp, n_traces, target):
+    
+        """
+        Computes the Guessing Entropy of an attack as the average rank of the 
+        correct key-byte among the predictions.
         
-        # Consider all couples (predicitons, plaintext byte)
-        # During each experiment, sample n_traces couples
-        # Perform all GE-related computations w.r.t. the sampled couples only
+        Parameters: 
+            - preds (np.ndarray):
+                Target predictions.
+            - pltxt_bytes (np.array):
+                Plaintext used during the encryption (single byte).
+            - true_key_byte (int):
+                Actual key used during the encryption (single byte).
+            - n_exp (int):
+                Number of experiment to compute the average value of GE.
+            - n_traces (int):
+                Number of traces to consider during GE computation.
+            - target (str):
+                Target of the attack.
+                
+        Returns:
+            - ge (np.array):
+                Guessing Entropy of the attack.
+        """
         
-        
+        # Consider all couples predictions-plaintext
         all_preds_pltxt = list(zip(preds, pltxt_bytes))
         
         ranks_per_exp = []
         for _ in range(n_exp):
+            
+            # During each experiment:
+            #   * Consider only a fixed number of target-predictions
+            #   * Retrieve the corresponding key-predictions
+            #   * Compute the final key-predictions
+            #   * Rank the final key-predictions
+            #   * Retrieve the rank of the correct key (key-byte)
             
             sampled = random.sample(all_preds_pltxt, n_traces)
             sampled_preds, sampled_pltxt_bytes = list(zip(*sampled))
@@ -171,6 +276,8 @@ class Network():
                                       for kbs in final_ranking])
             
             ranks_per_exp.append(true_kb_ranks)
+            
+        # After the experiments, average the ranks
             
         ranks_per_exp = np.array(ranks_per_exp)
         ge = np.mean(ranks_per_exp, axis=0)

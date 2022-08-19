@@ -1,3 +1,12 @@
+##################################################################################
+#                                                                                # 
+#  This Genetic Algorithm for Neural Network hyperparameter tuning is based on   #
+#  the implementation by Matt Harvey (https://github.com/harvitronix) available  # 
+#  at https://github.com/harvitronix/neural-network-genetic-algorithm),          #
+#  licensed under MIT License.                                                   #
+#                                                                                #
+##################################################################################
+
 # Basics
 import random
 from tensorflow.keras.backend import clear_session
@@ -13,7 +22,7 @@ class GeneticTuner():
     Genetic Algorithm for hyperparameter tuning.
     
     Populations of hyperparameters are generated, tested and updated
-    according to the "natural selection" principle: the best-perfoming
+    according to the "natural selection" principle: the best-performing
     hyperparameters are kept to generate the next population.
     
     Attributes:
@@ -22,17 +31,14 @@ class GeneticTuner():
         - hp_space (dict):
             Whole hyperparameter space.
         - pop_size (int):
-             Size of each population of hyperparameters.
+            Size of each population of hyperparameters.
         - selection_perc (float):
-             Percentage of best-performing hyperparameters to keep
-             by default for the next population.
+            Percentage of best-performing hyperparameters to keep by default 
+            for the next population.
         - second_chance_prob (float):
-             Probability of keeping a bad-perfoming hyperparameter set.
+            Probability of keeping a bad-performing hyperparameter set.
         - mutation_prob (float):
-             Probability of mutating an offspring.
-        - metric (str):
-            Fitness value to monitor in order to measure the performance 
-            of the hyperparameters.
+            Probability of mutating an offspring.
             
     Methods:
         - populate:
@@ -47,7 +53,6 @@ class GeneticTuner():
             Mutates an offspring.
         - evolve:
             Generates the new population of hyperparameters.
-            
     """
 
 
@@ -55,8 +60,8 @@ class GeneticTuner():
                  second_chance_prob, mutation_prob):
     
         """
-        Class constructor: takes as input all class attributes and generates 
-        a GeneticTuner object.
+        Class constructor: takes as input all class attributes and generates a
+        GeneticTuner object.
         """
     
         self.model_type = model_type
@@ -105,11 +110,10 @@ class GeneticTuner():
         Returns:
             - res (list of tuple):
                 Result of the evaluation, containing, for each individual in
-                the population, the validation score (validation metric), the 
+                the population, the validation score (validation loss), the 
                 individual (hyperparameters) and the training history.
                 The tuples are ordered from the best score to the worst score
-                (highest to lowest if accuracy, lowest to highest if loss or 
-                rank).
+                (lowest to highest because loss is considered rank).
         """
         
         res = []
@@ -145,8 +149,12 @@ class GeneticTuner():
         
         A subset of individuals is selected from the current population w.r.t.
         the result of the evaluation step.
-        The cardinality of the subset is specified in the constructor as 
-        "selection_perc".
+        Also some bad-performing individuals are selected, in order to add 
+        diversity in the new population.
+        
+        The cardinality of the best-performing subset is specified in the 
+        constructor as "selection_perc", while the chance of being selected if 
+        the performance is not good is specified by "second_chance_prob".
         
         Parameters:
             - evaluation (list of tuple):
@@ -154,17 +162,17 @@ class GeneticTuner():
         
         Returns:
             - parents (list of dict):
-                Selected best-perfoming hyperparameters.
+                Selected hyperparameters.
         """
         
         # Sort the individuals w.r.t. their val accuracy (the higher the better)
         sorted_pop = [hp_config for _, hp_config, _ in evaluation]
         
-        # Select the best-perfoming individuals as parents for the next population
+        # Select the best-performing individuals as parents for the next population
         num_selected = int(self.selection_perc * self.pop_size)
         parents = sorted_pop[:num_selected]
         
-        # Select also some bad-perfoming individuals to add diversity in the 
+        # Select also some bad-performing individuals to add diversity in the 
         # next population
         for hp_config in sorted_pop[num_selected:]:
             if random.random() < self.second_chance_prob:
@@ -174,9 +182,22 @@ class GeneticTuner():
         
         
     def _produce_offspring(self, parent_a, parent_b):
+    
+        """
+        Generates an offspring considering two parents.
         
-        # An offspring is an hp configuration where the values derive from the parents 
-        # in a random way
+        An offspring is a hyperparameter configuration where the values derive
+        from the parents in a random way.
+        
+        Parameters:
+            - parent_a, parent_b (dict):
+                Hyperparameters to randomly mix in order to generate the offspring.
+                
+        Returns:
+            - offspring (dict):
+                Generated hyperparameters.
+        """
+        
         offspring = {k: random.choice([parent_a[k], parent_b[k]])
                      for k in self.hp_space.keys()}
                         
@@ -184,6 +205,21 @@ class GeneticTuner():
         
         
     def _mutate_offspring(self, offspring):
+    
+        """
+        Mutates an offspring.
+        
+        A mutation consists in the substitution of a hyperparameter value with
+        another chosen from the hyperparameter space (both choices are random).
+        
+        Parameters:
+            - offspring (dict):
+                Offspring to be mutated.
+                
+        Returns:
+            - offspring (dict):
+                The mutated version of the starting offspring.
+        """
         
         to_mutate = random.choice(list(self.hp_space.keys()))
         offspring[to_mutate] = random.choice(self.hp_space[to_mutate])
@@ -192,12 +228,29 @@ class GeneticTuner():
         
     
     def evolve(self, parents):
+    
+        """
+        Generates a new population considering all the parents, their offspring 
+        (eventually mutated) and some bad-performing individuals from the 
+        the previous population.
+        
+        The mutation probability is specified in the constructor as 
+        "mutation_prob".
+        
+        Parameters:
+            - parents (dict list):
+                Selected individuals from the previous population.
+                
+        Returns:
+            - new_pop (dict list):
+                New population of hyperparameters.
+        """
         
         n_offsprings = self.pop_size - len(parents)
         
         offsprings = []
         for _ in range(n_offsprings):
-            parent_a, parent_b = random.sample(parents, k=2)
+            parent_a, parent_b = random.sample(parents, k=2) # Always different
             offspring = self._produce_offspring(parent_a, parent_b)
             
             if random.random() < self.mutation_prob:

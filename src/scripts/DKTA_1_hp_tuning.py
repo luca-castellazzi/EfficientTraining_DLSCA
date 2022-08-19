@@ -101,7 +101,7 @@ def main():
         
     res_path = f'{constants.RESULTS_PATH}/DKTA/{target}'
         
-    vis.plot_history(hp_tuner.best_history, f'{res_path}/best_history__{tuning_method}.png')
+    vis.plot_history(hp_tuner.best_history, f'{res_path}/best_history_{n_devs}d__{tuning_method}.png')
     
     with open(f'{res_path}/{n_devs}d/best_hp__{tuning_method}.json', 'w') as jfile:
         json.dump(best_hp, jfile)
