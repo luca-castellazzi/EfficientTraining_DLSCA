@@ -12,6 +12,19 @@ from nicv import nicv
 
 def plot_nicv(nicvs, configs, output_path):
 
+    """
+    Plots NICV values and saves the result in a PNG file.
+    
+    Parameters:
+        - nicvs (np.ndarray):
+            NICV values to plot.
+        - configs (str list):
+            Device-key configurations that generate the traces used to compute
+            NICV values.
+        - output_path (str):
+            Absolute path to the PNG file containing the plot.
+    """
+
     cmap = plt.cm.Set1
     colors = cmap(range(len(configs)))
  
@@ -41,6 +54,16 @@ def plot_nicv(nicvs, configs, output_path):
     
 
 def plot_history(history, output_path):
+
+    """
+    Plots a train history and saves the result in a PNG file.
+    
+    Parameters:
+        - history (dict):
+            Train history to plot.
+        - output_path (str):
+            Absolute path to the PNG file containing the plot.
+    """
 
     f, ax = plt.subplots(2, 1, figsize=(10,18))
     
@@ -98,8 +121,84 @@ def plot_history(history, output_path):
         # dpi=600
     # )
     
+    
+def plot_conf_matrix(conf_matrix, output_path):
+
+    """
+    Plots a confusion matrix and saves the result in a PNG file.
+    
+    Parameters:
+        - conf_matrix (np.ndarray):
+            Confusion matrix to plot.
+        - output_path (str):
+            Absolute path to the PNG file containing the plot.
+    """
+    
+    cmap = plt.cm.Blues
+    
+    f = plt.figure(figsize=(10,8))
+    plt.imshow(conf_matrix, cmap=cmap)
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted Labels')
+    plt.ylabel('True Labels')
+    
+    plt.colorbar()
+    
+    f.savefig(
+        output_path,
+        bbox_inches='tight',
+        dpi=600
+    )
+    
+    plt.close(f)
+    
+
+def plot_attack_losses(losses, output_path):
+
+    """
+    Plots attack losses and saves the result in a PNG file.
+    
+    Parameters:
+        - losses (np.array):
+            Attack losses to plot.
+        - output_path (str):
+            Absolute path to the PNG file containing the plot.
+    """
+
+    f = plt.figure(figsize=(10,5))
+    plt.plot(losses, marker='o')
+    plt.title('Attack Loss')
+    plt.xlabel('Number of keys')
+    plt.ylabel('Loss')
+    
+    plt.xticks(range(len(losses)), labels=range(1, len(losses)+1))
+    plt.ylim(2, 5)
+    
+    plt.grid()
+    
+    f.savefig(
+        output_path, 
+        bbox_inches='tight', 
+        dpi=600
+    )
+    
+    plt.close(f)
+
 
 def plot_avg_ges(ges, n_devs, output_path):
+
+    """
+    Plots the average GEs resulting from a DKTA experiment and saves the result 
+    in a PNG file.
+    
+    Parameters:
+        - ges (np.ndarray):
+            Average GEs to plot.
+        - n_devs (int):
+            Number of train-devices used during the computation of GEs.
+        - output_path (str):
+            Absolute path to the PNG file containing the plot.
+    """
     
     # Set the color palette
     cmap = plt.cm.jet # Google Turbo
@@ -130,58 +229,26 @@ def plot_avg_ges(ges, n_devs, output_path):
     )
     
     plt.close(f)
-    
-    
-def plot_conf_matrix(conf_matrix, output_path):
-    
-    cmap = plt.cm.Blues
-    
-    f = plt.figure(figsize=(10,8))
-    plt.imshow(conf_matrix, cmap=cmap)
-    plt.title('Confusion Matrix')
-    plt.xlabel('Predicted Labels')
-    plt.ylabel('True Labels')
-    
-    plt.colorbar()
-    
-    f.savefig(
-        output_path,
-        bbox_inches='tight',
-        dpi=600
-    )
-    
-    plt.close(f)
-    
-
-def plot_attack_losses(losses, output_path):
-
-    f = plt.figure(figsize=(10,5))
-    plt.plot(losses, marker='o')
-    plt.title('Attack Loss')
-    plt.xlabel('Number of keys')
-    plt.ylabel('Loss')
-    
-    plt.xticks(range(len(losses)), labels=range(1, len(losses)+1))
-    plt.ylim(2, 5)
-    
-    plt.grid()
-    
-    f.savefig(
-        output_path, 
-        bbox_inches='tight', 
-        dpi=600
-    )
-    
-    plt.close(f)
 
 
-def plot_overlap(avg_ges, output_path):
+def plot_overlap(all_ges, output_path):
+
+    """
+    Plots GEs resulting from different DKTA experiments in a single plane and 
+    saves the result in a PNG file.
+    
+    Parameters:
+        - all_ges (np.ndarray):
+            GEs to plot.
+        - output_path (str):
+            Absolute path to the PNG file containing the plot.
+    """
     
     colors = ['r', 'b', 'g']
     
     f, ax = plt.subplots(figsize=(10,5))
     
-    for i, ges in enumerate(avg_ges): # i used for color and num devices
+    for i, ges in enumerate(all_ges): # i used for color and num devices
         
         for j, ge in enumerate(ges): # j used for label
             

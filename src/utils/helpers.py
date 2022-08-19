@@ -2,16 +2,15 @@ def int_to_hex(int_values):
 
     """
     Converts int values into hex values, where the eventual 0 in front is explicit.
-    This function works also with len-1 lists, but in that case the returned
-    value is a single str.
+    To convert a single int value, the input should be a len-1 list.
 
     Parameters:
-        - int_values (int np.array or list): 
+        - int_values (np.array or int list): 
             int values to be converted to hex.
   
     Returns:
-        - hex_values (str list): 
-            element-to-element hex-conversion of the input.
+        - conversion (str or str list): 
+            Element-to-element hex-conversion of the input.
             The eventual 0 in front is explicit.
     """
 
@@ -23,15 +22,17 @@ def int_to_hex(int_values):
         hex_values.append(tmp)
     
     if len(hex_values) == 1:
-        return hex_values[0]
+        conversion = hex_values[0]
     else:
-        return hex_values
+        conversion = hex_values
+    
+    return conversion
 
 
 def hex_to_int(hex_str):
     
     """
-    Converts the given hex number into an array of int, each one relative to
+    Converts the given hex number into a list of int, each one relative to
     a single byte of the input.
 
     Parameters:
@@ -39,27 +40,31 @@ def hex_to_int(hex_str):
             hex value to be converted.
 
     Returns:
-        Conversion of the given hex value as an int list, where each value is
-        relative to a single byte of the input.
+        - conversion (int list):
+            Conversion of the input to a list of int.
     """
 
     split_hex_str = [hex_str[i:i+2] for i in range(0, len(hex_str), 2)]
+    
+    conversion = [int(sb, 16) for sb in split_hex_str]
 
-    return [int(sb, 16) for sb in split_hex_str]
+    return conversion
 
 
 def to_coords(int_values):
     
     """
-    Converts the given int values in coordinates relative to an AES-SBox.
+    Converts the given int values to coordinates relative to an AES-SBox.
     
     Parameters:
         - int_values (int list):
-            int values to be converted.
+            Values to be converted.
 
     Returns:
-        Conversion of the given int values as a tuple of int lists, where the 
-        first list contains the rows' indices, and the second the columns' ones.
+        - rows, cols (tuple of lists):
+             AES-SBox coordinates relative to the given input (rows contains
+             the indices for the rows (first 4 bits of each input), cols 
+             contains the indices for the columns (last 4 bits of each input)).
     """
 
     hex_values = int_to_hex(int_values)

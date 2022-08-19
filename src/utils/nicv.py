@@ -1,12 +1,11 @@
-################################################################################
-#                                                                              # 
-# This code is based on the NICV implementation from AISyLab.                  #
-#                                                                              # 
-# The reference project is                                                     # 
-# https://github.com/AISyLab/side-channel-analysis-toolbox,                    # 
-# which is licensed under MIT License.                                         #
-#                                                                              #
-################################################################################
+##################################################################################
+#                                                                                # 
+#  This NICV implementation is based on the work by AISyLab                      #
+#  (https://github.com/AISyLab) available at                                     #
+#  https://github.com/AISyLab/side-channel-analysis-toolbox, licensed under MIT  #
+#  License.                                                                      #
+#                                                                                #
+##################################################################################
 
 
 import numpy as np
@@ -15,25 +14,23 @@ import numpy as np
 def nicv(traces, plaintexts, byte_idx):
 
     """
-    Compute the Normalized Inter-Class Variance (NICV) index for the provided
-    set of traces and byte.
+    Computes the Normalized Inter-Class Variance (NICV) index for the provided
+    traces, plaintexts and byte index.
     
-    NICV = Var(E[T|X]) / Var(T), where T is a trace and X is a known parameter, 
-    such as the plaintext.   
-    In this case X takes the values of the SBox Output 
-
+    In general, NICV = Var(E[T|X]) / Var(T), where T is the trace-set and X is 
+    a known parameter, such as the plaintext.
 
     Parameters:
-        - traces (float np.ndarray): 
-            set of traces to consider during the computation.
-        - plaintexts (int np.ndarray):
-            plaintexts that have been encrypted.
+        - traces (np.ndarray): 
+            Values of the traces.
+        - plaintexts (np.ndarray):
+            Integer-version of the plaintexts.
         - byte_idx (int): 
-            index of the byte to consider during the computation (range 0-15).
+            Byte index to use during the computation of NICV.
 
     Returns:
-        - nicv (float np.array): 
-            NICV values, one for each sample of the given traces.
+        - nicv (np.array): 
+            NICV values.
     """
 
     # Define all fixed values

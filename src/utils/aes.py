@@ -7,58 +7,54 @@ import constants
 def labels_from_key(plaintext, key, target):
     
     """ 
-    Generates the labels associated to the encryption of the given plaintext
-    with the given key, w.r.t. the given target.
+    Emulates AES-128 in order to generate target labels relative to the given 
+    plaintext and key.
 
     Parameters: 
-        - plaintext (int np.array):
-            plaintext considered as list of int values, each one relative to 
-            a single byte of the hex version.
-        - key (int np.array): 
-            encryption key considered as list of int values, each one relative
-            to a single byte of the hex version.
-        - target (str, default: 'SBOX_OUT'):
-            target of the attack ('SBOX_OUTPUT' for SBox Output).
-            More targets in future (e.g. Hamming Weights, Key, ...).
+        - plaintext (np.array):
+            Integer-version of the plaintext used during the encryption.
+        - key (np.array): 
+            Integer-version of the key used during the encryption.
+        - target (str):
+            Target of the attack.
 
     Returns:
-        int np.array containing the 16 labels (one per byte of plaintext/key)
-        relative to the given target.
-        In case of 'SBOX_OUT' target, the output is the result of the SBox-lookup.
+        - labels (np.array):
+            Integer-version of the target labels.
     """
     
     # AddRoundKey
     sbox_in = plaintext ^ key
 
-    # SubBytes
-    rows, cols = to_coords(sbox_in)
-    sbox_out = constants.SBOX_DEC[rows, cols]
-
     # Labeling
     if target == 'SBOX_IN':
-        return sbox_in
+        labels = sbox_in
     elif target == 'SBOX_OUT':
-        return sbox_out
+        # SubBytes
+        rows, cols = to_coords(sbox_in)
+        sbox_out = constants.SBOX_DEC[rows, cols]
+        labels = sbox_out
     else:
         pass # Future implementations (target = HW, target = KEY, ...)
 
+    return labels
+    
 
 def key_from_labels(pltxt_byte, target):
 
     """ 
-    Generates the key-bytes relative to each possible value of the sbox-output
-    w.r.t. the plaintext byte and the given target.
-
-    Parameters: 
+    Recovers the key relative to each possible value of the attack target, 
+    given a plaintext byte.
+    
+    Parameters:
         - pltxt_byte (int):
-            plaintext byte considered as int value.
+            Single plaintext byte used during the encryption.
         - target (str):
-            target of the attack ('SBOX_OUT' for SBox Output).
-            More targets in future (e.g. Hamming Weights, Key, ...).
-
+            Target of the attack.
+            
     Returns:
-        int np.ndarray containing the key-bytes relative to each possible value 
-        of the sbox-output w.r.t. the given plaintext byte.
+        - key_bytes (np.array):
+            Key-bytes relative to each possible value of the attack target
     """ 
 
     possible_values = range(256)
@@ -72,6 +68,6 @@ def key_from_labels(pltxt_byte, target):
         pass # Future implementations (target = HW, target = KEY, ...)
 
     # Inverse-AddRoundKey
-    key_bytes = sbox_in ^ pltxt_byte # Shape: (1 x 256)
+    key_bytes = np.array(sbox_in ^ pltxt_byte) # Shape: (1 x 256)
 
-    return np.array(key_bytes)
+    return key_bytes
