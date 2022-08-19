@@ -6,7 +6,19 @@ import json
 
 
 def main():
-    n_keys = int(sys.argv[1])
+
+    """
+    Generates a specified number of random keys for AES-128.
+    Settings parameters (provided in order via command line):
+        - n_keys: Number of keys to be generated
+        
+    The results are a command line print of the generated keys and a JSON file
+    containing them.
+    """
+    
+    _, n_keys = sys.argv
+    
+    n_keys = int(n_keys)
 
     random.seed(24)
 

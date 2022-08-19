@@ -13,18 +13,25 @@ import constants
 from nicv import nicv
 import visualization as vis
 
-TARGET = 'SBOX_OUT'
-
 
 def main():
-    
-    tr_type = sys.argv[1].upper() # CURR or EM
-    target = sys.argv[2].upper() # SBOX_OUT or HW or KEY
 
-    if tr_type == 'CURR':
-        dset_path = constants.CURR_DATASETS_PATH + f'/{target}'
-    else:
-        dset_path = constants.EM_DATASETS_PATH + f'/{target}'
+    """
+    Computes NICV index with the given settings.
+    Settings parameters (provided in order via command line):
+        - tr_type: Type of traces to use (CURR for Current, EM for ElectroMagnetic)
+        
+    NICVs are computed for fixed device-key configurations, but all scenarios 
+    are covered: same config, same key but different device, same device but 
+    different key, different device and different key.
+    
+    The results are NPY files containing all NICV indices for each scenario and 
+    PNG files containing their plots.
+    """
+    
+    _, tr_type = sys.argv
+    
+    tr_type = tr_type.upper()
     
     
     configs = ['D3-K3', 'D3-K3_nicv',
@@ -33,82 +40,112 @@ def main():
                'D2-K0', 'D2-K5', 'D2-K9',
                'D3-K0', 'D3-K5', 'D3-K9']
     
-    same_config = ['D3-K3', 'D3-K3_nicv']
-    same_key_k1 = ['D1-K1', 'D2-K1', 'D3-K1']
-    same_dev_d1 = ['D1-K1', 'D1-K0', 'D1-K5', 'D1-K9']
-    same_dev_d2 = ['D2-K1', 'D2-K0', 'D2-K5', 'D2-K9']
-    same_dev_d3 = ['D3-K1', 'D3-K0', 'D3-K5', 'D3-K9']
-    diff = ['D1-K1', 'D2-K5', 'D3-K9']
-    
     # Compute NICVs for all scenarios and save them
     nicv_dict = {}
-    for config in tqdm(configs, desc='Computing NICVs: '):
-        path = dset_path + f'/{config}_train.json'
+    for c in tqdm(configs, desc='Computing NICVs: '):
         dl = DataLoader(
-            [path], 
-            n_tr_per_config=constants.TRACE_NUM,
-            target=TARGET
+            [c],
+            n_tot_traces=constants.TRACE_NUM,
+            target='SBOX_OUT' # Not important in NICV computation
         )
+        
         trs, _, pltxts, _ = dl.load()
 
-        nicv_dict[config] = np.array([nicv(trs, pltxts, b) for b in range(16)])
-        
-    
-    cmap = plt.cm.Set1
+        nicv_dict[c] = np.array([nicv(trs, pltxts, b) for b in range(16)])
+
 
     # Plot NICVs for all scenarios
-    print()
-    print('Plotting NICV for "same config"...')
-    nicvs = [nicv_dict[c] for c in same_config]
-    vis.plot_nicv(
-        nicvs, 
-        same_config, 
-        ('same-config-D3-K3', cmap))
+    scenarios = {
+        'same-config': ['D3-K3', 'D3-K3_nicv'],
+        'same-key-K1': ['D1-K1', 'D2-K1', 'D3-K1'],
+        'same-dev-D1': ['D1-K0', 'D1-K1', 'D1-K5', 'D1-K9'],
+        'same-dev-D2': ['D2-K0', 'D2-K1', 'D2-K5', 'D2-K9'],
+        'same-dev-D3': ['D3-K0', 'D3-K1', 'D3-K5', 'D3-K9'],
+        'diff':        ['D1-K1', 'D2-K5', 'D3-K9']
+    }
+    
+    for s_name, s_configs in tqdm(scenarios.items(), desc='Plotting NICVs: '):
+    
+        output = f'{constants.RESULTS_PATH}/NICV/nicv_{s_name}'
+        
+        nicvs = np.array([nicv_dict[c] for c in s_configs])
+        
+        np.save(f'{output}.npy', nicvs)
+        
+        vis.plot_nicv(
+            nicvs, 
+            s_configs,
+            f'{output}.png'
+        )
+        
+   
+    
+    
+    
+    
+    # print()
+    # print('Plotting NICV for "same config"...')
+    # output = f'{constants.RESULTS_PATH}/NICV/nicv_same-config-D3-K3'
+    # nicvs = np.array([nicv_dict[c] for c in same_config])
+    # np.save(f'{output}.npy', nicvs)
+    # vis.plot_nicv(
+        # nicvs, 
+        # same_config,
+        # f'{output}.png'
+    # )
 
 
-    print()
-    print('Plotting NICV for "same key K1"...')
-    nicvs = [nicv_dict[c] for c in same_key_k1]
-    vis.plot_nicv(
-        nicvs, 
-        same_key_k1, 
-        (f'same-key-K1', cmap))
+    # print()
+    # print('Plotting NICV for "same key K1"...')
+    # output = f'{constants.RESULTS_PATH}/NICV/nicv_same-key-K1'
+    # nicvs = [nicv_dict[c] for c in same_key_k1]
+    # np.save(f'{output}.npy', nicvs)
+    # vis.plot_nicv(
+        # nicvs, 
+        # same_key_k1,
+        # f'{output}.png'
+    # )
 
  
-    print()
-    print('Plotting NICV for "same dev D1"...')
-    nicvs = [nicv_dict[c] for c in same_dev_d1]
-    vis.plot_nicv(
-        nicvs, 
-        same_dev_d1, 
-        (f'same-dev-D1', cmap))
+    # print()
+    # print('Plotting NICV for "same dev D1"...')
+    # nicvs = [nicv_dict[c] for c in same_dev_d1]
+    # np.save(f'{output}.npy', nicvs)
+    # vis.plot_nicv(
+        # nicvs, 
+        # same_dev_d1,
+        # f'{constants.RESULTS_PATH}/NICV/nicv_same-dev-D1.png'
+    # )
     
     
-    print()
-    print('Plotting NICV for "same dev D2"...')
-    nicvs = [nicv_dict[c] for c in same_dev_d2]
-    vis.plot_nicv(
-        nicvs, 
-        same_dev_d2, 
-        (f'same-dev-D2', cmap))
+    # print()
+    # print('Plotting NICV for "same dev D2"...')
+    # nicvs = [nicv_dict[c] for c in same_dev_d2]
+    # vis.plot_nicv(
+        # nicvs, 
+        # same_dev_d2,
+        # f'{constants.RESULTS_PATH}/NICV/nicv_same-dev-D2.png'
+    # )
         
         
-    print()
-    print('Plotting NICV for "same dev D3"...')
-    nicvs = [nicv_dict[c] for c in same_dev_d3]
-    vis.plot_nicv(
-        nicvs, 
-        same_dev_d3, 
-        (f'same-dev-D3', cmap))
+    # print()
+    # print('Plotting NICV for "same dev D3"...')
+    # nicvs = [nicv_dict[c] for c in same_dev_d3]
+    # vis.plot_nicv(
+        # nicvs, 
+        # same_dev_d3,
+        # f'{constants.RESULTS_PATH}/NICV/nicv_same-dev-D3.png'
+    # )
         
         
-    print()
-    print('Plotting NICV for "diff"...')
-    nicvs = [nicv_dict[c] for c in diff]
-    vis.plot_nicv(
-        nicvs, 
-        diff, 
-        (f'diff', cmap))
+    # print()
+    # print('Plotting NICV for "diff"...')
+    # nicvs = [nicv_dict[c] for c in diff]
+    # vis.plot_nicv(
+        # nicvs, 
+        # diff,
+        # f'{constants.RESULTS_PATH}/NICV/nicv_diff.png'
+    # )
 
 
 if __name__ == '__main__':
