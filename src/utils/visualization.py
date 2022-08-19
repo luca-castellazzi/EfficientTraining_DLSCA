@@ -10,9 +10,9 @@ import constants
 from nicv import nicv
 
 
-def plot_nicv(nicvs, configs, metadata):
+def plot_nicv(nicvs, configs, output_path):
 
-    scenario, cmap = metadata
+    cmap = plt.cm.Set1
     colors = cmap(range(len(configs)))
  
     f, ax = plt.subplots(4, 4, figsize=(25,25))
@@ -32,7 +32,7 @@ def plot_nicv(nicvs, configs, metadata):
                 row += 1
 
     f.savefig(
-        constants.RESULTS_PATH + f'/nicv/nicv_plots/nicv_{scenario}.png', 
+        output_path,
         bbox_inches='tight', 
         dpi=600
     )
