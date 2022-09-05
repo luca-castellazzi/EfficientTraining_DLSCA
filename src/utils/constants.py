@@ -32,6 +32,7 @@ TRACE_NUM = 50000
 
 # Number of classes per target
 N_CLASSES = {
+    'KEY': 256,
     'SBOX_IN': 256,
     'SBOX_OUT': 256
 }

@@ -2,8 +2,8 @@
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, BatchNormalization, Activation
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, Activation
 from tensorflow.keras.optimizers import SGD, Adam, RMSprop
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from tensorflow.keras.regularizers import L1, L2, L1L2
@@ -265,10 +265,17 @@ class Network():
             sampled = random.sample(all_preds_pltxt, n_traces)
             sampled_preds, sampled_pltxt_bytes = list(zip(*sampled))
             
-            key_bytes = [aes.key_from_labels(pb, target) for pb in sampled_pltxt_bytes]
-        
-            key_preds = np.array([self._compute_key_preds(ps, kbs) 
-                                  for ps, kbs in zip(sampled_preds, key_bytes)])
+            if target == 'KEY':
+                # If the target is 'KEY', then key_preds is directly sampled_preds
+                # because sampled_preds contains predictions related to each key-byte
+                # already in order
+                key_preds = preds
+            else: 
+                # SBOX-IN, SBOX-OUT, ... need further computations
+                key_bytes = [aes.key_from_labels(pb, target) for pb in sampled_pltxt_bytes]
+            
+                key_preds = np.array([self._compute_key_preds(ps, kbs) 
+                                      for ps, kbs in zip(sampled_preds, key_bytes)])
                                 
             final_ranking = self._compute_final_ranking(key_preds)
             

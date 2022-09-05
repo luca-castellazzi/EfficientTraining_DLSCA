@@ -34,6 +34,8 @@ def labels_from_key(plaintext, key, target):
         rows, cols = to_coords(sbox_in)
         sbox_out = constants.SBOX_DEC[rows, cols]
         labels = sbox_out
+    elif target == 'KEY':
+        labels = key
     else:
         pass # Future implementations (target = HW, target = KEY, ...)
 
@@ -64,6 +66,8 @@ def key_from_labels(pltxt_byte, target):
     elif target == 'SBOX_OUT': # Sbox-out values: inverse-SubBytes needed
         rows, cols = to_coords(possible_values)
         sbox_in = constants.INV_SBOX_DEC[rows, cols]
+    elif target == 'KEY':
+        pass # This function is bypassed if the target is 'KEY'
     else:
         pass # Future implementations (target = HW, target = KEY, ...)
 

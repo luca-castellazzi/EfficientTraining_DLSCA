@@ -57,7 +57,7 @@ def main():
     model_type = model_type.upper()
     target = target.upper()
     
-    train_configs = [f'{dev}-{k}' for k in constants.KEYS
+    train_configs = [f'{dev}-{k}' for k in list(constants.KEYS)[1:]
                      for dev in train_devs]
                      
     train_dl = SplitDataLoader(

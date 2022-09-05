@@ -67,7 +67,7 @@ def main():
             
         ges = []
         test_losses = []
-        for n_keys in range(1, len(constants.KEYS)):
+        for n_keys in range(1, len(constants.KEYS)): 
         
             n_keys_folder = f'{res_path}/{n_devs}d/{n_keys}k'
             if not os.path.exists(n_keys_folder):
@@ -85,16 +85,16 @@ def main():
                 byte_idx=BYTE_IDX
             )
             train_data, val_data = train_dl.load()
-            x_train, y_train, _, _ = train_data
-            x_val, y_val, _, _ = val_data # Val data is kept to consider callbacks
-                   
+            x_train, y_train, _, _ = train_data 
+            x_val, y_val, _, _ = val_data # Val data is kept to consider callbacks             
+            
             attack_net = Network(model_type, hp)
             attack_net.build_model()
             saved_model_path = f'{res_path}/{n_devs}d/{n_keys}k/best_model_{"".join(train_devs)}vs{test_dev}__{tuning_method}.h5'
             attack_net.add_checkpoint_callback(saved_model_path)
             train_model = attack_net.model
             
-            # Training (with Validation)
+            #Training (with Validation)
             train_model.fit(
                 x_train, 
                 y_train, 
@@ -117,19 +117,8 @@ def main():
             test_model = load_model(saved_model_path)
             preds = test_model.predict(x_test)
             
-            # Compute GE
-            ge = attack_net.ge(
-                preds=preds, 
-                pltxt_bytes=pbs_test, 
-                true_key_byte=tkb_test, 
-                n_exp=100, 
-                n_traces=10, 
-                target=target
-            )
-            ges.append(ge)
             
-            
-            # Generate additional info about the attack performance #########################################
+            # Generate info about the attack performance #########################################
             
             # Test Loss and Acc
             test_loss, test_acc = test_model.evaluate(x_test, y_test, verbose=0)
@@ -146,7 +135,21 @@ def main():
             )
             ###############################################################################################
             
+            
+            # Compute GE
+            ge = attack_net.ge(
+                preds=preds, 
+                pltxt_bytes=pbs_test, 
+                true_key_byte=tkb_test, 
+                n_exp=100, 
+                n_traces=10, 
+                target=target
+            )
+            ges.append(ge)
+            
+            
             clear_session()
+            
         
         ges = np.array(ges)
         np.save(f'{res_path}/{n_devs}d/ges_{"".join(train_devs)}vs{test_dev}__{tuning_method}.npy', ges)
