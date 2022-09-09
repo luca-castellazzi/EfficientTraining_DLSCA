@@ -131,3 +131,6 @@ dmypy.json
 
 # Vim swap files
 *.swp
+
+# Tmp folders
+src/scripts/single_attack_models/
