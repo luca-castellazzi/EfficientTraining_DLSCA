@@ -207,7 +207,7 @@ def plot_avg_ges(ges, n_devs, output_path):
     # Plot the GEs
     f, ax = plt.subplots(figsize=(10,5))
     for i, ge in enumerate(ges):
-        
+            
         label = f'{i+1} key'
         if i != 0:
             label += 's' # Plural
@@ -216,7 +216,7 @@ def plot_avg_ges(ges, n_devs, output_path):
         
     ax.set_title(f'Number of Train-Devices: {n_devs}')
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
-    ax.set_ylim([-3, 40])
+    ax.set_ylim([-3, 30]) 
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()
@@ -263,7 +263,7 @@ def plot_overlap(all_ges, output_path):
                 
     ax.set_title(f'Avg GEs - Comparison')
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
-    ax.set_ylim([-3, 40])
+    ax.set_ylim([-3, 30])
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()

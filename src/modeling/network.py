@@ -39,7 +39,7 @@ class Network():
             Generates the Neural Network model.
         - _compute_key_preds:
             Converts target-predictions into key-predictions.
-        - _compute_final_ranking:
+        - _compute_final_rankings:
             Generates the final ranking of all possible key-bytes.
         - ge:
             Computes the Guessing Entropy of an attack.
@@ -179,12 +179,13 @@ class Network():
         Returns:
             - key_preds (np.array):
                Key-predictions (probabilities for each possible key-byte value).
+               Sorted from key-byte=0 to key-byte=255.
         """
         
         # Associate each sbox-out prediction with its relative key-byte
         association = list(zip(key_bytes, preds))
         
-        # Sort the association w.r.t. key-bytes (alignment for all traces)
+        # Sort the association w.r.t. key-bytes (0 to 255, for alignment within all traces)
         association.sort(key=lambda x: x[0])
         
         # Consider the sorted sbox-out predictons as key-byte predictons
@@ -193,7 +194,7 @@ class Network():
         return key_preds
         
         
-    def _compute_final_ranking(self, key_preds):
+    def _compute_final_rankings(self, key_preds):
     
         """
         Generates the ranking of the key-bytes starting from key-predictions.
@@ -209,19 +210,20 @@ class Network():
                 least probable).
         """
     
-        log_probs = np.log10(key_preds + 1e-22)
-        cum_tot_probs = np.cumsum(log_probs, axis=0)
+        log_probs = np.log10(key_preds + 1e-22) # n_traces x 256
+        
+        cum_tot_probs = np.cumsum(log_probs, axis=0) # n_traces x 256
         
         indexed_cum_tot_probs = [list(zip(range(256), tot_probs))
-                                 for tot_probs in cum_tot_probs]
-                                
+                                 for tot_probs in cum_tot_probs] # n_traces x 256 x 2
+        
         sorted_cum_tot_probs = [sorted(el, key=lambda x: x[1], reverse=True)
-                                for el in indexed_cum_tot_probs]
+                                for el in indexed_cum_tot_probs] # n_traces x 256 x 2
                                 
-        sorted_kbs = [[el[0] for el in tot_probs]
-                      for tot_probs in sorted_cum_tot_probs]
+        final_rankings = [[el[0] for el in tot_probs]
+                          for tot_probs in sorted_cum_tot_probs] # n_traces x 256
                       
-        return sorted_kbs
+        return final_rankings
 
 
     def ge(self, preds, pltxt_bytes, true_key_byte, n_exp, n_traces, target):
@@ -276,16 +278,17 @@ class Network():
             
                 key_preds = np.array([self._compute_key_preds(ps, kbs) 
                                       for ps, kbs in zip(sampled_preds, key_bytes)])
-                                
-            final_ranking = self._compute_final_ranking(key_preds)
             
+            # Compute the final ranking (for increasing number of traces)
+            final_ranking = self._compute_final_rankings(key_preds)
+            
+            # Retrieve the rank of the true key-byte (for increasing number of traces)
             true_kb_ranks = np.array([kbs.index(true_key_byte)
                                       for kbs in final_ranking])
-            
+
             ranks_per_exp.append(true_kb_ranks)
             
         # After the experiments, average the ranks
-            
         ranks_per_exp = np.array(ranks_per_exp)
         ge = np.mean(ranks_per_exp, axis=0)
         
