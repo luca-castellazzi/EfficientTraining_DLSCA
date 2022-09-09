@@ -53,7 +53,7 @@ def main():
     vis.plot_avg_ges(
         avg_ges, 
         n_devs, 
-        f'{res_path}/avg_ge__{tuning_method}.png'
+        f'{res_path}/avg_ge__{tuning_method}.png' 
     )
     
 

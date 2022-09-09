@@ -43,7 +43,7 @@ def main():
     
     The results are multiple NPY files containing each average GE.
     In addition, the confusion matrices relative to each attack are considered
-    alongside plots about attack-loss (both as PNG files).\
+    alongside plots about attack-loss (both as PNG files).
     """
     
     _, n_devs, model_type, tuning_method, target = sys.argv
