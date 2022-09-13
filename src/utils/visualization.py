@@ -185,7 +185,7 @@ def plot_attack_losses(losses, output_path):
     plt.close(f)
 
 
-def plot_avg_ges(ges, n_devs, output_path):
+def plot_avg_ges(ges, n_devs, b, output_path):
 
     """
     Plots the average GEs resulting from a DKTA experiment and saves the result 
@@ -195,7 +195,9 @@ def plot_avg_ges(ges, n_devs, output_path):
         - ges (np.ndarray):
             Average GEs to plot.
         - n_devs (int):
-            Number of train-devices used during the computation of GEs.
+            Number of train-devices used in the experiments.
+        - b (int):
+            Byte retrieved in the experiments.
         - output_path (str):
             Absolute path to the PNG file containing the plot.
     """
@@ -214,9 +216,9 @@ def plot_avg_ges(ges, n_devs, output_path):
             
         ax.plot(ge, label=label, marker='o', color=colors[i])
         
-    ax.set_title(f'Number of Train-Devices: {n_devs}')
+    ax.set_title(f'Byte: {b}  |  Train-Devices: {n_devs}')
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
-    ax.set_ylim([-3, 30]) 
+    ax.set_ylim([-3, 40]) 
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()
