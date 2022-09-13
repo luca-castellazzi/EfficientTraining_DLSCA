@@ -13,6 +13,7 @@ import sys
 sys.path.insert(0, '../utils')
 from data_loader import DataLoader, SplitDataLoader
 import constants
+import results
 import visualization as vis
 sys.path.insert(0, '../modeling')
 from hp_tuner import HPTuner
@@ -22,7 +23,7 @@ from network import Network
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 for INFO & WARNINGs & ERRORs
 
-BYTE_IDX = 0
+MAX_TRACES = 50000
 EPOCHS = 100
 
 def main():
@@ -33,8 +34,8 @@ def main():
     Settings parameters (provided in order via command line):
         - n_devs: Number of train devices
         - model_type: Type of model to consider (MLP or CNN)
-        - tuning_method: HP searching method (Random Search (rs) or Genetic Algorithm (ga))
         - target: Target of the attack (SBOX_IN or SBOX_OUT)
+        - b: Byte to be retrieved (from 0 to 15)
     
     All possible permutations of devices are automatically considered.
     Each DKTA consists in model-building, model-training, attack: all models 
@@ -46,32 +47,39 @@ def main():
     alongside plots about attack-loss (both as PNG files).
     """
     
-    _, n_devs, model_type, tuning_method, target = sys.argv
+    _, n_devs, model_type, target, b = sys.argv
     n_devs = int(n_devs)
     model_type = model_type.upper()
     target = target.upper()
+    b = int(b)
     
-    TOT_TRAIN_TRACES = n_devs * 50000
-    
-    res_path = f'{constants.RESULTS_PATH}/DKTA/{target}'
-    
-    with open(f'{res_path}/{n_devs}d/best_hp__{tuning_method}.json', 'r') as jfile:
-        hp = json.load(jfile)
-    
+    n_tot_traces = n_devs * MAX_TRACES
     dev_permutations = constants.PERMUTATIONS[n_devs]
+    
+    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d' 
+    HP_PATH = RES_ROOT + '/hp.json'
+
+
+    with open(HP_PATH, 'r') as jfile:
+        hp = json.load(jfile)
     
     
     for train_devs, test_dev in dev_permutations:
       
+        GES_FILE_PATH = RES_ROOT + f'/ges_{"".join(train_devs)}vs{test_dev}.npy'
+        
         test_config = f'{test_dev}-K0'
             
         ges = []
-        test_losses = []
+
         for n_keys in range(1, len(constants.KEYS)): 
         
-            n_keys_folder = f'{res_path}/{n_devs}d/{n_keys}k'
-            if not os.path.exists(n_keys_folder):
-                os.mkdir(n_keys_folder)
+            N_KEYS_FOLDER = RES_ROOT + f'/{n_keys}k'
+            if not os.path.exists(N_KEYS_FOLDER):
+                os.mkdir(N_KEYS_FOLDER)
+            SAVED_MODEL_PATH = N_KEYS_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
+            CONF_MATRIX_PATH = N_KEYS_FOLDER + f'/conf_matrix_{"".join(train_devs)}vs{test_dev}.png'
+            
         
             print(f'===== {"".join(train_devs)}vs{test_dev} | Number of keys: {n_keys}  =====')
             
@@ -79,10 +87,10 @@ def main():
                              for dev in train_devs]
             train_dl = SplitDataLoader(
                 train_configs, 
-                n_tot_traces=TOT_TRAIN_TRACES,
+                n_tot_traces=n_tot_traces,
                 train_size=0.9,
                 target=target,
-                byte_idx=BYTE_IDX
+                byte_idx=b
             )
             train_data, val_data = train_dl.load()
             x_train, y_train, _, _ = train_data 
@@ -90,8 +98,7 @@ def main():
             
             attack_net = Network(model_type, hp)
             attack_net.build_model()
-            saved_model_path = f'{res_path}/{n_devs}d/{n_keys}k/best_model_{"".join(train_devs)}vs{test_dev}__{tuning_method}.h5'
-            attack_net.add_checkpoint_callback(saved_model_path)
+            attack_net.add_checkpoint_callback(SAVED_MODEL_PATH)
             train_model = attack_net.model
             
             #Training (with Validation)
@@ -110,55 +117,42 @@ def main():
                 [test_config], 
                 n_tot_traces=5000,
                 target=target,
-                byte_idx=BYTE_IDX
+                byte_idx=b
             )
             x_test, y_test, pbs_test, tkb_test = test_dl.load()
             
-            test_model = load_model(saved_model_path)
+            test_model = load_model(SAVED_MODEL_PATH)
             preds = test_model.predict(x_test)
             
-            
-            # Generate info about the attack performance #########################################
-            
-            # Test Loss and Acc
-            test_loss, test_acc = test_model.evaluate(x_test, y_test, verbose=0)
-            test_losses.append(test_loss)
-            print(f'Test Loss: {test_loss:.4f}  |  Test Accuracy: {test_acc:.4f}')
-            
-            # Confusion Matrix
+           
+            # Generate Confusion Matrix ########################################
             y_true = [el.tolist().index(1) for el in y_test]
             y_pred = [el.tolist().index(max(el)) for el in preds]
             conf_matrix = confusion_matrix(y_true, y_pred)
             vis.plot_conf_matrix(
                 conf_matrix, 
-                f'{res_path}/{n_devs}d/{n_keys}k/conf_matrix_{"".join(train_devs)}vs{test_dev}__{tuning_method}.png'
+                CONF_MATRIX_PATH
             )
-            ###############################################################################################
+            ####################################################################
             
             
             # Compute GE
-            ge = attack_net.ge(
+            ge = results.ge(
                 preds=preds, 
                 pltxt_bytes=pbs_test, 
                 true_key_byte=tkb_test, 
                 n_exp=100, 
-                n_traces=10, 
-                target=target
+                target=target,
+                n_traces=100 # Default: 500
             )
             ges.append(ge)
-            
-            
+           
+
             clear_session()
             
         
         ges = np.array(ges)
-        np.save(f'{res_path}/{n_devs}d/ges_{"".join(train_devs)}vs{test_dev}__{tuning_method}.npy', ges)
-        
-        # Plot attack losses
-        vis.plot_attack_losses(
-            test_losses, 
-            f'{res_path}/{n_devs}d/attack_loss_{"".join(train_devs)}vs{test_dev}__{tuning_method}.png'
-        )
+        np.save(GES_FILE_PATH, ges)
         
         print()
         

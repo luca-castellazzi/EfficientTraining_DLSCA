@@ -15,45 +15,47 @@ def main():
     generalize the results.
     Settings parameters (provided in order via command line):
         - n_devs: Number of train devices
-        - tuning_method: HP searching method (Random Search (rs) or Genetic Algorithm (ga))
         - target: Target of the attack (SBOX_IN or SBOX_OUT)
-        
+        - b: Byte to be retrieved (from 0 to 15)
+
     The result is a PNG file containing the average GE.
     """
     
-    _, n_devs, tuning_method, target = sys.argv
+    _, n_devs, target, b = sys.argv
     
     n_devs = int(n_devs) # Number of training devices (to access the right results folder)
     target = target.upper()
+    b = int(b)
     
-    res_path = f'{constants.RESULTS_PATH}/DKTA/{target}/{n_devs}d'
-    
+    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d'
+    AVG_GES_PATH = RES_ROOT + f'/avg_ges.npy'
+    AVG_GES_PLOT_PATH = RES_ROOT + f'/avg_ges_plot.png'
+
+
     all_ges = []
-    for filename in os.listdir(res_path):
-        if f'{tuning_method}.npy' in filename:
-            if not 'avg' in filename: # Avoid to consider avg_ge NPY file if already present
-                npy_file = f'{res_path}/{filename}'
-                ges = np.load(npy_file)
-                all_ges.append(ges)
-    
-    n_train_configs = len(constants.KEYS) - 1 # There is exactly 1 train-config per key
-                                              # Do not consider K0
+    for filename in os.listdir(RES_ROOT): 
+        # Consider all .NPY files except avg_ges, if already present
+        if ('.npy' in filename) and (not 'avg' in filename):
+            NPY_FILE = RES_ROOT + f'/{filename}'
+            ges = np.load(NPY_FILE)
+            all_ges.append(ges)
     
     avg_ges = []
-    for i in range(n_train_configs):
+    for i in range(len(constants.KEYS) - 1): # 1 train-config per key, not K0
         ges_per_train_config = np.array([ges[i] for ges in all_ges])
         avg_ge = np.mean(ges_per_train_config, axis=0)
         avg_ges.append(avg_ge)
         
     avg_ges = np.array(avg_ges)
-    np.save(f'{res_path}/avg_ge__{tuning_method}.npy', avg_ges)
+    np.save(AVG_GES_PATH, avg_ges)
     
     
     # Plot Avg GEs
     vis.plot_avg_ges(
-        avg_ges, 
+        avg_ges[:, :10], 
         n_devs, 
-        f'{res_path}/avg_ge__{tuning_method}.png' 
+        b,
+        AVG_GES_PLOT_PATH 
     )
     
 

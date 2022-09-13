@@ -3,7 +3,7 @@ import numpy as np
 import random
 import json
 from tensorflow.keras.backend import clear_session
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+import time
 
 # Custom
 import sys
@@ -20,9 +20,10 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 for INFO & WARNINGs & ERRORs
 
 
+TUNING_METHOD = 'GA'
 N_MODELS = 15
-BYTE_IDX = 0
-TOT_TRAIN_TRACES = 100000
+BYTES = [6, 7, 8]
+MAX_TRACES = 50000
 EPOCHS = 100
 HP = {
     'hidden_layers':  [1, 2, 3, 4, 5],
@@ -42,15 +43,15 @@ def main():
     Settings parameters (provided in order via command line):
         - train_devs: Devices to use during training
         - model_type: Type of model to consider (MLP or CNN)
-        - tuning_method: HP searching method (Random Search (rs) or Genetic Algorithm (ga))
         - target: Target of the attack (SBOX_IN or SBOX_OUT)
+        - b: Byte to be retrieved (from 0 to 15)
     
     HP tuning is performed considering all the keys.
     
     The result is a JSON file containing the best hyperparameters.
     """
     
-    _, train_devs, model_type, tuning_method, target = sys.argv
+    _, train_devs, model_type, target = sys.argv
     
     train_devs = train_devs.upper().split(',')
     n_devs = len(train_devs)
@@ -59,53 +60,67 @@ def main():
     
     train_configs = [f'{dev}-{k}' for k in list(constants.KEYS)[1:]
                      for dev in train_devs]
-                     
-    train_dl = SplitDataLoader(
-        train_configs, 
-        n_tot_traces=TOT_TRAIN_TRACES,
-        train_size=0.9,
-        target=target,
-        byte_idx=BYTE_IDX
-    )
-    train_data, val_data = train_dl.load()
-    x_train, y_train, _, _ = train_data
-    x_val, y_val, _, _ = val_data
     
-    hp_tuner = HPTuner(
-        model_type=model_type, 
-        hp_space=HP, 
-        n_models=N_MODELS, 
-        n_epochs=EPOCHS
-    )
+    n_tot_traces = n_devs * MAX_TRACES
+
+
+    for b in BYTES:
+
+        RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d'
+        HISTORY_PATH = RES_ROOT + f'/hp_tuning_history.png' 
+        HP_PATH = RES_ROOT + f'/hp.json'
     
-    if tuning_method == 'rs':
-        best_hp = hp_tuner.random_search(
-            x_train=x_train,
-            y_train=y_train,
-            x_val=x_val,
-            y_val=y_val
+        print(f':::::::::: Byte {b} ::::::::::')
+
+        train_dl = SplitDataLoader(
+            train_configs, 
+            n_tot_traces=n_tot_traces,
+            train_size=0.9,
+            target=target,
+            byte_idx=b
         )
-    elif tuning_method == 'ga':
-        best_hp = hp_tuner.genetic_algorithm(
-            n_gen=20,
-            selection_perc=0.3,
-            second_chance_prob=0.2,
-            mutation_prob=0.2,
-            x_train=x_train,
-            y_train=y_train,
-            x_val=x_val,
-            y_val=y_val
+        train_data, val_data = train_dl.load()
+        x_train, y_train, _, _ = train_data
+        x_val, y_val, _, _ = val_data
+        
+        hp_tuner = HPTuner(
+            model_type=model_type, 
+            hp_space=HP, 
+            n_models=N_MODELS, 
+            n_epochs=EPOCHS
         )
-    else:
-        pass
         
-    res_path = f'{constants.RESULTS_PATH}/DKTA/{target}'
+        if TUNING_METHOD == 'RS':
+            best_hp = hp_tuner.random_search(
+                x_train=x_train,
+                y_train=y_train,
+                x_val=x_val,
+                y_val=y_val
+            )
+        elif TUNING_METHOD == 'GA':
+            best_hp = hp_tuner.genetic_algorithm(
+                n_gen=20,
+                selection_perc=0.3,
+                second_chance_prob=0.2,
+                mutation_prob=0.2,
+                x_train=x_train,
+                y_train=y_train,
+                x_val=x_val,
+                y_val=y_val
+            )
+        else:
+            pass
+            
+            
+        vis.plot_history(hp_tuner.best_history, HISTORY_PATH)
         
-    vis.plot_history(hp_tuner.best_history, f'{res_path}/best_history_{n_devs}d__{tuning_method}.png')
-    
-    with open(f'{res_path}/{n_devs}d/best_hp__{tuning_method}.json', 'w') as jfile:
-        json.dump(best_hp, jfile)
+        with open(HP_PATH, 'w') as jfile:
+            json.dump(best_hp, jfile)
+
+        print()
 
 
 if __name__ == '__main__':
+    start = time.time()
     main()
+    print(f'Elapsed time: {((time.time() - start) / 3600):.2f} h')
