@@ -162,7 +162,7 @@ def main():
     print(f'Selected Neurons: {neurons}')
     print(f'Val Acc:          {val_acc*100:.2f}%')
 
-    final_model = build_model(n_layers, n_neurons)
+    final_model = build_model(layers, neurons)
     final_model.fit(
         x_train, 
         y_train, 
