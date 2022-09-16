@@ -3,10 +3,11 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, Activation
-from tensorflow.keras.optimizers import SGD, Adam, RMSprop
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
-from tensorflow.keras.regularizers import L1, L2, L1L2
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import RMSprop
+import matplotlib
+matplotlib.use('agg') # Avoid interactive mode (and save files as .PNG as default)
+import matplotlib.pyplot as plt
 
 # Custom
 import sys
@@ -25,15 +26,19 @@ POSSIBLE_LAYERS = [1, 2, 3, 4]
 POSSIBLE_NEURONS = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
 EPOCHS = 50
 BATCH_SIZE = 256
-BYTE_IDX = 0
+BYTE_IDX = 5
 TARGET = 'SBOX_OUT'
 N_TOT_TRACES = 50000
-TRAIN_CONFIG = ['D2-K6']
+TRAIN_CONFIG = ['D1-K5']
 TEST_CONFIG = ['D3-K0']
-METRIC = 'loss'
+METRIC = 'acc'
+
+MTP_RES_ROOT = '/prj/side_channel/Pinata/results/MTP_Reproduction'
 
 
 def build_model(layers, neurons):
+
+    # The total amount of layers of the network is (layers + 1)
 
     model = Sequential()
 
@@ -59,13 +64,11 @@ def build_model(layers, neurons):
     return model
 
 
-def hp_tuning(metric, x_train, y_train, x_val, y_val):
+def hp_tuning(x_train, y_train, x_val, y_val):
 
     res = []
     for layers in POSSIBLE_LAYERS:
         for neurons in POSSIBLE_NEURONS:
-
-            print(f'::::::::::  layers = {layers}  |  neurons = {neurons}  ::::::::::')
 
             model = build_model(layers, neurons)
             model.fit(
@@ -76,27 +79,57 @@ def hp_tuning(metric, x_train, y_train, x_val, y_val):
                 batch_size=BATCH_SIZE,
                 verbose=0
             )
-            val_loss, val_acc = model.evaluate(
+            _, val_acc = model.evaluate(
                 x_val, 
                 y_val, 
                 batch_size=BATCH_SIZE, 
                 verbose=0
             )
 
-            hps = (layers, neurons)
-            
-            if metric == 'loss':
-                el = (val_loss, hps)
-                reverse = False
-            else:
-                el = (val_acc, hps)
-                reverse = True
-            res.append(el)
+            res.append((val_acc, layers, neurons))
     
-    res.sort(key=lambda x: x[0], reverse=reverse)
+    res.sort(key=lambda x: x[0], reverse=True)
     
-    return res[0][1]
+    return res[0]
    
+
+def plot_ge(ge, output_path):
+
+    """
+    Plots the provided GE vector.
+    
+    Parameters:
+        - ge (np.array):
+            GE vector to plot.
+        - metric (str):
+            Metric used during Hyperparameter Tuning.
+        - output_path (str):
+            Absolute path to the PNG file containing the plot.
+    """
+    
+    ge = ge[:10]
+    
+    # Plot GE
+    f, ax = plt.subplots(figsize=(10,5))
+    
+    ax.plot(ge, marker='o', color='b')
+        
+    ax.set_title(f'Byte: {BYTE_IDX}  |  Train: {TRAIN_CONFIG[0]}  |  Test: {TEST_CONFIG[0]}  |  Metric: {METRIC}')
+    ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
+    ax.set_ylim([-3, 50]) 
+    ax.set_xlabel('Number of traces')
+    ax.set_ylabel('GE')
+    ax.grid()
+
+    f.savefig(
+        output_path, 
+        bbox_inches='tight', 
+        dpi=600
+    )
+    
+    plt.close(f)
+
+
 
 def main():
 
@@ -119,14 +152,16 @@ def main():
     )
     x_test, y_test, pbs_test, tkb_test = test_dl.load()
 
+    MTP_GE_PATH = MTP_RES_ROOT + f'/ge.npy'
+    MTP_GE_PLOT_PATH = MTP_RES_ROOT + f'/ge.png'
+    
     print('HP Tuning...')
-    n_layers, n_neurons = hp_tuning(METRIC, x_train, y_train, x_val, y_val)
-    print('Finished HP Tuning')
-    print(f'Selected Number of Layers: {n_layers}')
-    print(f'Selected Number of Neurons:{n_neurons}')
+    val_acc, layers, neurons = hp_tuning(x_train, y_train, x_val, y_val)
     print()
+    print(f'Selected Layers:  {layers}')
+    print(f'Selected Neurons: {neurons}')
+    print(f'Val Acc:          {val_acc*100:.2f}%')
 
-    print('Final Training')
     final_model = build_model(n_layers, n_neurons)
     final_model.fit(
         x_train, 
@@ -148,12 +183,10 @@ def main():
         n_traces=100 # Default: 500
     )
 
-    np.save('./paper_hp_tuning_ge.npy', ge)
+    np.save(MTP_GE_PATH, ge)
 
-    print()
-    print('GE:')
-    print(ge)
-
+    plot_ge(ge, MTP_GE_PLOT_PATH)
+        
 
 if __name__ == '__main__':
     main()

@@ -132,13 +132,13 @@ def ge(preds, pltxt_bytes, true_key_byte, n_exp, target, n_traces=500):
         
         # Retrieve the rank of the true key-byte (for increasing number of traces)
         true_kb_ranks = np.array([kbs.index(true_key_byte)
-                                  for kbs in final_rankings])
+                                  for kbs in final_rankings]) # 1 x n_traces 
 
         ranks_per_exp.append(true_kb_ranks)
         
     # After the experiments, average the ranks
-    ranks_per_exp = np.array(ranks_per_exp)
-    ge = np.mean(ranks_per_exp, axis=0)
+    ranks_per_exp = np.array(ranks_per_exp) # n_exp x n_traces
+    ge = np.mean(ranks_per_exp, axis=0) # 1 x n_traces
     
     return ge
 

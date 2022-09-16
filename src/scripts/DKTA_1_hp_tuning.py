@@ -22,7 +22,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 
 TUNING_METHOD = 'GA'
 N_MODELS = 15
-BYTES = [6, 7, 8]
+BYTES = [9, 10, 11]
 MAX_TRACES = 50000
 EPOCHS = 100
 HP = {
@@ -124,3 +124,4 @@ if __name__ == '__main__':
     start = time.time()
     main()
     print(f'Elapsed time: {((time.time() - start) / 3600):.2f} h')
+    print()

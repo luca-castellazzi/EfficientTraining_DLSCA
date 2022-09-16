@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import os
 
@@ -39,14 +38,16 @@ def main():
             NPY_FILE = RES_ROOT + f'/{filename}'
             ges = np.load(NPY_FILE)
             all_ges.append(ges)
+    all_ges = np.array(all_ges) # n_npy_files x n_keys x n_traces
     
-    avg_ges = []
-    for i in range(len(constants.KEYS) - 1): # 1 train-config per key, not K0
-        ges_per_train_config = np.array([ges[i] for ges in all_ges])
-        avg_ge = np.mean(ges_per_train_config, axis=0)
-        avg_ges.append(avg_ge)
+    # avg_ges = []
+    # for i in range(len(constants.KEYS) - 1): # 1 train-config per key, not K0
+        # ges_per_train_config = np.array([ges[i] for ges in all_ges])
+        # avg_ge = np.mean(ges_per_train_config, axis=0)
+        # avg_ges.append(avg_ge)
         
-    avg_ges = np.array(avg_ges)
+    # avg_ges = np.array(avg_ges)
+    avg_ges = np.mean(all_ges, axis=0)
     np.save(AVG_GES_PATH, avg_ges)
     
     
