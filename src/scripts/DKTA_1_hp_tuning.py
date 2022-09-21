@@ -22,7 +22,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 
 TUNING_METHOD = 'GA'
 N_MODELS = 15
-BYTES = [9, 10, 11]
 MAX_TRACES = 50000
 EPOCHS = 100
 HP = {
@@ -41,22 +40,23 @@ def main():
     """
     Performs hyperparameter tuning with the specified settings.
     Settings parameters (provided in order via command line):
-        - train_devs: Devices to use during training
+        - train_devs: Devices to use during training, provided as comma-separated string without spaces
         - model_type: Type of model to consider (MLP or CNN)
         - target: Target of the attack (SBOX_IN or SBOX_OUT)
-        - b: Byte to be retrieved (from 0 to 15)
+        - bytes: Bytes to be retrieved, provided as comma-separated string without spaces
     
     HP tuning is performed considering all the keys.
     
     The result is a JSON file containing the best hyperparameters.
     """
     
-    _, train_devs, model_type, target = sys.argv
+    _, train_devs, model_type, target, bytes = sys.argv
     
     train_devs = train_devs.upper().split(',')
     n_devs = len(train_devs)
     model_type = model_type.upper()
     target = target.upper()
+    bytes = [int(b) for b in bytes.split(',')]
     
     train_configs = [f'{dev}-{k}' for k in list(constants.KEYS)[1:]
                      for dev in train_devs]
@@ -64,7 +64,7 @@ def main():
     n_tot_traces = n_devs * MAX_TRACES
 
 
-    for b in BYTES:
+    for b in bytes:
 
         RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d'
         HISTORY_PATH = RES_ROOT + f'/hp_tuning_history.png' 

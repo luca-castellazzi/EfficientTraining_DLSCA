@@ -143,7 +143,7 @@ def ge(preds, pltxt_bytes, true_key_byte, n_exp, target, n_traces=500):
     return ge
 
 
-def retrieve_key_byte(preds, pltxt_bytes, n_traces, target):
+def retrieve_key_byte(preds, pltxt_bytes, target, n_traces=500):
     
     # Consider all couples predictions-plaintext
     all_preds_pltxt = list(zip(preds, pltxt_bytes))
