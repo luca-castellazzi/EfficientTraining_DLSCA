@@ -122,19 +122,7 @@ def main():
             x_test, y_test, pbs_test, tkb_test = test_dl.load()
             
             test_model = load_model(SAVED_MODEL_PATH)
-            preds = test_model.predict(x_test)
-            
-           
-            # Generate Confusion Matrix ########################################
-            y_true = [el.tolist().index(1) for el in y_test]
-            y_pred = [el.tolist().index(max(el)) for el in preds]
-            conf_matrix = confusion_matrix(y_true, y_pred)
-            vis.plot_conf_matrix(
-                conf_matrix, 
-                CONF_MATRIX_PATH
-            )
-            ####################################################################
-            
+            preds = test_model.predict(x_test)            
             
             # Compute GE
             ge = results.ge(
