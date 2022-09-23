@@ -109,7 +109,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-mdm32_env/
+.dkta
 
 # Spyder project settings
 .spyderproject
@@ -131,6 +131,3 @@ dmypy.json
 
 # Vim swap files
 *.swp
-
-# Tmp folders
-src/scripts/single_attack_models/
