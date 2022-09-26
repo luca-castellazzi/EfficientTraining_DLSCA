@@ -82,8 +82,10 @@ INV_SBOX_DEC = np.array(
 )
 
 # Default paths
-CURR_TRACES_PATH = '/prj/side_channel/Pinata/CURR/traces'
-EM_TRACES_PATH = '/prj/side_channel/Pinata/EM/traces'
+PC_TRACES_PATH = '/prj/side_channel/Pinata/PC/swAES'
+EM_TRACES_PATH = '/prj/side_channel/Pinata/EM/swAES'
+MSK_PC_TRACES_PATH = '/prj/side_channel/Pinata/PC/swMaskedAES'
+MSK_EM_TRACES_PATH = '/prj/side_channel/Pinata/EM/swMaskedAES'
 RESULTS_PATH = '/prj/side_channel/Pinata/results'
 
 # Train-Attack permutations for DKTA (format: (train devs list, attack dev))

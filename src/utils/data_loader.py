@@ -59,7 +59,7 @@ class DataLoader():
                 Byte index considered during the labeling of the traces.
         """
         
-        self.trace_files = [f'{constants.CURR_TRACES_PATH}/{c}_500MHz + Resampled.trs' 
+        self.trace_files = [f'{constants.PC_TRACES_PATH}/{c}_500MHz + Resampled.trs' 
                             for c in configs]
                             
         self.n_tr_per_config = int(n_tot_traces / len(configs))

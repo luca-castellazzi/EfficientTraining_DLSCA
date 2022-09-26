@@ -25,7 +25,7 @@ def compute_key_preds(preds, key_bytes):
            Sorted from key-byte=0 to key-byte=255.
     """
     
-    # Associate each sbox-out prediction with its relative key-byte
+    # Associate each prediction with its relative key-byte
     association = list(zip(key_bytes, preds))
     
     # Sort the association w.r.t. key-bytes (0 to 255, for alignment within all traces)
@@ -57,12 +57,12 @@ def compute_final_rankings(preds, pltxt_bytes, target):
     """
 
     if target == 'KEY':
-        # If the target is 'KEY', then key_preds is directly sampled_preds
-        # because sampled_preds contains predictions related to each key-byte
-        # already in order
-        key_preds = preds
+        # If the target is 'KEY', then key_preds is directly preds (sampled_preds)
+        # because it contains predictions related to each key-byte,
+        # already in order (0 to 255)
+        key_preds = np.array(preds) # preds is a tuple due to previous unzip
     else: 
-        # SBOX-IN, SBOX-OUT, ... need further computations
+        # SBOX-IN, SBOX-OUT need further computations
         key_bytes = [aes.key_from_labels(pb, target) for pb in pltxt_bytes]
     
         key_preds = np.array([compute_key_preds(ps, kbs) 
@@ -127,6 +127,9 @@ def ge(preds, pltxt_bytes, true_key_byte, n_exp, target, n_traces=500):
         sampled = random.sample(all_preds_pltxt, n_traces)
         sampled_preds, sampled_pltxt_bytes = list(zip(*sampled))
         
+        print(len(sampled_preds))
+        print(len(sampled_preds[0]))
+        
         # Compute the final rankings (for increasing number of traces)
         final_rankings = compute_final_rankings(sampled_preds, sampled_pltxt_bytes, target)
         
@@ -155,6 +158,6 @@ def retrieve_key_byte(preds, pltxt_bytes, target, n_traces=500):
     # Compute the final rankings (for increasing number of traces)
     final_rankings = compute_final_rankings(sampled_preds, sampled_pltxt_bytes, target)
 
-    resulting_key_byte = np.array([ranking[0] for ranking in final_rankings])
+    resulting_key_bytes = np.array([ranking[0] for ranking in final_rankings])
 
-    return resulting_key_byte
+    return resulting_key_bytes

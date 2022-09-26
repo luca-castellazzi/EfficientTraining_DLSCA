@@ -1,5 +1,7 @@
+# Basics
 import numpy as np
 
+# Custom
 from helpers import int_to_hex, to_coords
 import constants
 
@@ -23,21 +25,37 @@ def labels_from_key(plaintext, key, target):
             Integer-version of the target labels.
     """
     
-    # AddRoundKey
-    sbox_in = plaintext ^ key
-
-    # Labeling
-    if target == 'SBOX_IN':
-        labels = sbox_in
-    elif target == 'SBOX_OUT':
-        # SubBytes
-        rows, cols = to_coords(sbox_in)
-        sbox_out = constants.SBOX_DEC[rows, cols]
-        labels = sbox_out
-    elif target == 'KEY':
+    if target == 'KEY':
         labels = key
     else:
-        pass # Future implementations (target = HW, target = KEY, ...)
+        # AddRoundKey
+        sbox_in = plaintext ^ key
+
+        if target == 'SBOX_IN':
+            labels = sbox_in
+        elif target == 'SBOX_OUT':
+            # SubBytes
+            rows, cols = to_coords(sbox_in)
+            sbox_out = constants.SBOX_DEC[rows, cols]
+            labels = sbox_out
+        else:
+            pass # Future implementations (HW, HD, ...)
+
+#    # AddRoundKey
+#    sbox_in = plaintext ^ key
+#
+#    # Labeling
+#    if target == 'SBOX_IN':
+#        labels = sbox_in
+#    elif target == 'SBOX_OUT':
+#        # SubBytes
+#        rows, cols = to_coords(sbox_in)
+#        sbox_out = constants.SBOX_DEC[rows, cols]
+#        labels = sbox_out
+#    elif target == 'KEY':
+#        labels = key
+#    else:
+#        pass # Future implementations (target = HW, target = KEY, ...)
 
     return labels
     
@@ -66,10 +84,8 @@ def key_from_labels(pltxt_byte, target):
     elif target == 'SBOX_OUT': # Sbox-out values: inverse-SubBytes needed
         rows, cols = to_coords(possible_values)
         sbox_in = constants.INV_SBOX_DEC[rows, cols]
-    elif target == 'KEY':
-        pass # This function is bypassed if the target is 'KEY'
     else:
-        pass # Future implementations (target = HW, target = KEY, ...)
+        pass # Future implementations (HW, HD)
 
     # Inverse-AddRoundKey
     key_bytes = np.array(sbox_in ^ pltxt_byte) # Shape: (1 x 256)
