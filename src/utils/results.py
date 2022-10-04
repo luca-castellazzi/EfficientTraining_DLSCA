@@ -63,10 +63,10 @@ def compute_final_rankings(preds, pltxt_bytes, target):
         key_preds = np.array(preds) # preds is a tuple due to previous unzip
     else: 
         # SBOX-IN, SBOX-OUT need further computations
-        key_bytes = [aes.key_from_labels(pb, target) for pb in pltxt_bytes]
+        key_bytes = [aes.key_from_labels(pb, target) for pb in pltxt_bytes] # n_traces x 256
     
         key_preds = np.array([compute_key_preds(ps, kbs) 
-                              for ps, kbs in zip(preds, key_bytes)])
+                              for ps, kbs in zip(preds, key_bytes)]) # n_traces x 256
 
     log_probs = np.log10(key_preds + 1e-22) # n_traces x 256
     
@@ -77,7 +77,9 @@ def compute_final_rankings(preds, pltxt_bytes, target):
     
     sorted_cum_tot_probs = [sorted(el, key=lambda x: x[1], reverse=True)
                             for el in indexed_cum_tot_probs] # n_traces x 256 x 2
-                            
+    
+    # Generate the key-byte ranking for each element of the cumulative sum of 
+    # total probabilities
     final_rankings = [[el[0] for el in tot_probs]
                       for tot_probs in sorted_cum_tot_probs] # n_traces x 256
                   
@@ -126,9 +128,6 @@ def ge(preds, pltxt_bytes, true_key_byte, n_exp, target, n_traces=500):
         
         sampled = random.sample(all_preds_pltxt, n_traces)
         sampled_preds, sampled_pltxt_bytes = list(zip(*sampled))
-        
-        print(len(sampled_preds))
-        print(len(sampled_preds[0]))
         
         # Compute the final rankings (for increasing number of traces)
         final_rankings = compute_final_rankings(sampled_preds, sampled_pltxt_bytes, target)

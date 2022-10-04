@@ -42,7 +42,8 @@ class DataLoader():
     """
 
 
-    def __init__(self, configs, n_tot_traces, target, byte_idx=None):
+    def __init__(self, configs, n_tot_traces, target, byte_idx=None, 
+                 mk_traces=False):
     
         """
         Class constructor: and generates a DataLoader object (most of inputs are 
@@ -57,11 +58,22 @@ class DataLoader():
                 Target of the attack.
             - byte_idx (int, default=None):
                 Byte index considered during the labeling of the traces.
+            - mk_traces (bool, default=False):
+                MultiKey flag.
+                Indicates if the data to retrieve comes from a MultiKey traceset.
         """
         
-        self.trace_files = [f'{constants.PC_TRACES_PATH}/{c}_500MHz + Resampled.trs' 
-                            for c in configs]
-                            
+        if not mk_traces:
+            # If data comes from "normal" tracesets
+            # Then read traces from PC_TRACES_PATH
+            self.trace_files = [f'{constants.PC_TRACES_PATH}/{c}_500MHz + Resampled.trs' 
+                                for c in configs]
+        else:
+            # If data comes from MultiKey traceset
+            # Then read traces from PC_MULTIKEY_PATH
+            self.trace_files = [f'{constants.PC_MULTIKEY_PATH}/{c}.trs'
+                                for c in configs]
+        
         self.n_tr_per_config = int(n_tot_traces / len(configs))
         
         self.target = target
@@ -207,7 +219,8 @@ class SplitDataLoader(DataLoader):
             In addition, splits the data into train and validation sets.
     """
    
-    def __init__(self, configs, n_tot_traces, train_size, target, byte_idx=None):
+    def __init__(self, configs, n_tot_traces, train_size, target, byte_idx=None,
+                 mk_traces=False):
     
         """
         Class constructor: and generates a SplitDataLoader object (most of inputs 
@@ -224,9 +237,12 @@ class SplitDataLoader(DataLoader):
                 Target of the attack.
             - byte_idx (int, default=None):
                 Byte index considered during the labeling of the traces.
+            - mk_traces (bool, default=False):
+                MultiKey flag.
+                Indicates if the data to retrieve comes from a MultiKey traceset.
         """
         
-        super().__init__(configs, n_tot_traces, target, byte_idx)
+        super().__init__(configs, n_tot_traces, target, byte_idx, mk_traces)
         
         self.n_train_tr_per_config = int(train_size * self.n_tr_per_config)
         

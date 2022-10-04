@@ -153,36 +153,36 @@ def plot_conf_matrix(conf_matrix, output_path):
     plt.close(f)
     
 
-def plot_attack_losses(losses, output_path):
+# def plot_attack_losses(losses, output_path):
 
-    """
-    Plots attack losses and saves the result in a PNG file.
+    # """
+    # Plots attack losses and saves the result in a PNG file.
     
-    Parameters:
-        - losses (np.array):
-            Attack losses to plot.
-        - output_path (str):
-            Absolute path to the PNG file containing the plot.
-    """
+    # Parameters:
+        # - losses (np.array):
+            # Attack losses to plot.
+        # - output_path (str):
+            # Absolute path to the PNG file containing the plot.
+    # """
 
-    f = plt.figure(figsize=(10,5))
-    plt.plot(losses, marker='o')
-    plt.title('Attack Loss')
-    plt.xlabel('Number of keys')
-    plt.ylabel('Loss')
+    # f = plt.figure(figsize=(10,5))
+    # plt.plot(losses, marker='o')
+    # plt.title('Attack Loss')
+    # plt.xlabel('Number of keys')
+    # plt.ylabel('Loss')
     
-    plt.xticks(range(len(losses)), labels=range(1, len(losses)+1))
-    plt.ylim(2, 5)
+    # plt.xticks(range(len(losses)), labels=range(1, len(losses)+1))
+    # plt.ylim(2, 5)
     
-    plt.grid()
+    # plt.grid()
     
-    f.savefig(
-        output_path, 
-        bbox_inches='tight', 
-        dpi=600
-    )
+    # f.savefig(
+        # output_path, 
+        # bbox_inches='tight', 
+        # dpi=600
+    # )
     
-    plt.close(f)
+    # plt.close(f)
 
 
 def plot_avg_ges(ges, n_devs, b, output_path):

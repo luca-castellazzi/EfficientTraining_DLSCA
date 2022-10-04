@@ -83,6 +83,7 @@ INV_SBOX_DEC = np.array(
 
 # Default paths
 PC_TRACES_PATH = '/prj/side_channel/Pinata/PC/swAES'
+PC_MULTIKEY_PATH = '/prj/side_channel/Pinata/PC/swAES/MultiKeySplits'
 EM_TRACES_PATH = '/prj/side_channel/Pinata/EM/swAES'
 MSK_PC_TRACES_PATH = '/prj/side_channel/Pinata/PC/swMaskedAES'
 MSK_EM_TRACES_PATH = '/prj/side_channel/Pinata/EM/swMaskedAES'

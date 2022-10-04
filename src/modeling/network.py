@@ -118,30 +118,31 @@ class Network():
             #######################
     
             # Input Dense
-            self.model.add(Dense(constants.TRACE_LEN, activation='relu'))
+            self.model.add(Dense(constants.TRACE_LEN, activation='relu', name='Input'))
             # Input BatchNorm
-            self.model.add(BatchNormalization())
+            self.model.add(BatchNormalization(name='InputBatchNorm'))
 
             # Hidden
-            for _ in range(self.hp['hidden_layers']):
+            for i in range(self.hp['hidden_layers']):
                 # Hidden Dropout
-                self.model.add(Dropout(self.hp['dropout_rate']))
+                self.model.add(Dropout(self.hp['dropout_rate'], name=f'HiddenDropout{i}'))
                 # Hidden Dense
                 self.model.add(Dense(
                     self.hp['hidden_neurons'], 
                     activation='relu',
-                    kernel_regularizer=L2(self.hp['l2']))
+                    kernel_regularizer=L2(self.hp['l2']),
+                    name=f'HiddenDense{i}')
                 )
                 # Hidden BatchNorm
-                self.model.add(BatchNormalization())
+                self.model.add(BatchNormalization(name=f'HiddenBatchNorm{i}'))
 
             # Output
             # Output Dropout
-            self.model.add(Dropout(self.hp['dropout_rate']))
+            self.model.add(Dropout(self.hp['dropout_rate'], name='OutputDropout'))
             # Output Dense with BatchNorm before activation
-            self.model.add(Dense(256))
-            self.model.add(BatchNormalization())
-            self.model.add(Activation('softmax'))
+            self.model.add(Dense(256, name='Output'))
+            self.model.add(BatchNormalization(name='OutputBatchNorm'))
+            self.model.add(Activation('softmax', name='Softmax'))
             
             # Compilation
             lr = self.hp['learning_rate']
