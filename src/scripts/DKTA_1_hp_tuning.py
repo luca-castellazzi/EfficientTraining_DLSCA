@@ -43,7 +43,7 @@ def main():
         - train_devs: Devices to use during training, provided as comma-separated string without spaces
         - model_type: Type of model to consider (MLP or CNN)
         - target: Target of the attack (SBOX_IN or SBOX_OUT)
-        - bytes: Bytes to be retrieved, provided as comma-separated string without spaces
+        - byte_list: Bytes to be retrieved, provided as comma-separated string without spaces
     
     HP tuning is performed considering all the keys.
     

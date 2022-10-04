@@ -20,9 +20,9 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 for INFO & WARNINGs & ERRORs
 
 
-TUNING_METHOD = 'RS'
-N_MODELS = 5
-MAX_TRACES = 50000
+TUNING_METHOD = 'GA'
+N_MODELS = 15
+N_TOT_TRACES = 200000
 EPOCHS = 100
 HP = {
     'hidden_layers':  [1, 2, 3, 4, 5],
@@ -43,30 +43,28 @@ def main():
         - train_devs: Devices to use during training, provided as comma-separated string without spaces
         - model_type: Type of model to consider (MLP or CNN)
         - target: Target of the attack (SBOX_IN or SBOX_OUT)
-        - bytes: Bytes to be retrieved, provided as comma-separated string without spaces
+        - byte_list: Bytes to be retrieved, provided as comma-separated string without spaces
     
     HP tuning is performed considering all the keys.
     
     The result is a JSON file containing the best hyperparameters.
     """
     
-    _, train_devs, model_type, target, bs = sys.argv
+    _, train_devs, model_type, target, byte_list = sys.argv
     
     train_devs = train_devs.upper().split(',')
     n_devs = len(train_devs)
     model_type = model_type.upper()
     target = target.upper()
-    bs = [int(b) for b in bs.split(',')]
+    byte_list = [int(b) for b in byte_list.split(',')]
     
-    train_configs = [f'{dev}-{k}' for k in list(constants.KEYS)[1:]
+    train_configs = [f'{dev}-MK{k}' for k in range(100)
                      for dev in train_devs]
-    
-    n_tot_traces = n_devs * MAX_TRACES
 
 
-    for b in bs:
+    for b in byte_list:
 
-        RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/{n_devs}d'
+        RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/MultiKey/{target}/byte{b}/{n_devs}d'
         HISTORY_PATH = RES_ROOT + f'/hp_tuning_history.png' 
         HP_PATH = RES_ROOT + f'/hp.json'
     
@@ -74,10 +72,11 @@ def main():
 
         train_dl = SplitDataLoader(
             train_configs, 
-            n_tot_traces=n_tot_traces,
+            n_tot_traces=N_TOT_TRACES,
             train_size=0.9,
             target=target,
-            byte_idx=b
+            byte_idx=b,
+            mk_traces=True
         )
         train_data, val_data = train_dl.load()
         x_train, y_train, _, _ = train_data

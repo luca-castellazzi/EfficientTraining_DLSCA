@@ -53,7 +53,7 @@ def main():
     
     # Plot Avg GEs
     vis.plot_avg_ges(
-        avg_ges[:, :10], 
+        avg_ges[:, :], 
         n_devs, 
         b,
         AVG_GES_PLOT_PATH 

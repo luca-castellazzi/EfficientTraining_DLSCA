@@ -4,7 +4,6 @@ import random
 import json
 from tensorflow.keras.backend import clear_session
 from tensorflow.keras.models import load_model
-from sklearn.metrics import confusion_matrix
 
 import matplotlib.pyplot as plt
 
@@ -78,7 +77,6 @@ def main():
             if not os.path.exists(N_KEYS_FOLDER):
                 os.mkdir(N_KEYS_FOLDER)
             SAVED_MODEL_PATH = N_KEYS_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
-            CONF_MATRIX_PATH = N_KEYS_FOLDER + f'/conf_matrix_{"".join(train_devs)}vs{test_dev}.png'
             
         
             print(f'===== {"".join(train_devs)}vs{test_dev} | Number of keys: {n_keys}  =====')
