@@ -1,6 +1,5 @@
 # Basics
 import numpy as np
-import random
 import json
 from tensorflow.keras.backend import clear_session
 from tensorflow.keras.models import load_model

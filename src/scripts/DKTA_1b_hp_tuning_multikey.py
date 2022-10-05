@@ -1,8 +1,5 @@
 # Basics
-import numpy as np
-import random
 import json
-from tensorflow.keras.backend import clear_session
 import time
 
 # Custom
@@ -13,7 +10,6 @@ import constants
 import visualization as vis
 sys.path.insert(0, '../modeling')
 from hp_tuner import HPTuner
-from network import Network
 
 # Suppress TensorFlow messages
 import os

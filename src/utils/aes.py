@@ -2,7 +2,7 @@
 import numpy as np
 
 # Custom
-from helpers import int_to_hex, to_coords
+from helpers import to_coords
 import constants
 
 

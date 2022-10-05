@@ -1,13 +1,9 @@
 # Basics
-import numpy as np
 import matplotlib
 matplotlib.use('agg') # Avoid interactive mode (and save files as .PNG as default)
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Custom
-import constants
-from nicv import nicv
 
 
 def plot_nicv(nicvs, configs, output_path):

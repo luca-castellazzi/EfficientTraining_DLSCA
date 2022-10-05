@@ -1,16 +1,13 @@
 # Basic
-import random
-import numpy as np
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, Activation
 from tensorflow.keras.optimizers import SGD, Adam, RMSprop
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
-from tensorflow.keras.regularizers import L1, L2, L1L2
+from tensorflow.keras.regularizers import L2
 
 # Custom
 import sys
 sys.path.insert(0, '../utils')
-import aes
 import constants
 
 

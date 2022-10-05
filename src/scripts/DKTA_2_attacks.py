@@ -1,11 +1,9 @@
 # Basics
 import numpy as np
-import random
 import json
 from tensorflow.keras.backend import clear_session
 from tensorflow.keras.models import load_model
 
-import matplotlib.pyplot as plt
 
 # Custom
 import sys
@@ -13,9 +11,7 @@ sys.path.insert(0, '../utils')
 from data_loader import DataLoader, SplitDataLoader
 import constants
 import results
-import visualization as vis
 sys.path.insert(0, '../modeling')
-from hp_tuner import HPTuner
 from network import Network
 
 # Suppress TensorFlow messages
