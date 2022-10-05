@@ -131,3 +131,6 @@ dmypy.json
 
 # Vim swap files
 *.swp
+
+# vscode folder
+.vscode
