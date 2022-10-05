@@ -89,7 +89,8 @@ def main():
                 n_tot_traces=n_tot_traces,
                 train_size=0.9,
                 target=target,
-                byte_idx=b
+                byte_idx=b,
+                mk_traces=True
             )
             train_data, val_data = train_dl.load()
             x_train, y_train, _, _ = train_data 
