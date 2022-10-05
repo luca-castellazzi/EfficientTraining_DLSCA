@@ -88,36 +88,6 @@ def plot_history(history, output_path):
     plt.close(f)
     
     
-# def plot_ges(ges, n_traces, labels, title, output_path):
-
-    # Get the colors
-    # cmap = plt.cm.jet # Google Turbo
-    # colors = cmap(range(0, cmap.N, int(cmap.N/len(ges))))
-    
-    # Plot
-    # f, ax = plt.subplots(figsize=(10,5))
-    # ax.plot(np.zeros(n_traces), color='r', ls='--', linewidth=0.5)
-
-    # for i, ge in enumerate(ges):
-        # if n_traces <= 100:
-            # ax.plot(ge[:n_traces], label=labels[i], color=colors[i], marker='o')
-            # ax.set_xticks(range(n_traces), labels=range(1, n_traces+1))
-            # ax.set_yticks(range(0, 50, 5))
-            # ax.grid()
-        # else:
-            # ax.plot(ge[:n_traces], label=labels[i], color=colors[i])
-        # ax.legend()
-        # ax.set_title(title)
-        # ax.set_xlabel('Number of traces')
-        # ax.set_ylabel('GE')
-    
-    # f.savefig(
-        # output_path, 
-        # bbox_inches='tight', 
-        # dpi=600
-    # )
-    
-    
 def plot_conf_matrix(conf_matrix, output_path):
 
     """
@@ -147,38 +117,6 @@ def plot_conf_matrix(conf_matrix, output_path):
     )
     
     plt.close(f)
-    
-
-# def plot_attack_losses(losses, output_path):
-
-    # """
-    # Plots attack losses and saves the result in a PNG file.
-    
-    # Parameters:
-        # - losses (np.array):
-            # Attack losses to plot.
-        # - output_path (str):
-            # Absolute path to the PNG file containing the plot.
-    # """
-
-    # f = plt.figure(figsize=(10,5))
-    # plt.plot(losses, marker='o')
-    # plt.title('Attack Loss')
-    # plt.xlabel('Number of keys')
-    # plt.ylabel('Loss')
-    
-    # plt.xticks(range(len(losses)), labels=range(1, len(losses)+1))
-    # plt.ylim(2, 5)
-    
-    # plt.grid()
-    
-    # f.savefig(
-        # output_path, 
-        # bbox_inches='tight', 
-        # dpi=600
-    # )
-    
-    # plt.close(f)
 
 
 def plot_avg_ges(ges, n_devs, b, output_path):
@@ -229,39 +167,40 @@ def plot_avg_ges(ges, n_devs, b, output_path):
     plt.close(f)
 
 
-def plot_overlap(all_ges, output_path):
+def plot_overlap(all_ges, to_compare, title, output_path):
 
     """
-    Plots GEs resulting from different DKTA experiments in a single plane and 
+    Plots GEs resulting from 2 different DKTA experiments in a single plane and 
     saves the result in a PNG file.
     
     Parameters:
         - all_ges (np.ndarray):
             GEs to plot.
+        - to_compare (int list):
+            Bytes whose results are compared.
         - output_path (str):
             Absolute path to the PNG file containing the plot.
     """
     
-    colors = ['r', 'b', 'g']
+    colors = ['r', 'b']
     
     f, ax = plt.subplots(figsize=(10,5))
     
-    for i, ges in enumerate(all_ges): # i used for color and num devices
+    for i, ges in enumerate(all_ges): # i used for indexing the compared bytes
         
-        for j, ge in enumerate(ges): # j used for label
+        for j, ge in enumerate(ges): # j used for labeling
             
+            ge = ge[:10]
+
             if j == len(ges) - 1: # Label only the last element of each group
-                label = f'{i+1} device'
-                if i != 0:
-                    label += 's' # Plural
-                ax.plot(ge, color=colors[i], marker='o', label=label)
+                label = f'Byte {to_compare[i]}'
+                ax.plot(ge, color=colors[i], marker='o', label=label, alpha=0.5)
             else:
-                ax.plot(ge, color=colors[i], marker='o')
-                
-                
-    ax.set_title(f'Avg GEs - Comparison')
+                ax.plot(ge, color=colors[i], marker='o', alpha=0.5)
+
+    ax.set_title(title)
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
-    ax.set_ylim([-3, 30])
+    ax.set_ylim([-3, 40])
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()
@@ -274,17 +213,3 @@ def plot_overlap(all_ges, output_path):
     )
     
     plt.close(f)
-    
-    
-# def plot_scores(scores_dict, title, output_path):
-
-    # f, ax = plt.subplots(figsize=(10,5))
-    # ax.bar(scores_dict.keys(), scores_dict.values())
-    # ax.set_title(title)
-    
-    # f.savefig(
-        # output_path, 
-        # bbox_inches='tight', 
-        # dpi=600
-    # )
-    
