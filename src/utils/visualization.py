@@ -2,6 +2,7 @@
 import matplotlib
 matplotlib.use('agg') # Avoid interactive mode (and save files as .PNG as default)
 import matplotlib.pyplot as plt
+import matplotlib.colors as clrs
 
 # Custom
 
@@ -152,7 +153,7 @@ def plot_avg_ges(ges, n_devs, b, output_path):
         
     ax.set_title(f'Byte: {b}  |  Train-Devices: {n_devs}')
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
-    ax.set_ylim([-3, 40]) 
+    ax.set_ylim([-3, 45]) 
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()
@@ -182,7 +183,7 @@ def plot_overlap(all_ges, to_compare, title, output_path):
             Absolute path to the PNG file containing the plot.
     """
     
-    colors = ['r', 'b']
+    colors = list(clrs.TABLEAU_COLORS)
     
     f, ax = plt.subplots(figsize=(10,5))
     
@@ -200,7 +201,7 @@ def plot_overlap(all_ges, to_compare, title, output_path):
 
     ax.set_title(title)
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
-    ax.set_ylim([-3, 40])
+    ax.set_ylim([-3, 45])
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()

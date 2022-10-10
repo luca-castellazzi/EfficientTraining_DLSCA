@@ -18,7 +18,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 
 TUNING_METHOD = 'GA'
 N_MODELS = 15
-N_TOT_TRACES = 200000
+N_TOT_TRACES = 250000
 EPOCHS = 100
 HP = {
     'hidden_layers':  [1, 2, 3, 4, 5],
@@ -54,7 +54,7 @@ def main():
     target = target.upper()
     byte_list = [int(b) for b in byte_list.split(',')]
     
-    train_configs = [f'{dev}-MK{k}' for k in range(100)
+    train_configs = [f'{dev}-MK{k}' for k in range(50) ################################################## 100
                      for dev in train_devs]
 
 

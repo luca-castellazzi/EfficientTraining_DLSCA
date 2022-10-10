@@ -119,10 +119,11 @@ class GeneticTuner():
         res = []
         for hp_config in tqdm(pop, desc='Training the population: '):
             
+            clear_session() # Start a new keras session every new training
+            
             net = Network(self.model_type, hp_config)
             net.build_model()
-            model = net.model
-            history = model.fit(
+            history = net.model.fit(
                 x_train, 
                 y_train, 
                 validation_data=(x_val, y_val),
@@ -132,10 +133,8 @@ class GeneticTuner():
                 verbose=0
             ).history
             
-            val_loss, _ = model.evaluate(x_val, y_val, verbose=0)        
+            val_loss, _ = net.model.evaluate(x_val, y_val, verbose=0)        
             res.append((val_loss, hp_config, history))
-            
-            clear_session()
             
         res.sort(key=lambda x: x[0])
         
