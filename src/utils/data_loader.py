@@ -42,16 +42,16 @@ class DataLoader():
     """
 
 
-    def __init__(self, configs, n_tot_traces, target, byte_idx=None, 
-                 mk_traces=False):
+    def __init__(self, trace_files, n_tot_traces, target, byte_idx=None):
+                #  mk_traces=False):
     
         """
         Class constructor: and generates a DataLoader object (most of inputs are 
         not attributes).
         
         Parameters:
-            - configs (str list):
-                Device-keys configurations used during the encryption.
+            - trace_files (str list):
+            Paths to the trace files.
             - n_tot_traces (int):
                 Total number of traces to retrieve.
             - target (str):
@@ -63,18 +63,20 @@ class DataLoader():
                 Indicates if the data to retrieve comes from a MultiKey traceset.
         """
         
-        if not mk_traces:
-            # If data comes from "normal" tracesets
-            # Then read traces from PC_TRACES_PATH
-            self.trace_files = [f'{constants.PC_TRACES_PATH}/{c}_500MHz + Resampled.trs' 
-                                for c in configs]
-        else:
-            # If data comes from MultiKey traceset
-            # Then read traces from PC_MULTIKEY_PATH
-            self.trace_files = [f'{constants.PC_MULTIKEY_PATH}/{c}.trs'
-                                for c in configs]
+        # if not mk_traces:
+        #     # If data comes from "normal" tracesets
+        #     # Then read traces from PC_TRACES_PATH
+        #     self.trace_files = [f'{constants.PC_TRACES_PATH}/{c}_500MHz + Resampled.trs' 
+        #                         for c in configs]
+        # else:
+        #     # If data comes from MultiKey traceset
+        #     # Then read traces from PC_MULTIKEY_PATH
+        #     self.trace_files = [f'{constants.PC_MULTIKEY_PATH}/{c}.trs'
+        #                         for c in configs]
+
+        self.trace_files = trace_files
         
-        self.n_tr_per_config = int(n_tot_traces / len(configs))
+        self.n_tr_per_config = int(n_tot_traces / len(trace_files))
         
         self.target = target
         self.n_classes = constants.N_CLASSES[target]
@@ -219,8 +221,8 @@ class SplitDataLoader(DataLoader):
             In addition, splits the data into train and validation sets.
     """
    
-    def __init__(self, configs, n_tot_traces, train_size, target, byte_idx=None,
-                 mk_traces=False):
+    def __init__(self, trace_files, n_tot_traces, train_size, target, byte_idx=None):
+                #  mk_traces=False):
     
         """
         Class constructor: and generates a SplitDataLoader object (most of inputs 
@@ -242,7 +244,7 @@ class SplitDataLoader(DataLoader):
                 Indicates if the data to retrieve comes from a MultiKey traceset.
         """
         
-        super().__init__(configs, n_tot_traces, target, byte_idx, mk_traces)
+        super().__init__(trace_files, n_tot_traces, target, byte_idx)#, mk_traces)
         
         self.n_train_tr_per_config = int(train_size * self.n_tr_per_config)
         
