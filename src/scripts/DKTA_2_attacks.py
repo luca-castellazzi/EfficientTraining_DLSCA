@@ -75,7 +75,7 @@ def main():
             SAVED_MODEL_PATH = N_KEYS_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
             
         
-            print(f'===== {"".join(train_devs)}vs{test_dev} | Number of keys: {n_keys}  =====')
+            print(f'{"".join(train_devs)}vs{test_dev}, Number of keys: {n_keys}')
             
             train_configs = [f'{dev}-{k}' for k in list(constants.KEYS)[1:n_keys+1]
                              for dev in train_devs]
@@ -113,7 +113,7 @@ def main():
                 target=target,
                 byte_idx=b
             )
-            x_test, y_test, pbs_test, tkb_test = test_dl.load()
+            x_test, _, pbs_test, tkb_test = test_dl.load()
             
             test_model = load_model(SAVED_MODEL_PATH)
             preds = test_model.predict(x_test)            
