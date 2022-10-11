@@ -54,8 +54,9 @@ def main():
     target = target.upper()
     byte_list = [int(b) for b in byte_list.split(',')]
     
-    train_configs = [f'{dev}-{k}' for k in list(constants.KEYS)[1:]
-                     for dev in train_devs]
+    train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
+                   for k in list(constants.KEYS)[1:]
+                   for dev in train_devs]
     
     n_tot_traces = n_devs * MAX_TRACES
 
@@ -69,7 +70,7 @@ def main():
         print(f':::::::::: Byte {b} ::::::::::')
 
         train_dl = SplitDataLoader(
-            train_configs, 
+            train_files, 
             n_tot_traces=n_tot_traces,
             train_size=0.9,
             target=target,

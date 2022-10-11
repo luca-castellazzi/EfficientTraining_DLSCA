@@ -63,7 +63,7 @@ def main():
       
         GES_FILE_PATH = RES_ROOT + f'/ges_{"".join(train_devs)}vs{test_dev}.npy'
         
-        test_config = f'{test_dev}-K0'
+        test_files = [f'{constants.PC_TRACES_PATH}/{test_dev}-K0_500MHz + Resampled.trs'] # list is needed in DataLoader
             
         ges = []
 
@@ -75,12 +75,14 @@ def main():
             SAVED_MODEL_PATH = N_KEYS_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
             
         
-            print(f'{"".join(train_devs)}vs{test_dev}, Number of keys: {n_keys}')
+            print(f'{"".join(train_devs)}vs{test_dev} | Number of keys: {n_keys}')
             
-            train_configs = [f'{dev}-{k}' for k in list(constants.KEYS)[1:n_keys+1]
-                             for dev in train_devs]
+            train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
+                           for k in list(constants.KEYS)[1:n_keys+1]
+                           for dev in train_devs]
+
             train_dl = SplitDataLoader(
-                train_configs, 
+                train_files, 
                 n_tot_traces=n_tot_traces,
                 train_size=0.9,
                 target=target,
@@ -108,7 +110,7 @@ def main():
             
             # Testing (every time consider random test traces from the same set)
             test_dl = DataLoader(
-                [test_config], 
+                test_files, 
                 n_tot_traces=5000,
                 target=target,
                 byte_idx=b

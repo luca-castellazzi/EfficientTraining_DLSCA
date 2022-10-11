@@ -60,17 +60,17 @@ def main():
     # HISTORY_PATH = RES_ROOT + f'/hp_tuning_history.png' 
     HP_PATH = RES_ROOT + f'/hp.json'
     
-    configs = [f'{dev}-MK{k}' for k in range(100)
-               for dev in train_devs]
+    train_files = [f'{constants.PC_MULTIKEY_PATH}/{dev}-MK{k}.trs' 
+                   for k in range(100)
+                   for dev in train_devs]
 
 
     # Get dataset
     dl = DataLoader(
-        configs,
+        train_files,
         n_tot_traces=N_TOT_TRACES,
         target=target,
-        byte_idx=b,
-        mk_traces=True
+        byte_idx=b
     )
     x, y, _, _ = dl.load()
 
@@ -88,6 +88,8 @@ def main():
     kf = KFold(n_splits=10)
     
     xval_hps = []
+
+    print()
 
     for train_idx, val_idx in tqdm(kf.split(x), desc='10-Fold Crossvalidation: '):
 
