@@ -1,13 +1,16 @@
 # Basics
 import json
 import time
+import statistics
+from tqdm import tqdm
+from sklearn.model_selection import KFold
 
 # Custom
 import sys
 sys.path.insert(0, '../utils')
-from data_loader import SplitDataLoader
+from data_loader import DataLoader
 import constants
-import visualization as vis
+# import visualization as vis
 sys.path.insert(0, '../modeling')
 from hp_tuner import HPTuner
 
@@ -16,9 +19,8 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 for INFO & WARNINGs & ERRORs
 
 
-TUNING_METHOD = 'GA'
 N_MODELS = 15
-N_TOT_TRACES = 250000
+N_TOT_TRACES = 100000
 EPOCHS = 100
 HP = {
     'hidden_layers':  [1, 2, 3, 4, 5],
@@ -46,73 +48,81 @@ def main():
     The result is a JSON file containing the best hyperparameters.
     """
     
-    _, train_devs, model_type, target, byte_list = sys.argv
+    _, train_devs, model_type, target, b = sys.argv
     
     train_devs = train_devs.upper().split(',')
     n_devs = len(train_devs)
     model_type = model_type.upper()
     target = target.upper()
-    byte_list = [int(b) for b in byte_list.split(',')]
+    b = int(b)
+
+    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/MultiKey/{target}/byte{b}/{n_devs}d'
+    # HISTORY_PATH = RES_ROOT + f'/hp_tuning_history.png' 
+    HP_PATH = RES_ROOT + f'/hp.json'
     
-    train_configs = [f'{dev}-MK{k}' for k in range(50) ################################################## 100
-                     for dev in train_devs]
+    configs = [f'{dev}-MK{k}' for k in range(100)
+               for dev in train_devs]
 
 
-    for b in byte_list:
+    # Get dataset
+    dl = DataLoader(
+        configs,
+        n_tot_traces=N_TOT_TRACES,
+        target=target,
+        byte_idx=b,
+        mk_traces=True
+    )
+    x, y, _, _ = dl.load()
 
-        RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/MultiKey/{target}/byte{b}/{n_devs}d'
-        HISTORY_PATH = RES_ROOT + f'/hp_tuning_history.png' 
-        HP_PATH = RES_ROOT + f'/hp.json'
     
-        print(f':::::::::: Byte {b} ::::::::::')
+    # Initialize Tuner
+    hp_tuner = HPTuner(
+        model_type=model_type, 
+        hp_space=HP, 
+        n_models=N_MODELS, 
+        n_epochs=EPOCHS
+    )
 
-        train_dl = SplitDataLoader(
-            train_configs, 
-            n_tot_traces=N_TOT_TRACES,
-            train_size=0.9,
-            target=target,
-            byte_idx=b,
-            mk_traces=True
-        )
-        train_data, val_data = train_dl.load()
-        x_train, y_train, _, _ = train_data
-        x_val, y_val, _, _ = val_data
-        
-        hp_tuner = HPTuner(
-            model_type=model_type, 
-            hp_space=HP, 
-            n_models=N_MODELS, 
-            n_epochs=EPOCHS
-        )
-        
-        if TUNING_METHOD == 'RS':
-            best_hp = hp_tuner.random_search(
-                x_train=x_train,
-                y_train=y_train,
-                x_val=x_val,
-                y_val=y_val
-            )
-        elif TUNING_METHOD == 'GA':
-            best_hp = hp_tuner.genetic_algorithm(
-                n_gen=20,
-                selection_perc=0.3,
-                second_chance_prob=0.2,
-                mutation_prob=0.2,
-                x_train=x_train,
-                y_train=y_train,
-                x_val=x_val,
-                y_val=y_val
-            )
-        else:
-            pass
-            
-            
-        vis.plot_history(hp_tuner.best_history, HISTORY_PATH)
-        
-        with open(HP_PATH, 'w') as jfile:
-            json.dump(best_hp, jfile)
 
-        print()
+    # Perform HP Tuning with Genetic Algorithm and 10-fold Crossvalidation
+    kf = KFold(n_splits=10)
+    
+    xval_hps = []
+
+    for train_idx, val_idx in tqdm(kf.split(x), desc='10-Fold Crossvalidation: '):
+
+        print() # To separate tqdm from print of Genetic Algorithm's generations
+        
+        x_train = x[train_idx]
+        y_train = y[train_idx]
+
+        x_val = x[val_idx]
+        y_val = y[val_idx]
+    
+        hp = hp_tuner.genetic_algorithm(
+            n_gen=10,
+            selection_perc=0.3,
+            second_chance_prob=0.2,
+            mutation_prob=0.2,
+            x_train=x_train,
+            y_train=y_train,
+            x_val=x_val,
+            y_val=y_val
+        )
+
+        xval_hps.append(hp)
+        
+    xval_hp_space = {k: [el[k] for el in xval_hps]
+                     for k in HP.keys()}
+
+    best_hp = {k: statistics.mode(it) for k, it in xval_hp_space.items()}
+
+    # vis.plot_history(hp_tuner.best_history, HISTORY_PATH)
+    
+    with open(HP_PATH, 'w') as jfile:
+        json.dump(best_hp, jfile)
+
+    print()
 
 
 if __name__ == '__main__':
