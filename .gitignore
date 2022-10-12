@@ -134,3 +134,6 @@ dmypy.json
 
 # vscode folder
 .vscode
+
+# Renesas folder (for now)
+renesas
