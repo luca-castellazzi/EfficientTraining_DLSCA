@@ -6,24 +6,25 @@ sys.path.insert(0, '../utils')
 import constants
 
 N_KEYS = 100
-TRACES_PER_KEY = 50000
 
 
 def main():
 
-    _, dev = sys.argv
-
+    _, dev, tr_per_key = sys.argv
+    
     dev = dev.upper()
+    tr_per_key = int(tr_per_key) # Number of traces per key
+    
     IN_FILE = f'{constants.PC_TRACES_PATH}/{dev}-MultiKey_500MHz + Resampled.trs'
 
     with trsfile.open(IN_FILE, 'r') as trace_set:
         
-        for k, start in enumerate(tqdm(range(0, TRACES_PER_KEY*N_KEYS, TRACES_PER_KEY), 
+        for k, start in enumerate(tqdm(range(0, tr_per_key*N_KEYS, tr_per_key), 
                 desc='Splitting MultiKey trace: ')):
             
             OUT_FILE = f'{constants.PC_MULTIKEY_PATH}/{dev}-MK{k}.trs'
 
-            stop = start + TRACES_PER_KEY
+            stop = start + tr_per_key
             
             new_traces = trace_set[start:stop]
                 
