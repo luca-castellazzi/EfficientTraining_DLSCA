@@ -43,7 +43,6 @@ class DataLoader():
 
 
     def __init__(self, trace_files, n_tot_traces, target, byte_idx=None):
-                #  mk_traces=False):
     
         """
         Class constructor: and generates a DataLoader object (most of inputs are 
@@ -62,17 +61,6 @@ class DataLoader():
                 MultiKey flag.
                 Indicates if the data to retrieve comes from a MultiKey traceset.
         """
-        
-        # if not mk_traces:
-        #     # If data comes from "normal" tracesets
-        #     # Then read traces from PC_TRACES_PATH
-        #     self.trace_files = [f'{constants.PC_TRACES_PATH}/{c}_500MHz + Resampled.trs' 
-        #                         for c in configs]
-        # else:
-        #     # If data comes from MultiKey traceset
-        #     # Then read traces from PC_MULTIKEY_PATH
-        #     self.trace_files = [f'{constants.PC_MULTIKEY_PATH}/{c}.trs'
-        #                         for c in configs]
 
         self.trace_files = trace_files
         
@@ -222,7 +210,6 @@ class SplitDataLoader(DataLoader):
     """
    
     def __init__(self, trace_files, n_tot_traces, train_size, target, byte_idx=None):
-                #  mk_traces=False):
     
         """
         Class constructor: and generates a SplitDataLoader object (most of inputs 
