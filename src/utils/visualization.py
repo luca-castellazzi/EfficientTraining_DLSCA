@@ -1,4 +1,5 @@
 # Basics
+from turtle import showturtle
 import matplotlib
 matplotlib.use('agg') # Avoid interactive mode (and save files as .PNG as default)
 import matplotlib.pyplot as plt
@@ -62,7 +63,7 @@ def plot_history(history, output_path):
             Absolute path to the PNG file containing the plot.
     """
 
-    f, ax = plt.subplots(2, 1, figsize=(10,18))
+    f, ax = plt.subplots(1, 2, figsize=(18,8))
     
     ax[0].plot(history['loss'], label='train_loss')
     ax[0].plot(history['val_loss'], label='val_loss')
