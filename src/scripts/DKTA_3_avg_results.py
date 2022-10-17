@@ -1,8 +1,11 @@
-import numpy as np
+# Basics
 import os
+import numpy as np
 
+# Custom
 import sys
 sys.path.insert(0, '../utils')
+import helpers
 import constants
 import visualization as vis
 
@@ -27,8 +30,9 @@ def main():
     b = int(b)
     
     RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d'
-    AVG_GES_PATH = RES_ROOT + f'/avg_ges.npy'
-    AVG_GES_PLOT_PATH = RES_ROOT + f'/avg_ges_plot.png'
+    AVG_GES_FILE = RES_ROOT + f'/avg_ges.csv'
+    AVG_GES_FILE_NPY = RES_ROOT + f'/avg_ges.npy'
+    AVG_GES_PLOT = RES_ROOT + f'/avg_ges_plot.png'
 
 
     all_ges = []
@@ -41,15 +45,23 @@ def main():
     all_ges = np.array(all_ges) # n_npy_files x n_keys x n_traces
     
     avg_ges = np.mean(all_ges, axis=0)
-    np.save(AVG_GES_PATH, avg_ges)
-    
+
+    # Save average GEs files 
+    # In .CSV for future use
+    helpers.save_csv(
+        data=avg_ges,
+        columns=[f'NTraces_{i+1}' for i in range(avg_ges.shape[1])],
+        output_path=AVG_GES_FILE
+    )
+    # In .NPY for direct use in DKTA_4_overlap.py
+    np.save(AVG_GES_FILE_NPY, avg_ges)
     
     # Plot Avg GEs
     vis.plot_avg_ges(
         avg_ges[:, :10], 
         n_devs, 
         b,
-        AVG_GES_PLOT_PATH 
+        AVG_GES_PLOT 
     )
     
 

@@ -1,13 +1,15 @@
 # Basics
 import json
 import time
+import numpy as np
 
 # Custom
 import sys
 sys.path.insert(0, '../utils')
-from data_loader import SplitDataLoader
+import helpers
 import constants
 import visualization as vis
+from data_loader import SplitDataLoader
 sys.path.insert(0, '../modeling')
 from hp_tuner import HPTuner
 
@@ -64,7 +66,9 @@ def main():
     for b in byte_list:
 
         RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d'
-        HISTORY_PATH = RES_ROOT + f'/hp_tuning_history.png' 
+        LOSS_HIST_FILE = RES_ROOT + f'/loss_hist_data.csv'
+        ACC_HIST_FILE = RES_ROOT + f'/acc_hist_data.csv'
+        HISTORY_PLOT = RES_ROOT + f'/hp_tuning_history.png' 
         HP_PATH = RES_ROOT + f'/hp.json'
     
         print(f':::::::::: Byte {b} ::::::::::')
@@ -108,8 +112,34 @@ def main():
         else:
             pass
             
-            
-        vis.plot_history(hp_tuner.best_history, HISTORY_PATH)
+        
+        # Save history data to .CSV files
+        b_history = hp_tuner.best_history
+
+        # Loss
+        loss_data = np.array([
+            b_history['loss'],
+            b_history['val_loss']
+        ])
+        helpers.save_csv(
+            data=loss_data, 
+            columns=[f'Epoch_{i+1}' for i in range(len(b_history['loss']))],
+            output_path=LOSS_HIST_FILE
+        )
+
+        # Accuracy
+        acc_data = np.array([
+            b_history['accuracy'],
+            b_history['val_accuracy']
+        ])
+        helpers.save_csv(
+            data=acc_data, 
+            columns=[f'Epoch_{i+1}' for i in range(len(b_history['accuracy']))],
+            output_path=ACC_HIST_FILE
+        )
+
+        # Plot trainin history
+        vis.plot_history(b_history, HISTORY_PLOT)
         
         with open(HP_PATH, 'w') as jfile:
             json.dump(best_hp, jfile)

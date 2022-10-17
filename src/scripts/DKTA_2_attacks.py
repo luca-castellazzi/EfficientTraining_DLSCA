@@ -1,6 +1,6 @@
 # Basics
-import numpy as np
 import json
+import numpy as np
 from tensorflow.keras.backend import clear_session
 from tensorflow.keras.models import load_model
 
@@ -8,9 +8,9 @@ from tensorflow.keras.models import load_model
 # Custom
 import sys
 sys.path.insert(0, '../utils')
-from data_loader import DataLoader, SplitDataLoader
-import constants
 import results
+import constants
+from data_loader import DataLoader, SplitDataLoader
 sys.path.insert(0, '../modeling')
 from network import Network
 
@@ -61,7 +61,7 @@ def main():
     
     for train_devs, test_dev in dev_permutations:
       
-        GES_FILE_PATH = RES_ROOT + f'/ges_{"".join(train_devs)}vs{test_dev}.npy'
+        GES_FILE = RES_ROOT + f'/ges_{"".join(train_devs)}vs{test_dev}.npy'
         
         test_files = [f'{constants.PC_TRACES_PATH}/{test_dev}-K0_500MHz + Resampled.trs'] # list is needed in DataLoader
             
@@ -136,7 +136,7 @@ def main():
             
         
         ges = np.array(ges)
-        np.save(GES_FILE_PATH, ges)
+        np.save(GES_FILE, ges) # .NPY file because no direct plot
         
         print()
         
