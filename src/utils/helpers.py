@@ -1,3 +1,6 @@
+import polars as pl
+
+
 def int_to_hex(int_values):
 
     """
@@ -73,3 +76,13 @@ def to_coords(int_values):
     cols = [int(hex_val[1], 16) for hex_val in hex_values]
 
     return rows, cols
+
+
+def save_csv(data, columns, output_path):
+    
+    df = pl.DataFrame(
+        data=data, 
+        columns=columns
+    )
+    
+    df.write_csv(output_path)
