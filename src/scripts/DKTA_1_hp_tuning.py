@@ -20,7 +20,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 
 TUNING_METHOD = 'GA'
 N_MODELS = 15
-MAX_TRACES = 50000
+N_TRACES = 5000
 EPOCHS = 100
 HP = {
     'hidden_layers':  [1, 2, 3, 4, 5],
@@ -60,7 +60,7 @@ def main():
                    for k in list(constants.KEYS)[1:]
                    for dev in train_devs]
     
-    n_tot_traces = n_devs * MAX_TRACES
+    n_tr_per_config = n_devs * N_TRACES
 
 
     for b in byte_list:
@@ -75,7 +75,7 @@ def main():
 
         train_dl = SplitDataLoader(
             train_files, 
-            n_tot_traces=n_tot_traces,
+            n_tr_per_config=n_tr_per_config,
             train_size=0.9,
             target=target,
             byte_idx=b

@@ -42,7 +42,7 @@ class DataLoader():
     """
 
 
-    def __init__(self, trace_files, n_tot_traces, target, byte_idx=None):
+    def __init__(self, trace_files, n_tr_per_config, target, byte_idx=None):
     
         """
         Class constructor: and generates a DataLoader object (most of inputs are 
@@ -51,8 +51,8 @@ class DataLoader():
         Parameters:
             - trace_files (str list):
             Paths to the trace files.
-            - n_tot_traces (int):
-                Total number of traces to retrieve.
+            - n_tr_per_config (int):
+                Number of traces to retrieve per configuration file.
             - target (str):
                 Target of the attack.
             - byte_idx (int, default=None):
@@ -64,7 +64,7 @@ class DataLoader():
 
         self.trace_files = trace_files
         
-        self.n_tr_per_config = int(n_tot_traces / len(trace_files))
+        self.n_tr_per_config = n_tr_per_config
         
         self.target = target
         self.n_classes = constants.N_CLASSES[target]
@@ -176,7 +176,8 @@ class DataLoader():
                     labels.append(l)
                     pltxt_bytes.append(p)
                     true_key_bytes.append(k)
-                    
+        
+        # Define n_tot_traces as n_tr_per_config * len(trace_files)
         x = np.array(samples) # (n_tot_traces x trace_len)
         x = self.scaler.fit_transform(x)
         y = np.array(labels) # (n_tot_traces x n_classes)
@@ -209,7 +210,7 @@ class SplitDataLoader(DataLoader):
             In addition, splits the data into train and validation sets.
     """
    
-    def __init__(self, trace_files, n_tot_traces, train_size, target, byte_idx=None):
+    def __init__(self, trace_files, n_tr_per_config, train_size, target, byte_idx=None):
     
         """
         Class constructor: and generates a SplitDataLoader object (most of inputs 
@@ -218,20 +219,17 @@ class SplitDataLoader(DataLoader):
         Parameters:
             - configs (str list):
                 Device-keys configurations used during the encryption.
-            - n_tot_traces (int):
-                Total number of traces to retrieve.
+            - n_tr_per_config (int):
+                Number of traces to retrieve per configuration file.
             - train_size (float):
                 Size of the train-set expressed as percentage.
             - target (str):
                 Target of the attack.
             - byte_idx (int, default=None):
                 Byte index considered during the labeling of the traces.
-            - mk_traces (bool, default=False):
-                MultiKey flag.
-                Indicates if the data to retrieve comes from a MultiKey traceset.
         """
         
-        super().__init__(trace_files, n_tot_traces, target, byte_idx)#, mk_traces)
+        super().__init__(trace_files, n_tr_per_config, target, byte_idx)
         
         self.n_train_tr_per_config = int(train_size * self.n_tr_per_config)
         
@@ -305,6 +303,7 @@ class SplitDataLoader(DataLoader):
         tkbs_val = np.concatenate(tkbs_val)
         
         # Scale the whole train-set (train + val) with the same scaler
+        # Define n_tot_traces as n_tr_per_config * len(trace_files)
         n_tot_train = x_train.shape[0] # train_size * n_tot_traces
         x_tot = np.concatenate([x_train, x_val])
         x_tot = self.scaler.fit_transform(x_tot)

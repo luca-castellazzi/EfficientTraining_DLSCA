@@ -18,7 +18,7 @@ from network import Network
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 for INFO & WARNINGs & ERRORs
 
-MAX_TRACES = 50000
+N_TRACES = 5000
 EPOCHS = 100
 
 def main():
@@ -48,7 +48,7 @@ def main():
     target = target.upper()
     b = int(b)
     
-    n_tot_traces = n_devs * MAX_TRACES
+    n_tr_per_config = n_devs * N_TRACES
     dev_permutations = constants.PERMUTATIONS[n_devs]
     
     RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d' 
@@ -83,7 +83,7 @@ def main():
 
             train_dl = SplitDataLoader(
                 train_files, 
-                n_tot_traces=n_tot_traces,
+                n_tr_per_config=n_tr_per_config,
                 train_size=0.9,
                 target=target,
                 byte_idx=b
@@ -111,7 +111,7 @@ def main():
             # Testing (every time consider random test traces from the same set)
             test_dl = DataLoader(
                 test_files, 
-                n_tot_traces=5000,
+                n_tr_per_config=N_TRACES,
                 target=target,
                 byte_idx=b
             )
