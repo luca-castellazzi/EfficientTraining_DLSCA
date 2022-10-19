@@ -48,9 +48,16 @@ def main():
 
     # Save average GEs files 
     # In .CSV for future use
+    csv_ges_data = np.vstack(
+        (
+            np.arange(avg_ges.shape[1])+1, # The values of the x-axis in the plot
+            avg_ges # The values of the y-axis in the plot
+        )
+    ).T
+
     helpers.save_csv(
-        data=avg_ges,
-        columns=[f'NTraces_{i+1}' for i in range(avg_ges.shape[1])],
+        data=csv_ges_data,
+        columns=['NTraces']+[f'NKeys_{nk+1}' for nk in range(avg_ges.shape[0])],
         output_path=AVG_GES_FILE
     )
     # In .NPY for direct use in DKTA_4_overlap.py

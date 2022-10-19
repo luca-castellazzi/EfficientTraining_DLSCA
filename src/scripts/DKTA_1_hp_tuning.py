@@ -115,26 +115,34 @@ def main():
         
         # Save history data to .CSV files
         b_history = hp_tuner.best_history
+        actual_epochs = len(b_history['loss']) # Early Stopping can make the actual 
+                                               # number of epochs different from the original one
 
         # Loss
-        loss_data = np.array([
-            b_history['loss'],
-            b_history['val_loss']
-        ])
+        loss_data = np.vstack(
+            (
+                np.arange(actual_epochs)+1, # X-axis values
+                b_history['loss'], # Y-axis values for 'loss'
+                b_history['val_loss'] # Y-axis values for 'val_loss'
+            )
+        ).T
         helpers.save_csv(
             data=loss_data, 
-            columns=[f'Epoch_{i+1}' for i in range(len(b_history['loss']))],
+            columns=['Epochs', 'Loss', 'Val_Loss'],
             output_path=LOSS_HIST_FILE
         )
 
         # Accuracy
-        acc_data = np.array([
-            b_history['accuracy'],
-            b_history['val_accuracy']
-        ])
+        acc_data = np.vstack(
+            (
+                np.arange(actual_epochs)+1, # X-axis values
+                b_history['accuracy'], # Y-axis values for 'loss'
+                b_history['val_accuracy'] # Y-axis values for 'val_loss'
+            )
+        ).T
         helpers.save_csv(
             data=acc_data, 
-            columns=[f'Epoch_{i+1}' for i in range(len(b_history['accuracy']))],
+            columns=['Epochs', 'Acc', 'Val_Acc'],
             output_path=ACC_HIST_FILE
         )
 

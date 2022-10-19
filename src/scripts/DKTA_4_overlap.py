@@ -39,19 +39,20 @@ def main():
 
     ges = [np.load(gf)[:, :MAX_TRACES] for gf in ges_files]
 
-    # Associate each GE set with its corresponding byte
-    ges_with_byte = [(ge, to_compare[i]) for i, ge in enumerate(ges)]
-
-    # Append the relative byte to each element of each GE set
-    ges_data = [np.append(ge, np.expand_dims([tc for _ in range(ge.shape[0])], axis=1), axis=1)
-                for ge, tc in ges_with_byte]
-    # Concatenate the list of np.ndarray into a single np.ndarray
-    ges_data = np.vstack(ges_data)
+    ges_data = np.vstack(ges)
+    csv_ges_data = np.vstack(
+        (
+            np.arange(ges_data.shape[1])+1, # The values of the x-axis in the plot
+            ges_data # The values of the y-axis in the plot
+        )
+    ).T
     
+    n_ges_per_byte = int(ges_data.shape[0] / len(to_compare)) # ges_data is a (n_keys * n_bytes) x n_traces matrix
     helpers.save_csv(
-        data=ges_data,
-        columns=[f'NTraces_{i+1}' if i != MAX_TRACES else 'Byte' 
-                 for i in range(MAX_TRACES+1)],
+        data=csv_ges_data,
+        columns=['NTraces']+[f'Byte{b}_{i}'
+                             for b in to_compare
+                             for i in range(n_ges_per_byte)],
         output_path=COMPARISON_FILE
     )
     
