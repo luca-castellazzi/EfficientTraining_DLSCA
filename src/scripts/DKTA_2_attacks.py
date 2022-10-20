@@ -95,10 +95,11 @@ def main():
             attack_net = Network(model_type, hp)
             attack_net.build_model()
             attack_net.add_checkpoint_callback(SAVED_MODEL_PATH)
-            train_model = attack_net.model
+            
+            clear_session() # Start with a new Keras session every time    
             
             #Training (with Validation)
-            train_model.fit(
+            attack_net.model.fit(
                 x_train, 
                 y_train, 
                 validation_data=(x_val, y_val),
@@ -130,10 +131,6 @@ def main():
                 n_traces=100 # Default: 500
             )
             ges.append(ge)
-           
-
-            clear_session()
-            
         
         ges = np.array(ges)
         np.save(GES_FILE, ges) # .NPY file because no direct plot
