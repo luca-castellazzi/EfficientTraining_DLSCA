@@ -10,7 +10,6 @@
 # Basics
 import random
 from tensorflow.keras.backend import clear_session
-from tqdm import tqdm
 
 # Custom
 from network import Network
@@ -117,7 +116,7 @@ class GeneticTuner():
         """
         
         res = []
-        for hp_config in tqdm(pop, desc='Training the population: '):
+        for hp_config in pop:
             
             clear_session() # Start a new keras session every new training
             

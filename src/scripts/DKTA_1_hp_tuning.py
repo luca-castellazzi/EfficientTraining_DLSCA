@@ -71,7 +71,7 @@ def main():
         HISTORY_PLOT = RES_ROOT + f'/hp_tuning_history.png' 
         HP_PATH = RES_ROOT + f'/hp.json'
     
-        print(f':::::::::: Byte {b} ::::::::::')
+        print(f'*** Byte {b} ***')
 
         train_dl = SplitDataLoader(
             train_files, 

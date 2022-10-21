@@ -1,7 +1,7 @@
 # Basics
+import random
 from tqdm import tqdm
 from tensorflow.keras.backend import clear_session
-import random
 
 # Custom
 from network import Network
@@ -76,11 +76,15 @@ class HPTuner():
         """
     
         res = []
-        for m in tqdm(range(self.n_models), desc='Random Search: '):
+        for _ in tqdm(range(self.n_models), desc='Random Search: '):
+
+            clear_session()
+
             random_hp = {k: random.choice(self.hp_space[k]) for k in self.hp_space.keys()}
             net = Network(self.model_type, random_hp)
             net.build_model()
             model = net.model
+
             history = model.fit(
                 x_train, 
                 y_train, 
@@ -93,8 +97,6 @@ class HPTuner():
             
             val_loss, _ = model.evaluate(x_val, y_val, verbose=0)                    
             res.append((val_loss, random_hp, history))
-            
-            clear_session()
             
         res.sort(key=lambda x: x[0])
         
@@ -155,8 +157,7 @@ class HPTuner():
         
         pop = gt.populate()
         
-        for gen in range(n_gen):
-            print(f'=====  Gen {gen+1}/{n_gen}  =====')
+        for gen in tqdm(range(n_gen)):
             evaluation = gt.evaluate(
                 pop=pop, 
                 x_train=x_train, 
