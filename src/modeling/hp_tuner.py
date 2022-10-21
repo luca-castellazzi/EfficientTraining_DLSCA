@@ -167,7 +167,7 @@ class HPTuner():
                 n_epochs=self.n_epochs
             )
             
-            print(f'Top 5: {[val_loss for val_loss, _, _ in evaluation[:5]]}')
+            # print(f'Top 5: {[val_loss for val_loss, _, _ in evaluation[:5]]}')
             
             parents = gt.select(evaluation)
             
