@@ -169,7 +169,8 @@ class DataLoader():
         
         for tfile in self.trace_files:
             with trsfile.open(tfile, 'r') as traces:
-                for tr in traces[:self.n_tr_per_config]:
+                # for tr in traces[:self.n_tr_per_config]:
+                for tr in random.sample(list(traces), self.n_tr_per_config):
                     s = tr.samples
                     l, p, k = self._retrieve_metadata(tr)
                     samples.append(s)
@@ -270,7 +271,8 @@ class SplitDataLoader(DataLoader):
             config_k = []
             
             with trsfile.open(tfile, 'r') as traces:
-                for tr in traces[:self.n_tr_per_config]:
+                # for tr in traces[:self.n_tr_per_config]:
+                for tr in random.sample(list(traces), self.n_tr_per_config):
                     s = tr.samples
                     l, p, k = self._retrieve_metadata(tr)
                     
