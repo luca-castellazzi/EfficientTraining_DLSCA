@@ -243,10 +243,10 @@ def plot_multikey(ges, keys, title, output_path):
         if i != 0:
             label += 's' # Plural
             
-        ax.plot(ge, label=label, marker='o', color=colors[i])
+        ax.plot(ge, label=label, linewidth=3, color=colors[i])
         
     ax.set_title(title)
-    ax.set_title(title)
+    ax.set_ylim([-3, 258])
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()

@@ -2,18 +2,17 @@
 from tqdm import tqdm
 import numpy as np
 import json
-from src.scripts.DKTA_1_hp_tuning import TOT_TRACES
 from tensorflow.keras.backend import clear_session
 
 # Custom
 import sys
-sys.path.insert(0, '../src/utils')
+sys.path.insert(0, '../utils')
 from data_loader import DataLoader, SplitDataLoader
 import constants
 import helpers
 import results
 import visualization as vis
-sys.path.insert(0, '../src/modeling')
+sys.path.insert(0, '../modeling')
 from network import Network
 
 # Suppress TensorFlow messages
@@ -26,13 +25,13 @@ TARGET = 'SBOX_OUT'
 
 PERMUTATIONS = [('D3', 'D1'), ('D3', 'D2')]
 
-N_KEYS = [1, 50, 100]
+N_KEYS = [1, 25, 50, 75, 100]
 TOT_TRACES = [1000, 3000, 4000, 5000, 10000]
 
 
 def main():
 
-    _, b = sys.argv()
+    _, b = sys.argv
     b = int(b) # Byte to attack
 
     RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/SBOX_OUT/byte{b}/mk_1d'
@@ -45,13 +44,10 @@ def main():
 
 
     # Attack with different configurations of device, key and number of traces
-    ges_per_traces = []
-
     for tot_traces in TOT_TRACES:
 
-        GES_FILE = RES_ROOT + f'ges_{tot_traces}.csv'
-        GES_FILE_NPY = RES_ROOT + f'ges_{tot_traces}.npy'
-        GES_PLOT = RES_ROOT + f'ges_{tot_traces}.svg'
+        GES_FILE = RES_ROOT + f'/ges_{tot_traces}.csv'
+        GES_PLOT = RES_ROOT + f'/ges_{tot_traces}.svg'
 
         print(f'*** Number of Traces: {tot_traces}')
 
@@ -62,11 +58,6 @@ def main():
             ges = []
 
             for train_dev, test_dev in tqdm(PERMUTATIONS, desc=f'Using {n_keys} Keys: '):
-
-                N_KEYS_FOLDER = RES_ROOT + f'/{n_keys}k'
-                if not os.path.exists(N_KEYS_FOLDER):
-                    os.mkdir(N_KEYS_FOLDER)
-                SAVED_MODEL_PATH = N_KEYS_FOLDER + f'/model_{train_dev}vs{test_dev}.h5'
 
                 test_files = [f'{constants.PC_TRACES_PATH}/{test_dev}-K0_500MHz + Resampled.trs'] # list is needed in DataLoader      
 
@@ -88,7 +79,6 @@ def main():
                 
                 attack_net = Network('MLP', hp)
                 attack_net.build_model()
-                attack_net.add_checkpoint_callback(SAVED_MODEL_PATH)
                 
                 #Training (with Validation)
                 attack_net.model.fit(
@@ -104,7 +94,7 @@ def main():
                 # Testing (every time consider random test traces from the same set)
                 test_dl = DataLoader(
                     test_files, 
-                    n_tr_per_config=2000,
+                    tot_traces=2000,
                     target=TARGET,
                     byte_idx=b
                 )
@@ -129,10 +119,10 @@ def main():
             ges_per_keys.append(ges)
 
         ges_per_keys = np.array(ges_per_keys)
-        # ges_per_traces.append(ges_per_keys)
 
 
         # Save the results for the current total number of traces
+        # In .CSV for future use
         csv_ges_data = np.vstack(
             (
                 np.arange(ges_per_keys.shape[1])+1, # The values of the x-axis in the plot
@@ -145,8 +135,6 @@ def main():
             columns=['NTraces']+[f'NKeys_{nk+1}' for nk in N_KEYS],
             output_path=GES_FILE
         )
-        # In .NPY for direct use in DKTA_4_overlap.py
-        np.save(GES_FILE_NPY, ges_per_keys)
         
         # Plot Avg GEs
         vis.plot_multikey(
@@ -157,8 +145,6 @@ def main():
         )
 
         print()
-
-    # ges_per_traces = np.array(ges_per_traces)
 
 
 
