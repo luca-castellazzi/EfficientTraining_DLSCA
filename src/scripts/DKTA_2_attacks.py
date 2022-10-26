@@ -48,8 +48,6 @@ def main():
     target = target.upper()
     b = int(b)
     
-    # n_tr_per_config = n_devs * N_TRACES
-    
     RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d' 
     HP_PATH = RES_ROOT + '/hp.json'
 
