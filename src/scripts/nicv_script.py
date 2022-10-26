@@ -75,7 +75,7 @@ def main():
         vis.plot_nicv(
             nicvs, 
             s_configs,
-            f'{output}.png'
+            f'{output}.svg'
         )
         
    
@@ -91,7 +91,7 @@ def main():
     # vis.plot_nicv(
         # nicvs, 
         # same_config,
-        # f'{output}.png'
+        # f'{output}.svg'
     # )
 
 
@@ -103,7 +103,7 @@ def main():
     # vis.plot_nicv(
         # nicvs, 
         # same_key_k1,
-        # f'{output}.png'
+        # f'{output}.svg'
     # )
 
  
@@ -114,7 +114,7 @@ def main():
     # vis.plot_nicv(
         # nicvs, 
         # same_dev_d1,
-        # f'{constants.RESULTS_PATH}/NICV/nicv_same-dev-D1.png'
+        # f'{constants.RESULTS_PATH}/NICV/nicv_same-dev-D1.svg'
     # )
     
     
@@ -124,7 +124,7 @@ def main():
     # vis.plot_nicv(
         # nicvs, 
         # same_dev_d2,
-        # f'{constants.RESULTS_PATH}/NICV/nicv_same-dev-D2.png'
+        # f'{constants.RESULTS_PATH}/NICV/nicv_same-dev-D2.svg'
     # )
         
         
@@ -134,7 +134,7 @@ def main():
     # vis.plot_nicv(
         # nicvs, 
         # same_dev_d3,
-        # f'{constants.RESULTS_PATH}/NICV/nicv_same-dev-D3.png'
+        # f'{constants.RESULTS_PATH}/NICV/nicv_same-dev-D3.svg'
     # )
         
         
@@ -144,7 +144,7 @@ def main():
     # vis.plot_nicv(
         # nicvs, 
         # diff,
-        # f'{constants.RESULTS_PATH}/NICV/nicv_diff.png'
+        # f'{constants.RESULTS_PATH}/NICV/nicv_diff.svg'
     # )
 
 

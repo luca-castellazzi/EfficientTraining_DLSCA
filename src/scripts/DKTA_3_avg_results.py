@@ -32,7 +32,7 @@ def main():
     RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d'
     AVG_GES_FILE = RES_ROOT + f'/avg_ges.csv'
     AVG_GES_FILE_NPY = RES_ROOT + f'/avg_ges.npy'
-    AVG_GES_PLOT = RES_ROOT + f'/avg_ges_plot.png'
+    AVG_GES_PLOT = RES_ROOT + f'/avg_ges_plot.svg'
 
 
     all_ges = []
@@ -66,8 +66,7 @@ def main():
     # Plot Avg GEs
     vis.plot_avg_ges(
         avg_ges[:, :10], 
-        n_devs, 
-        b,
+        f'Byte: {b}  |  Train-Devices: {n_devs}',
         AVG_GES_PLOT 
     )
     

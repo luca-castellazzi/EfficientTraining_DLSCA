@@ -66,7 +66,7 @@ def main():
         RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d'
         LOSS_HIST_FILE = RES_ROOT + f'/loss_hist_data.csv'
         ACC_HIST_FILE = RES_ROOT + f'/acc_hist_data.csv'
-        HISTORY_PLOT = RES_ROOT + f'/hp_tuning_history.png' 
+        HISTORY_PLOT = RES_ROOT + f'/hp_tuning_history.svg' 
         HP_PATH = RES_ROOT + f'/hp.json'
     
         print(f'*** Byte {b} ***')

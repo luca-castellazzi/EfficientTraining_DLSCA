@@ -6,7 +6,7 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import RMSprop
 import matplotlib
-matplotlib.use('agg') # Avoid interactive mode (and save files as .PNG as default)
+matplotlib.use('svg') # Avoid interactive mode (and save files as .svg as default)
 import matplotlib.pyplot as plt
 
 # Custom
@@ -153,7 +153,7 @@ def main():
     x_test, y_test, pbs_test, tkb_test = test_dl.load()
 
     MTP_GE_PATH = MTP_RES_ROOT + f'/ge.npy'
-    MTP_GE_PLOT_PATH = MTP_RES_ROOT + f'/ge.png'
+    MTP_GE_PLOT_PATH = MTP_RES_ROOT + f'/ge.svg'
     
     print('HP Tuning...')
     val_acc, layers, neurons = hp_tuning(x_train, y_train, x_val, y_val)

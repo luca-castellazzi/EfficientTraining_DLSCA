@@ -30,7 +30,7 @@ def main():
 
     RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}'
     COMPARISON_FILE = RES_ROOT + f'/comparison_{n_devs}d_{"-".join([f"b{tc}" for tc in to_compare])}.csv'
-    COMPARISON_PLOT = RES_ROOT + f'/comparison_{n_devs}d_{"-".join([f"b{tc}" for tc in to_compare])}.png'
+    COMPARISON_PLOT = RES_ROOT + f'/comparison_{n_devs}d_{"-".join([f"b{tc}" for tc in to_compare])}.svg'
 
     MAX_TRACES = 10
 

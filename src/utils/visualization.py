@@ -1,7 +1,7 @@
 # Basics
 from turtle import showturtle
 import matplotlib
-matplotlib.use('agg') # Avoid interactive mode (and save files as .PNG as default)
+matplotlib.use('svg') # Avoid interactive mode (and save files as .SVG as default)
 import matplotlib.pyplot as plt
 import matplotlib.colors as clrs
 
@@ -11,7 +11,7 @@ import matplotlib.colors as clrs
 def plot_nicv(nicvs, configs, output_path):
 
     """
-    Plots NICV values and saves the result in a PNG file.
+    Plots NICV values and saves the result in a SVG file.
     
     Parameters:
         - nicvs (np.ndarray):
@@ -20,7 +20,7 @@ def plot_nicv(nicvs, configs, output_path):
             Device-key configurations that generate the traces used to compute
             NICV values.
         - output_path (str):
-            Absolute path to the PNG file containing the plot.
+            Absolute path to the SVG file containing the plot.
     """
 
     cmap = plt.cm.Set1
@@ -54,13 +54,13 @@ def plot_nicv(nicvs, configs, output_path):
 def plot_history(history, output_path):
 
     """
-    Plots a train history and saves the result in a PNG file.
+    Plots a train history and saves the result in a SVG file.
     
     Parameters:
         - history (dict):
             Train history to plot.
         - output_path (str):
-            Absolute path to the PNG file containing the plot.
+            Absolute path to the SVG file containing the plot.
     """
 
     f, ax = plt.subplots(1, 2, figsize=(18,8))
@@ -93,13 +93,13 @@ def plot_history(history, output_path):
 def plot_conf_matrix(conf_matrix, output_path):
 
     """
-    Plots a confusion matrix and saves the result in a PNG file.
+    Plots a confusion matrix and saves the result in a SVG file.
     
     Parameters:
         - conf_matrix (np.ndarray):
             Confusion matrix to plot.
         - output_path (str):
-            Absolute path to the PNG file containing the plot.
+            Absolute path to the SVG file containing the plot.
     """
     
     cmap = plt.cm.Blues
@@ -121,21 +121,19 @@ def plot_conf_matrix(conf_matrix, output_path):
     plt.close(f)
 
 
-def plot_avg_ges(ges, n_devs, b, output_path):
+def plot_avg_ges(ges, title, output_path):
 
     """
     Plots the average GEs resulting from a DKTA experiment and saves the result 
-    in a PNG file.
+    in a SVG file.
     
     Parameters:
         - ges (np.ndarray):
             Average GEs to plot.
-        - n_devs (int):
-            Number of train-devices used in the experiments.
-        - b (int):
-            Byte retrieved in the experiments.
+        - title (str):
+            Title of the plot.
         - output_path (str):
-            Absolute path to the PNG file containing the plot.
+            Absolute path to the SVG file containing the plot.
     """
     
     # Set the color palette
@@ -152,7 +150,8 @@ def plot_avg_ges(ges, n_devs, b, output_path):
             
         ax.plot(ge, label=label, marker='o', color=colors[i])
         
-    ax.set_title(f'Byte: {b}  |  Train-Devices: {n_devs}')
+    # ax.set_title(f'Byte: {b}  |  Train-Devices: {n_devs}')
+    ax.set_title(title)
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
     ax.set_ylim([-3, 45]) 
     ax.set_xlabel('Number of traces')
@@ -173,7 +172,7 @@ def plot_overlap(all_ges, to_compare, title, output_path):
 
     """
     Plots GEs resulting from 2 different DKTA experiments in a single plane and 
-    saves the result in a PNG file.
+    saves the result in a SVG file.
     
     Parameters:
         - all_ges (np.ndarray):
@@ -181,7 +180,7 @@ def plot_overlap(all_ges, to_compare, title, output_path):
         - to_compare (int list):
             Bytes whose results are compared.
         - output_path (str):
-            Absolute path to the PNG file containing the plot.
+            Absolute path to the SVG file containing the plot.
     """
     
     colors = list(clrs.TABLEAU_COLORS)
@@ -208,6 +207,51 @@ def plot_overlap(all_ges, to_compare, title, output_path):
     ax.legend()
     ax.grid()
     
+    f.savefig(
+        output_path, 
+        bbox_inches='tight', 
+        dpi=600
+    )
+    
+    plt.close(f)
+
+
+def plot_multikey(ges, keys, title, output_path):
+
+    """
+    Plots the average GEs resulting from a MultiKey experiment and saves the result 
+    in a SVG file.
+    
+    Parameters:
+        - ges (np.ndarray):
+            Average GEs to plot.
+        - title (str):
+            Title of the plot.
+        - output_path (str):
+            Absolute path to the SVG file containing the plot.
+    """
+    
+    # Set the color palette
+    cmap = plt.cm.jet # Google Turbo
+    colors = cmap(range(0, cmap.N, int(cmap.N/len(ges))))
+    
+    # Plot the GEs
+    f, ax = plt.subplots(figsize=(10,5))
+    for i, ge in enumerate(ges):
+
+        label = f'{keys[i]} key'
+        if i != 0:
+            label += 's' # Plural
+            
+        ax.plot(ge, label=label, marker='o', color=colors[i])
+        
+    ax.set_title(title)
+    ax.set_title(title)
+    ax.set_xlabel('Number of traces')
+    ax.set_ylabel('Avg GE')
+    ax.legend()
+    ax.grid()
+
     f.savefig(
         output_path, 
         bbox_inches='tight', 
