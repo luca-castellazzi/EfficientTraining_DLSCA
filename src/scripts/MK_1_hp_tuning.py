@@ -5,6 +5,8 @@ import numpy as np
 
 # Custom
 import sys
+
+from src.scripts.DKTA_1_hp_tuning import TOT_TRACES
 sys.path.insert(0, '../utils')
 import helpers
 import constants
@@ -56,14 +58,14 @@ def main():
     target = target.upper()
     byte_list = [int(b) for b in byte_list.split(',')]
     
-    train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
-                   for k in list(constants.KEYS)[1:]
+    train_files = [f'{constants.PC_MULTIKEY_PATH}/{dev}-MK{k}.trs' 
+                   for k in range(100)
                    for dev in train_devs]
 
 
     for b in byte_list:
 
-        RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d'
+        RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/mk_{n_devs}'
         LOSS_HIST_FILE = RES_ROOT + f'/loss_hist_data.csv'
         ACC_HIST_FILE = RES_ROOT + f'/acc_hist_data.csv'
         HISTORY_PLOT = RES_ROOT + f'/hp_tuning_history.png' 
