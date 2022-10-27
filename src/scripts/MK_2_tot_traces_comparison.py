@@ -2,6 +2,7 @@
 from tqdm import tqdm
 import numpy as np
 import json
+from tensorflow.keras.models import load_model
 from tensorflow.keras.backend import clear_session
 
 # Custom
@@ -59,6 +60,11 @@ def main():
 
             for train_dev, test_dev in tqdm(PERMUTATIONS, desc=f'Using {n_keys} Keys: '):
 
+                TOT_TRACES_FOLDER = RES_ROOT + f'/{tot_traces}t'
+                if not os.path.exists(TOT_TRACES_FOLDER):
+                    os.mkdir(TOT_TRACES_FOLDER)
+                SAVED_MODEL_PATH = TOT_TRACES_FOLDER + f'/model_{train_dev}vs{test_dev}_{n_keys}k.h5'
+
                 test_files = [f'{constants.PC_TRACES_PATH}/{test_dev}-K0_500MHz + Resampled.trs'] # list is needed in DataLoader      
 
                 train_files = [f'/prj/side_channel/Pinata/PC/swAES/MultiKeySplits/{train_dev}-MK{k}.trs'
@@ -79,6 +85,7 @@ def main():
                 
                 attack_net = Network('MLP', hp)
                 attack_net.build_model()
+                attack_net.add_checkpoint_callback(SAVED_MODEL_PATH)
                 
                 #Training (with Validation)
                 attack_net.model.fit(
@@ -100,7 +107,8 @@ def main():
                 )
                 x_test, _, pbs_test, tkb_test = test_dl.load()
                 
-                preds = attack_net.model.predict(x_test)            
+                test_model = load_model(SAVED_MODEL_PATH)
+                preds = test_model.predict(x_test)            
                 
                 # Compute GE
                 ge = results.ge(
@@ -132,7 +140,7 @@ def main():
 
         helpers.save_csv(
             data=csv_ges_data,
-            columns=['NTraces']+[f'NKeys_{nk+1}' for nk in N_KEYS],
+            columns=['NTraces']+[f'NKeys_{nk}' for nk in N_KEYS],
             output_path=GES_FILE
         )
         
