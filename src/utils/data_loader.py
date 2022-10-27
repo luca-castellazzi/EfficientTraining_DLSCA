@@ -282,6 +282,12 @@ class SplitDataLoader(DataLoader):
                     config_p.append(p)
                     config_k.append(k)
             
+            # At each selection, randomize the subset of data to consider as train and validation
+            to_shuffle = list(zip(config_s, config_l, config_p, config_k))
+            random.shuffle(to_shuffle)
+            config_s, config_l, config_p, config_k = zip(*to_shuffle)
+
+            # Generate train and validation sets
             x_train.append(config_s[:self.n_train_tr_per_config])
             x_val.append(config_s[self.n_train_tr_per_config:])
             

@@ -216,7 +216,7 @@ def plot_overlap(all_ges, to_compare, title, output_path):
     plt.close(f)
 
 
-def plot_multikey(ges, keys, title, output_path):
+def plot_multikey(ges, traces, title, output_path):
 
     """
     Plots the average GEs resulting from a MultiKey experiment and saves the result 
@@ -231,23 +231,14 @@ def plot_multikey(ges, keys, title, output_path):
             Absolute path to the SVG file containing the plot.
     """
     
-    # Set the color palette
-    cmap = plt.cm.jet # Google Turbo
-    colors = cmap(range(0, cmap.N, int(cmap.N/len(ges))))
-    
-    # Plot the GEs
+    # Plot the GEs (default matplotlib colors)
     f, ax = plt.subplots(figsize=(10,5))
     for i, ge in enumerate(ges):
-
-        label = f'{keys[i]} key'
-        if i != 0:
-            label += 's' # Plural
-            
-        ax.plot(ge, label=label, linewidth=3, color=colors[i])
+        ax.plot(ge, label=f'{traces[i]} Traces', linewidth=3)
         
     ax.set_title(title)
-    ax.set_ylim([-3, 258])
-    ax.set_xlabel('Number of traces')
+    ax.set_ylim([-3, 150])
+    ax.set_xlabel('Number of Attack Traces')
     ax.set_ylabel('Avg GE')
     ax.legend()
     ax.grid()

@@ -24,10 +24,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 EPOCHS = 100
 TARGET = 'SBOX_OUT'
 
-PERMUTATIONS = [('D3', 'D1'), ('D3', 'D2')]
+TRAIN_DEV = 'D3'
+ATTACKED_DEV = 'D1'
 
-N_KEYS = [1, 25, 50, 75, 100]
-TOT_TRACES = [1000, 3000, 4000, 5000, 10000]
+N_KEYS = [1, 50, 100]
+
+# Different experiments:
+# - Test different sizes for train-set
+# - Compute average of experiments, where smaller train-sets need more repetitions
+EXPS = [(1000, 10), (3000, 10), (4000, 10) (5000, 2), (7000, 2)] # (tot_traces, n_exps)
 
 
 def main():
@@ -45,29 +50,28 @@ def main():
 
 
     # Attack with different configurations of device, key and number of traces
-    for tot_traces in TOT_TRACES:
+    for n_keys in N_KEYS:
+        GES_FILE = RES_ROOT + f'/ges_{n_keys}k.csv'
+        GES_PLOT = RES_ROOT + f'/ges_{n_keys}k.svg'
 
-        GES_FILE = RES_ROOT + f'/ges_{tot_traces}.csv'
-        GES_PLOT = RES_ROOT + f'/ges_{tot_traces}.svg'
+        print(f'*** Number of Keys: {n_keys} ***')
 
-        print(f'*** Number of Traces: {tot_traces}')
+        ges_per_traces = []
 
-        ges_per_keys = []
+        for tot_traces, n_exps in EXPS:
 
-        for n_keys in N_KEYS:
+            avg_ges = []
 
-            ges = []
+            for _ in tqdm(range(n_exps), desc=f'{tot_traces} Traces: '):
 
-            for train_dev, test_dev in tqdm(PERMUTATIONS, desc=f'Using {n_keys} Keys: '):
+                N_KEYS_FOLDER = RES_ROOT + f'/{n_keys}k'
+                if not os.path.exists(N_KEYS_FOLDER):
+                    os.mkdir(N_KEYS_FOLDER)
+                SAVED_MODEL_PATH = N_KEYS_FOLDER + f'/model_D3vsD1_{tot_traces}t.h5'
 
-                TOT_TRACES_FOLDER = RES_ROOT + f'/{tot_traces}t'
-                if not os.path.exists(TOT_TRACES_FOLDER):
-                    os.mkdir(TOT_TRACES_FOLDER)
-                SAVED_MODEL_PATH = TOT_TRACES_FOLDER + f'/model_{train_dev}vs{test_dev}_{n_keys}k.h5'
+                test_files = [f'{constants.PC_TRACES_PATH}/D1-K0_500MHz + Resampled.trs'] # list is needed in DataLoader      
 
-                test_files = [f'{constants.PC_TRACES_PATH}/{test_dev}-K0_500MHz + Resampled.trs'] # list is needed in DataLoader      
-
-                train_files = [f'/prj/side_channel/Pinata/PC/swAES/MultiKeySplits/{train_dev}-MK{k}.trs'
+                train_files = [f'/prj/side_channel/Pinata/PC/swAES/MultiKeySplits/D3-MK{k}.trs'
                                for k in range(n_keys)]
 
                 train_dl = SplitDataLoader(
@@ -119,42 +123,40 @@ def main():
                     target=TARGET,
                     n_traces=500 # Default: 500
                 )
-                ges.append(ge)
+                avg_ges.append(ge)
 
-            ges = np.array(ges)
-            ges = np.mean(ges, axis=0) # Average the results of the "cycle" over the permutations
+            avg_ges = np.array(avg_ges)
+            avg_ges = np.mean(avg_ges, axis=0) # Average the results over the experiments
 
-            ges_per_keys.append(ges)
+            ges_per_traces.append(avg_ges)
 
-        ges_per_keys = np.array(ges_per_keys)
+        ges_per_traces = np.array(ges_per_traces)
 
 
         # Save the results for the current total number of traces
         # In .CSV for future use
         csv_ges_data = np.vstack(
             (
-                np.arange(ges_per_keys.shape[1])+1, # The values of the x-axis in the plot
-                ges_per_keys # The values of the y-axis in the plot
+                np.arange(ges_per_traces.shape[1])+1, # The values of the x-axis in the plot
+                ges_per_traces # The values of the y-axis in the plot
             )
         ).T
 
         helpers.save_csv(
             data=csv_ges_data,
-            columns=['NTraces']+[f'NKeys_{nk}' for nk in N_KEYS],
+            columns=['AttackTraces']+[f'TrainTraces_{t}' for t, _ in EXPS],
             output_path=GES_FILE
         )
-        
+
         # Plot Avg GEs
         vis.plot_multikey(
-            ges_per_keys, 
-            N_KEYS,
-            f'Total Traces: {tot_traces}',
+            ges_per_traces, 
+            [tot_tr for tot_tr, _ in EXPS],
+            f'Number of Keys: {n_keys}',
             GES_PLOT            
         )
 
         print()
-
-
 
 
 if __name__ == '__main__':
