@@ -88,13 +88,13 @@ def main():
             train_data, val_data = train_dl.load()
             x_train, y_train, _, _ = train_data 
             x_val, y_val, _, _ = val_data # Val data is kept to consider callbacks             
+                      
+            clear_session() # Start with a new Keras session every time    
             
             attack_net = Network(model_type, hp)
             attack_net.build_model()
             attack_net.add_checkpoint_callback(SAVED_MODEL_PATH)
-            
-            clear_session() # Start with a new Keras session every time    
-            
+
             #Training (with Validation)
             attack_net.model.fit(
                 x_train, 
