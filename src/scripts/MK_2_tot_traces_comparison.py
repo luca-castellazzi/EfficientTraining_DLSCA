@@ -8,7 +8,7 @@ from tensorflow.keras.backend import clear_session
 # Custom
 import sys
 sys.path.insert(0, '../utils')
-from data_loader import DataLoader, SplitDataLoader
+from data_loader import DataLoader, RandomSplitDataLoader
 import constants
 import helpers
 import results
@@ -74,7 +74,7 @@ def main():
                 train_files = [f'/prj/side_channel/Pinata/PC/swAES/MultiKeySplits/D3-MK{k}.trs'
                                for k in range(n_keys)]
 
-                train_dl = SplitDataLoader(
+                train_dl = RandomSplitDataLoader(
                     train_files, 
                     tot_traces=tot_traces,
                     train_size=0.9,
