@@ -25,7 +25,7 @@ EPOCHS = 100
 HP = {
     'hidden_layers':  [1, 2, 3, 4, 5],
     'hidden_neurons': [100, 200, 300, 400, 500],
-    'dropout_rate':   [0.0, 0.1, 0.2,  0.3, 0.4, 0.5],
+    'dropout_rate':   [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
     'l2':             [0.0, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4],
     'optimizer':      ['adam', 'rmsprop', 'sgd'],
     'learning_rate':  [5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5],
