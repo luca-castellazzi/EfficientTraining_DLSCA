@@ -28,6 +28,8 @@ KEYS = {
 
 # Trace constants
 TRACE_LEN = 1183
+MSK_TRACE_LEN = 8871
+
 TRACE_NUM = 50000
 
 # Number of classes per target
