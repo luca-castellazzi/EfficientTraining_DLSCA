@@ -93,11 +93,13 @@ class Network():
         Generates the Neural Network model adding layer to the default empty
         Sequential object.
         
-        Different models can be generated: MultiLayer Perceptron (MLP) or 
-        Convolutional Neural Network (CNN).
+        Different models can be generated: 
+            - MultiLayer Perceptron (MLP) for Unmasked-AES; 
+            - Multilayer Perceptron (MSK_MLP) for Masked-AES;
+            - Convolutional Neural Network (CNN) for Masked-AES.
         """
 
-        if self.model_type == 'MLP':
+        if self.model_type == 'MLP': # Generate an MLP for Unmasked-AES
         
             #### Architecture: ####
             # Input Dense         #
@@ -156,5 +158,12 @@ class Network():
                 metrics=['accuracy']
             )
     
-        else:
-            pass # In future there will be CNN
+    ############################################################################
+
+        elif self.model_type == 'MSK_MLP': # Generate an MLP for Masked-AES
+            pass
+
+    ############################################################################
+
+        else: # Generate a CNN for Masked-AES
+            pass
