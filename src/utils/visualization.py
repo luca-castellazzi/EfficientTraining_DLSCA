@@ -153,7 +153,7 @@ def plot_avg_ges(ges, title, output_path):
     # ax.set_title(f'Byte: {b}  |  Train-Devices: {n_devs}')
     ax.set_title(title)
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
-    ax.set_ylim([-3, 45]) 
+    ax.set_ylim([-3, 50]) 
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()
@@ -201,7 +201,7 @@ def plot_overlap(all_ges, to_compare, title, output_path):
 
     ax.set_title(title)
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
-    ax.set_ylim([-3, 45])
+    ax.set_ylim([-3, 50])
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()
