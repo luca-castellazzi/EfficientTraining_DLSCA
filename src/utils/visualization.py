@@ -121,7 +121,7 @@ def plot_conf_matrix(conf_matrix, output_path):
     plt.close(f)
 
 
-def plot_avg_ges(ges, title, output_path):
+def plot_avg_ges(ges, title, ylim_max, output_path):
 
     """
     Plots the average GEs resulting from a DKTA experiment and saves the result 
@@ -132,6 +132,8 @@ def plot_avg_ges(ges, title, output_path):
             Average GEs to plot.
         - title (str):
             Title of the plot.
+        - ylim_max (int):
+            Upper limit for y-axis.
         - output_path (str):
             Absolute path to the SVG file containing the plot.
     """
@@ -153,7 +155,7 @@ def plot_avg_ges(ges, title, output_path):
     # ax.set_title(f'Byte: {b}  |  Train-Devices: {n_devs}')
     ax.set_title(title)
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
-    ax.set_ylim([-3, 50]) 
+    ax.set_ylim([-3, ylim_max]) 
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()
@@ -168,7 +170,7 @@ def plot_avg_ges(ges, title, output_path):
     plt.close(f)
 
 
-def plot_overlap(all_ges, to_compare, title, output_path):
+def plot_overlap(all_ges, to_compare, title, ylim_max, output_path):
 
     """
     Plots GEs resulting from 2 different DKTA experiments in a single plane and 
@@ -179,6 +181,8 @@ def plot_overlap(all_ges, to_compare, title, output_path):
             GEs to plot.
         - to_compare (int list):
             Bytes whose results are compared.
+        - ylim_max (int):
+            Upper limit for y-axis.
         - output_path (str):
             Absolute path to the SVG file containing the plot.
     """
@@ -201,7 +205,7 @@ def plot_overlap(all_ges, to_compare, title, output_path):
 
     ax.set_title(title)
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
-    ax.set_ylim([-3, 50])
+    ax.set_ylim([-3, ylim_max])
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('Avg GE')
     ax.legend()
@@ -216,7 +220,7 @@ def plot_overlap(all_ges, to_compare, title, output_path):
     plt.close(f)
 
 
-def plot_multikey(ges, traces, title, output_path):
+def plot_multikey(ges, traces, title, ylim_max, output_path):
 
     """
     Plots the average GEs resulting from a MultiKey experiment and saves the result 
@@ -227,6 +231,8 @@ def plot_multikey(ges, traces, title, output_path):
             Average GEs to plot.
         - title (str):
             Title of the plot.
+        - ylim_max (int):
+            Upper limit for y-axis.
         - output_path (str):
             Absolute path to the SVG file containing the plot.
     """
@@ -237,7 +243,7 @@ def plot_multikey(ges, traces, title, output_path):
         ax.plot(ge, label=f'{traces[i]} Traces', linewidth=3)
         
     ax.set_title(title)
-    ax.set_ylim([-3, 150])
+    ax.set_ylim([-3, ylim_max])
     ax.set_xlabel('Number of Attack Traces')
     ax.set_ylabel('Avg GE')
     ax.legend()

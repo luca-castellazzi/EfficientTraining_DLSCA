@@ -32,7 +32,7 @@ N_KEYS = [1, 50, 100]
 # Different experiments:
 # - Test different sizes for train-set
 # - Compute average of experiments, where smaller train-sets need more repetitions
-EXPS = [(1000, 10), (3000, 10), (4000, 10) (5000, 2), (7000, 2)] # (tot_traces, n_exps)
+EXPS = [(1000, 10), (3000, 10), (4000, 10), (5000, 2), (7000, 2)] # (tot_traces, n_exps)
 
 
 def main():
@@ -150,10 +150,11 @@ def main():
 
         # Plot Avg GEs
         vis.plot_multikey(
-            ges_per_traces, 
-            [tot_tr for tot_tr, _ in EXPS],
-            f'Number of Keys: {n_keys}',
-            GES_PLOT            
+            ges=ges_per_traces, 
+            traces=[tot_tr for tot_tr, _ in EXPS],
+            title=f'Number of Keys: {n_keys}',
+            ylim_max=50,
+            output_path=GES_PLOT            
         )
 
         print()

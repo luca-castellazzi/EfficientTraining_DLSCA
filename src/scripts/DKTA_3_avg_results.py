@@ -65,9 +65,10 @@ def main():
     
     # Plot Avg GEs
     vis.plot_avg_ges(
-        avg_ges[:, :10], 
-        f'Byte: {b}  |  Train-Devices: {n_devs}',
-        AVG_GES_PLOT 
+        ges=avg_ges[:, :10], 
+        title=f'Byte: {b}  |  Train-Devices: {n_devs}',
+        ylim_max=50,
+        output_path=AVG_GES_PLOT 
     )
     
 

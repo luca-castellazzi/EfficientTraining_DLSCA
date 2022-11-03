@@ -57,10 +57,11 @@ def main():
     )
     
     vis.plot_overlap(
-        ges, 
-        to_compare, 
-        f'{" vs ".join([f"Byte{tc}" for tc in to_compare])} | Train-Devices: {n_devs}',     
-        COMPARISON_PLOT
+        ges=ges, 
+        to_compare=to_compare, 
+        title=f'{" vs ".join([f"Byte{tc}" for tc in to_compare])} | Train-Devices: {n_devs}',     
+        ylim_max=50,
+        output_path=COMPARISON_PLOT
     )
     
     

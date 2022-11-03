@@ -5,8 +5,6 @@ import numpy as np
 
 # Custom
 import sys
-
-from src.scripts.DKTA_1_hp_tuning import TOT_TRACES
 sys.path.insert(0, '../utils')
 import helpers
 import constants
