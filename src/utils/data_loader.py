@@ -2,7 +2,6 @@
 import random
 import trsfile
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.utils import to_categorical
 
 # Custom
@@ -26,8 +25,6 @@ class DataLoader():
             Number of possible labels.
         - byte_idx (int, default=None):
             Byte index to consider during the labeling of the traces.
-        - scaler (sklearn.preprocessing.StandardScaler):
-            Scaler used to scale the values of the traces.
            
     Methods:
         - _retrieve_metadata:
@@ -70,8 +67,6 @@ class DataLoader():
         self.n_classes = constants.N_CLASSES[target]
         
         self.byte_idx = byte_idx
-        
-        self.scaler = StandardScaler()
         
     
     def _retrieve_metadata(self, tr):
@@ -135,11 +130,11 @@ class DataLoader():
         to_shuffle = list(zip(x, y, pbs, tkbs))
         random.shuffle(to_shuffle)
         x, y, pbs, tkbs = zip(*to_shuffle)
-        
-        x = np.array(x)
-        y = np.array(y)
-        pbs = np.array(pbs)
-        tkbs = np.array(tkbs)
+
+        x = np.vstack(x)
+        y = np.vstack(y)
+        pbs = np.vstack(pbs)   # np.vstack can be used here to convert a tuple of np.array
+        tkbs = np.vstack(tkbs) # into a single np.ndarray
         
         return x, y, pbs, tkbs
         
@@ -149,9 +144,6 @@ class DataLoader():
         """
         Retrieves the values of the traces, the plaintexts and the keys and
         labels the traces.
-        
-        The values of the traces are scaled with a StandardScaler (resulting 
-        data have mean=0, var=1).
         
         Returns:
             - x, y, pbs, tkbs (tuple):
@@ -176,12 +168,11 @@ class DataLoader():
                     labels.append(l)
                     pltxt_bytes.append(p)
                     true_key_bytes.append(k)
-                    
-        x = np.array(samples) # (tot_traces x trace_len)
-        x = self.scaler.fit_transform(x)
-        y = np.array(labels) # (tot_traces x n_classes)
-        pbs = np.array(pltxt_bytes) # (tot_traces x 1)
-        tkbs = np.array(true_key_bytes) # (tot_traces x 1)
+        
+        x = np.vstack(samples) # (tot_traces x trace_len)
+        y = np.vstack(labels) # (tot_traces x n_classes)
+        pbs = np.vstack(pltxt_bytes) # (tot_traces x 1)
+        tkbs = np.vstack(true_key_bytes) # (tot_traces x 1)
         
         x, y, pbs, tkbs = self._shuffle(x, y, pbs, tkbs)
         
@@ -196,8 +187,6 @@ class SplitDataLoader(DataLoader):
     """
     Subclass of DataLoader used to directly split data into train and validation
     sets.
-    Randomness is not added during the split: the train subset is always the first
-    part of the considered data.
     
     Additional parameters:
         - n_train_tr_per_config (int):
@@ -232,139 +221,7 @@ class SplitDataLoader(DataLoader):
                 Indicates if the data to retrieve comes from a MultiKey traceset.
         """
         
-        super().__init__(trace_files, tot_traces, target, byte_idx)#, mk_traces)
-        
-        self.n_train_tr_per_config = int(train_size * self.n_tr_per_config)
-        
-        
-    def load(self):
-    
-        """
-        Retrieves the values of the traces, the plaintexts and the keys and
-        labels the traces.
-        In addition, splits the data into train and validation sets.
-        
-        Proportions are kept in both sets: in the train set there are i traces
-        per configuration, while in the validation set there are j < i traces 
-        per configuration.
-        
-        Returns:
-            - train_data, val_data (tuple):
-                Train set and validation set with values of the traces, labels,
-                plaintexts and keys (plaintexts and keys eventually as single 
-                bytes).
-        """
-    
-        x_train = []
-        y_train = []
-        pbs_train = []
-        tkbs_train = []
-        
-        x_val = []
-        y_val = []
-        pbs_val = []
-        tkbs_val = []
-        
-        for tfile in self.trace_files:
-            
-            config_s = []
-            config_l = []
-            config_p = []
-            config_k = []
-            
-            with trsfile.open(tfile, 'r') as traces:
-                for tr in traces[:self.n_tr_per_config]:
-                    s = tr.samples
-                    l, p, k = self._retrieve_metadata(tr)
-                    
-                    config_s.append(s)
-                    config_l.append(l)
-                    config_p.append(p)
-                    config_k.append(k)
-            
-            x_train.append(config_s[:self.n_train_tr_per_config])
-            x_val.append(config_s[self.n_train_tr_per_config:])
-            
-            y_train.append(config_l[:self.n_train_tr_per_config])
-            y_val.append(config_l[self.n_train_tr_per_config:])
-            
-            pbs_train.append(config_p[:self.n_train_tr_per_config])
-            pbs_val.append(config_p[self.n_train_tr_per_config:])
-            
-            tkbs_train.append(config_k[:self.n_train_tr_per_config])
-            tkbs_val.append(config_k[self.n_train_tr_per_config:])
-        
-        # Reduce the lists of arrays to a single np.ndarray
-        x_train = np.concatenate(x_train)
-        y_train = np.concatenate(y_train)
-        pbs_train = np.concatenate(pbs_train)
-        tkbs_train = np.concatenate(tkbs_train)
-        
-        x_val = np.concatenate(x_val)
-        y_val = np.concatenate(y_val)
-        pbs_val = np.concatenate(pbs_val)
-        tkbs_val = np.concatenate(tkbs_val)
-        
-        # Scale the whole train-set (train + val) with the same scaler
-        n_tot_train = x_train.shape[0] # train_size * tot_traces
-        x_tot = np.concatenate([x_train, x_val])
-        x_tot = self.scaler.fit_transform(x_tot)
-        x_train = x_tot[:n_tot_train]
-        x_val = x_tot[n_tot_train:]
-        
-        # Shuffle the sets
-        x_train, y_train, pbs_train, tkbs_train = self._shuffle(x_train, y_train, pbs_train, tkbs_train)
-        x_val, y_val, pbs_val, tkbs_val = self._shuffle(x_val, y_val, pbs_val, tkbs_val) 
-            
-        # Create train and test packages
-        train_data = (x_train, y_train, pbs_train, tkbs_train)
-        val_data = (x_val, y_val, pbs_val, tkbs_val)
-            
-        return train_data, val_data
-
-
-class RandomSplitDataLoader(DataLoader):
-
-    """
-    Subclass of DataLoader used to directly split data into train and validation
-    sets.
-    Differently from SplitDataLoader, this class adds randomness to the train/val
-    split.
-    
-    Additional parameters:
-        - n_train_tr_per_config (int):
-            Number of train-traces to be collected per different device-key 
-            configuration.
-    Overwritten methods:
-        - load:
-            Retrieves the values of the traces, the plaintexts and the keys and
-            labels the traces.
-            In addition, splits the data into train and validation sets.
-    """
-   
-    def __init__(self, trace_files, tot_traces, train_size, target, byte_idx=None):
-    
-        """
-        Class constructor: and generates a SplitDataLoader object (most of inputs 
-        are not attributes).
-        
-        Parameters:
-            - configs (str list):
-                Device-keys configurations used during the encryption.
-            - tot_traces (int):
-                Total number of traces to retrieve.
-            - train_size (float):
-                Size of the train-set expressed as percentage.
-            - target (str):
-                Target of the attack.
-            - byte_idx (int, default=None):
-                Byte index considered during the labeling of the traces.
-            - mk_traces (bool, default=False):
-                MultiKey flag.
-                Indicates if the data to retrieve comes from a MultiKey traceset.
-        """
-        
-        super().__init__(trace_files, tot_traces, target, byte_idx)#, mk_traces)
+        super().__init__(trace_files, tot_traces, target, byte_idx)
         
         self.n_train_tr_per_config = int(train_size * self.n_tr_per_config)
         
@@ -414,11 +271,6 @@ class RandomSplitDataLoader(DataLoader):
                     config_p.append(p)
                     config_k.append(k)
 
-            # At each selection, randomize the subset of data to consider as train and validation
-            to_shuffle = list(zip(config_s, config_l, config_p, config_k))
-            random.shuffle(to_shuffle)
-            config_s, config_l, config_p, config_k = zip(*to_shuffle)
-            
             x_train.append(config_s[:self.n_train_tr_per_config])
             x_val.append(config_s[self.n_train_tr_per_config:])
             
@@ -430,29 +282,22 @@ class RandomSplitDataLoader(DataLoader):
             
             tkbs_train.append(config_k[:self.n_train_tr_per_config])
             tkbs_val.append(config_k[self.n_train_tr_per_config:])
-        
+
         # Reduce the lists of arrays to a single np.ndarray
-        x_train = np.concatenate(x_train)
-        y_train = np.concatenate(y_train)
-        pbs_train = np.concatenate(pbs_train)
-        tkbs_train = np.concatenate(tkbs_train)
+        x_train = np.vstack(x_train)
+        y_train = np.vstack(y_train)
+        pbs_train = np.concatenate(pbs_train)   # pbs and tkbs are lists of int: np.concatenate must be used to
+        tkbs_train = np.concatenate(tkbs_train) # collapse multiple lists of int into one np.array
         
-        x_val = np.concatenate(x_val)
-        y_val = np.concatenate(y_val)
+        x_val = np.vstack(x_val)
+        y_val = np.vstack(y_val)
         pbs_val = np.concatenate(pbs_val)
         tkbs_val = np.concatenate(tkbs_val)
         
-        # Scale the whole train-set (train + val) with the same scaler
-        n_tot_train = x_train.shape[0] # train_size * tot_traces
-        x_tot = np.concatenate([x_train, x_val])
-        x_tot = self.scaler.fit_transform(x_tot)
-        x_train = x_tot[:n_tot_train]
-        x_val = x_tot[n_tot_train:]
-        
         # Shuffle the sets
         x_train, y_train, pbs_train, tkbs_train = self._shuffle(x_train, y_train, pbs_train, tkbs_train)
-        x_val, y_val, pbs_val, tkbs_val = self._shuffle(x_val, y_val, pbs_val, tkbs_val) 
-            
+        x_val, y_val, pbs_val, tkbs_val = self._shuffle(x_val, y_val, pbs_val, tkbs_val)
+        
         # Create train and test packages
         train_data = (x_train, y_train, pbs_train, tkbs_train)
         val_data = (x_val, y_val, pbs_val, tkbs_val)
