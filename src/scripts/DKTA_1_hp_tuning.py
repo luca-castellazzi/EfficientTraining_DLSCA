@@ -2,6 +2,7 @@
 import json
 import time
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 
 # Custom
 import sys
@@ -18,14 +19,14 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 for INFO & WARNINGs & ERRORs
 
 
-TUNING_METHOD = 'GA'
 N_MODELS = 15
+N_GEN = 20
 TOT_TRACES = 50000
 EPOCHS = 100
 HP = {
     'hidden_layers':  [1, 2, 3, 4, 5],
     'hidden_neurons': [100, 200, 300, 400, 500],
-    'dropout_rate':   [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
+    'dropout_rate':   [0.0, 0.1, 0.2, 0.3, 0.4, 0.5], 
     'l2':             [0.0, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4],
     'optimizer':      ['adam', 'rmsprop', 'sgd'],
     'learning_rate':  [5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5],
@@ -81,34 +82,31 @@ def main():
         train_data, val_data = train_dl.load()
         x_train, y_train, _, _ = train_data
         x_val, y_val, _, _ = val_data
+
+        # Scale data to 0-mean and 1-variance
+        scaler = StandardScaler()
+        scaler.fit(x_train)
+        x_train = scaler.transform(x_train)
+        x_val = scaler.transform(x_val)
         
+
         hp_tuner = HPTuner(
             model_type=model_type, 
             hp_space=HP, 
             n_models=N_MODELS, 
             n_epochs=EPOCHS
         )
-        
-        if TUNING_METHOD == 'RS':
-            best_hp = hp_tuner.random_search(
-                x_train=x_train,
-                y_train=y_train,
-                x_val=x_val,
-                y_val=y_val
-            )
-        elif TUNING_METHOD == 'GA':
-            best_hp = hp_tuner.genetic_algorithm(
-                n_gen=20,
-                selection_perc=0.3,
-                second_chance_prob=0.2,
-                mutation_prob=0.2,
-                x_train=x_train,
-                y_train=y_train,
-                x_val=x_val,
-                y_val=y_val
-            )
-        else:
-            pass
+            
+        best_hp = hp_tuner.genetic_algorithm(
+            n_gen=N_GEN,
+            selection_perc=0.3,
+            second_chance_prob=0.2,
+            mutation_prob=0.2,
+            x_train=x_train,
+            y_train=y_train,
+            x_val=x_val,
+            y_val=y_val
+        )
             
         
         # Save history data to .CSV files
