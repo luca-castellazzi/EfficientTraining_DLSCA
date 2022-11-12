@@ -86,23 +86,82 @@ def compute_final_rankings(preds, pltxt_bytes, target):
     return final_rankings
 
 
-def ge(preds, pltxt_bytes, true_key_byte, n_exp, target, n_traces=500):
+# def RANDOMIZED_ge(preds, pltxt_bytes, true_key_byte, n_exp, target, n_traces=500):
+
+#     """
+#     Computes the Guessing Entropy of an attack as the average rank of the 
+#     correct key-byte among the predictions.
+    
+#     Parameters: 
+#         - preds (np.ndarray):
+#             Target predictions.
+#         - pltxt_bytes (np.array):
+#             Plaintext used during the encryption (single byte).
+#         - true_key_byte (int):
+#             Actual key used during the encryption (single byte).
+#         - n_exp (int):
+#             Number of experiment to compute the average value of GE.
+#         - n_traces (int):
+#             Number of traces to consider during GE computation.
+#         - target (str):
+#             Target of the attack.
+            
+#     Returns:
+#         - ge (np.array):
+#             Guessing Entropy of the attack.
+#     """
+    
+#     # Consider all couples predictions-plaintext
+#     all_preds_pltxt = list(zip(preds, pltxt_bytes))
+    
+#     ranks_per_exp = []
+#     for _ in range(n_exp):
+        
+#         # During each experiment:
+#         #   * Consider only a fixed number of target-predictions
+#         #   * Retrieve the corresponding key-predictions
+#         #   * Compute the final key-predictions
+#         #   * Rank the final key-predictions
+#         #   * Retrieve the rank of the correct key (key-byte)
+#         # 
+#         # The whole process considers incrementing number of traces (not only 1)
+        
+#         sampled = random.sample(all_preds_pltxt, n_traces)
+#         sampled_preds, sampled_pltxt_bytes = list(zip(*sampled))
+        
+#         # Compute the final rankings (for increasing number of traces)
+#         final_rankings = compute_final_rankings(sampled_preds, sampled_pltxt_bytes, target)
+        
+#         # Retrieve the rank of the true key-byte (for increasing number of traces)
+#         true_kb_ranks = np.array([kbs.index(true_key_byte)
+#                                   for kbs in final_rankings]) # 1 x n_traces 
+
+#         ranks_per_exp.append(true_kb_ranks)
+        
+#     # After the experiments, average the ranks
+#     ranks_per_exp = np.array(ranks_per_exp) # n_exp x n_traces
+#     ge = np.mean(ranks_per_exp, axis=0) # 1 x n_traces
+    
+#     return ge
+
+
+def ge(model, x_test, pltxt_bytes, true_key_byte, n_exp, target):
 
     """
     Computes the Guessing Entropy of an attack as the average rank of the 
     correct key-byte among the predictions.
     
     Parameters: 
-        - preds (np.ndarray):
-            Target predictions.
+        - model (tensorflow.keras.Model):
+            Classifier.
+        - x_test (np.ndarray):
+            Test data used to perform the attack.
         - pltxt_bytes (np.array):
             Plaintext used during the encryption (single byte).
         - true_key_byte (int):
             Actual key used during the encryption (single byte).
         - n_exp (int):
             Number of experiment to compute the average value of GE.
-        - n_traces (int):
-            Number of traces to consider during GE computation.
         - target (str):
             Target of the attack.
             
@@ -111,26 +170,33 @@ def ge(preds, pltxt_bytes, true_key_byte, n_exp, target, n_traces=500):
             Guessing Entropy of the attack.
     """
     
-    # Consider all couples predictions-plaintext
-    all_preds_pltxt = list(zip(preds, pltxt_bytes))
-    
+    tr_per_exp = int(x_test.shape[0] / n_exp)
+
     ranks_per_exp = []
-    for _ in range(n_exp):
+
+    for i in range(n_exp):
         
+        start = i * tr_per_exp
+        stop = start + tr_per_exp
+
+        # Consider a batch of test-data
+        x_batch = x_test[start:stop]
+        pltxt_bytes_batch = pltxt_bytes[start:stop]
+
         # During each experiment:
-        #   * Consider only a fixed number of target-predictions
+        #   * Predict the target w.r.t. the current test-batch
         #   * Retrieve the corresponding key-predictions
         #   * Compute the final key-predictions
         #   * Rank the final key-predictions
         #   * Retrieve the rank of the correct key (key-byte)
         # 
-        # The whole process considers incrementing number of traces (not only 1)
-        
-        sampled = random.sample(all_preds_pltxt, n_traces)
-        sampled_preds, sampled_pltxt_bytes = list(zip(*sampled))
+        # The whole process considers incrementing number of traces
+
+        # Predict the target
+        curr_preds = model.predict(x_batch)
         
         # Compute the final rankings (for increasing number of traces)
-        final_rankings = compute_final_rankings(sampled_preds, sampled_pltxt_bytes, target)
+        final_rankings = compute_final_rankings(curr_preds, pltxt_bytes_batch, target)
         
         # Retrieve the rank of the true key-byte (for increasing number of traces)
         true_kb_ranks = np.array([kbs.index(true_key_byte)
@@ -139,7 +205,7 @@ def ge(preds, pltxt_bytes, true_key_byte, n_exp, target, n_traces=500):
         ranks_per_exp.append(true_kb_ranks)
         
     # After the experiments, average the ranks
-    ranks_per_exp = np.array(ranks_per_exp) # n_exp x n_traces
+    ranks_per_exp = np.vstack(ranks_per_exp) # n_exp x n_traces
     ge = np.mean(ranks_per_exp, axis=0) # 1 x n_traces
     
     return ge
