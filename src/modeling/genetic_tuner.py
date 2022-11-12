@@ -132,7 +132,8 @@ class GeneticTuner():
                 verbose=0
             ).history
             
-            val_loss, _ = net.model.evaluate(x_val, y_val, verbose=0)        
+            # val_loss, _ = net.model.evaluate(x_val, y_val, verbose=0)  
+            val_loss = history['val_loss'][-1]      
             res.append((val_loss, hp_config, history))
             
         res.sort(key=lambda x: x[0])

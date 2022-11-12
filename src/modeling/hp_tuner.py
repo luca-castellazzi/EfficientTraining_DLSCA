@@ -95,7 +95,8 @@ class HPTuner():
                 verbose=0
             ).history
             
-            val_loss, _ = model.evaluate(x_val, y_val, verbose=0)                    
+            # val_loss, _ = model.evaluate(x_val, y_val, verbose=0)   
+            val_loss = history['val_loss'][-1]                 
             res.append((val_loss, random_hp, history))
             
         res.sort(key=lambda x: x[0])
@@ -105,10 +106,6 @@ class HPTuner():
         print(f'Best result: {self.best_val_loss}')
         
         return self.best_hp
-        
-        
-    # def random_search_xval(self, n_folds):
-        # return
     
     
     def genetic_algorithm(self, n_gen, selection_perc, second_chance_prob, mutation_prob,

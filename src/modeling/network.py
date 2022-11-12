@@ -155,15 +155,11 @@ class Network():
             self.model.compile(
                 optimizer=opt, 
                 loss='categorical_crossentropy',
-                metrics=['accuracy']
+                metrics=['accuracy'] # Automatically detected as "categorical_accuracy" 
+                                     # if "categorical_crossentropy" is used (one-hot encoding)
             )
     
     ############################################################################
-
-        elif self.model_type == 'MSK_MLP': # Generate an MLP for Masked-AES
-            pass
-
-    ############################################################################
-
+    
         else: # Generate a CNN for Masked-AES
             pass
