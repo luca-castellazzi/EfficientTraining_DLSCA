@@ -1,8 +1,10 @@
 # Basics
 import json
 import numpy as np
-from tensorflow.keras.backend import clear_session
+from tqdm import tqdm
 from tensorflow.keras.models import load_model
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.backend import clear_session
 
 
 # Custom
@@ -64,15 +66,12 @@ def main():
             
         ges = []
 
-        for n_keys in range(1, len(constants.KEYS)): 
+        for n_keys in tqdm(range(1, len(constants.KEYS)), desc=f'{"".join(train_devs)}vs{test_dev}: '): 
         
             N_KEYS_FOLDER = RES_ROOT + f'/{n_keys}k'
             if not os.path.exists(N_KEYS_FOLDER):
                 os.mkdir(N_KEYS_FOLDER)
             SAVED_MODEL_PATH = N_KEYS_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
-            
-        
-            print(f'{"".join(train_devs)}vs{test_dev} | Number of keys: {n_keys}')
             
             train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
                            for k in list(constants.KEYS)[1:n_keys+1]
@@ -87,7 +86,13 @@ def main():
             )
             train_data, val_data = train_dl.load()
             x_train, y_train, _, _ = train_data 
-            x_val, y_val, _, _ = val_data # Val data is kept to consider callbacks             
+            x_val, y_val, _, _ = val_data # Val data is kept to consider callbacks
+
+            # Scale data to 0-mean and 1-variance
+            scaler = StandardScaler()
+            scaler.fit(x_train)
+            x_train = scaler.transform(x_train) 
+            x_val = scaler.transform(x_val)           
                       
             clear_session() # Start with a new Keras session every time    
             
@@ -114,18 +119,19 @@ def main():
                 byte_idx=b
             )
             x_test, _, pbs_test, tkb_test = test_dl.load()
-            
-            test_model = load_model(SAVED_MODEL_PATH)
-            preds = test_model.predict(x_test)            
+
+            # Scale test data to 0-mean and 1-variance w.r.t. train data
+            x_test = scaler.transform(x_test)        
             
             # Compute GE
+            test_model = load_model(SAVED_MODEL_PATH) 
             ge = results.ge(
-                preds=preds, 
+                model=test_model,
+                x_test=x_test,
                 pltxt_bytes=pbs_test, 
                 true_key_byte=tkb_test, 
                 n_exp=100, 
-                target=target,
-                n_traces=100 # Default: 500
+                target=target
             )
             ges.append(ge)
         
