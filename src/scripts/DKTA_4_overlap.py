@@ -8,6 +8,8 @@ import helpers
 import constants
 import visualization as vis
 
+TARGET = 'SBOX_OUT'
+
 def main():
 
     """
@@ -23,21 +25,18 @@ def main():
     with different colors.
     """
 
-    _, to_compare, n_devs, target = sys.argv
+    _, to_compare, n_devs = sys.argv
     to_compare = [int(tc) for tc in to_compare.split(',')]
     n_devs = int(n_devs)
-    target = target.upper()
 
-    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}'
+    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}'
     COMPARISON_FILE = RES_ROOT + f'/comparison_{n_devs}d_{"-".join([f"b{tc}" for tc in to_compare])}.csv'
     COMPARISON_PLOT = RES_ROOT + f'/comparison_{n_devs}d_{"-".join([f"b{tc}" for tc in to_compare])}.svg'
-
-    MAX_TRACES = 10
 
     ges_files = [RES_ROOT + f'/byte{tc}/{n_devs}d/avg_ges.npy'
                  for tc in to_compare]
 
-    ges = [np.load(gf)[:, :MAX_TRACES] for gf in ges_files]
+    ges = [np.load(gf)[:, :10] for gf in ges_files]
 
     ges_data = np.vstack(ges)
     csv_ges_data = np.vstack(
@@ -57,7 +56,7 @@ def main():
     )
     
     vis.plot_overlap(
-        ges=ges, 
+        all_ges=ges, 
         to_compare=to_compare, 
         title=f'{" vs ".join([f"Byte{tc}" for tc in to_compare])} | Train-Devices: {n_devs}',     
         ylim_max=50,

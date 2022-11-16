@@ -21,7 +21,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 
 N_MODELS = 15
 N_GEN = 20
-TOT_TRACES = 50000
 EPOCHS = 100
 HP = {
     'hidden_layers':  [1, 2, 3, 4, 5],
@@ -33,122 +32,127 @@ HP = {
     'batch_size':     [128, 256, 512, 1024]
 }
 
+TARGET = 'SBOX_OUT'
+
 
 def main():
 
     """
-    Performs hyperparameter tuning with the specified settings.
+    Performs hyperparameter tuning for an MLP model (target: SBOX_OUT) with the specified settings.
     Settings parameters (provided in order via command line):
         - train_devs: Devices to use during training, provided as comma-separated string without spaces
-        - model_type: Type of model to consider (MLP or CNN)
-        - target: Target of the attack (SBOX_IN or SBOX_OUT)
-        - byte_list: Bytes to be retrieved, provided as comma-separated string without spaces
-    
-    HP tuning is performed considering all the keys.
+        - n_keys: Number of keys to use during the tuning process
+        - tot_traces: Number of total train-traces
+        - b: Byte to be attacked
     
     The result is a JSON file containing the best hyperparameters.
     """
     
-    _, train_devs, model_type, target, byte_list = sys.argv
+    _, train_devs, n_keys, tot_traces, b = sys.argv
     
     train_devs = train_devs.upper().split(',')
     n_devs = len(train_devs)
-    model_type = model_type.upper()
-    target = target.upper()
-    byte_list = [int(b) for b in byte_list.split(',')]
+    n_keys = int(n_keys)
+    tot_traces = int(tot_traces)
+    b = int(b)
+
+    if n_keys <= 10:
+        # Use the original 10 keys
+        train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
+                       for k in list(constants.KEYS)[1:]
+                       for dev in train_devs]
+        RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/{n_devs}d'
+    else:
+        # MultiKey scenario
+        train_files = [f'{constants.PC_MULTIKEY_PATH}/{dev}-MK{k}.trs' 
+                       for k in range(n_keys)
+                       for dev in train_devs]
+        RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/mk_{n_devs}d'
+
+    if tot_traces < 50000:
+            RES_ROOT = RES_ROOT + f'/{tot_traces}traces'
     
-    train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
-                   for k in list(constants.KEYS)[1:]
-                   for dev in train_devs]
+    LOSS_HIST_FILE = RES_ROOT + f'/loss_hist_data.csv'
+    ACC_HIST_FILE = RES_ROOT + f'/acc_hist_data.csv'
+    HISTORY_PLOT = RES_ROOT + f'/hp_tuning_history.svg' 
+    HP_PATH = RES_ROOT + f'/hp.json'
 
+    # Get data
+    train_dl = SplitDataLoader(
+        train_files, 
+        tot_traces=tot_traces,
+        train_size=0.9,
+        target=TARGET,
+        byte_idx=b
+    )
+    train_data, val_data = train_dl.load()
+    x_train, y_train, _, _ = train_data
+    x_val, y_val, _, _ = val_data
 
-    for b in byte_list:
+    # Scale data to 0-mean and 1-variance
+    scaler = StandardScaler()
+    scaler.fit(x_train)
+    x_train = scaler.transform(x_train)
+    x_val = scaler.transform(x_val)
 
-        RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d'
-        LOSS_HIST_FILE = RES_ROOT + f'/loss_hist_data.csv'
-        ACC_HIST_FILE = RES_ROOT + f'/acc_hist_data.csv'
-        HISTORY_PLOT = RES_ROOT + f'/hp_tuning_history.svg' 
-        HP_PATH = RES_ROOT + f'/hp.json'
+    # HP Tuning via Genetic Algorithm
+    hp_tuner = HPTuner(
+        model_type='MLP', 
+        hp_space=HP, 
+        n_models=N_MODELS, 
+        n_epochs=EPOCHS
+    )
+        
+    best_hp = hp_tuner.genetic_algorithm(
+        n_gen=N_GEN,
+        selection_perc=0.3,
+        second_chance_prob=0.2,
+        mutation_prob=0.2,
+        x_train=x_train,
+        y_train=y_train,
+        x_val=x_val,
+        y_val=y_val
+    )
+        
     
-        print(f'*** Byte {b} ***')
+    # Save history data to .CSV files
+    b_history = hp_tuner.best_history
+    actual_epochs = len(b_history['loss']) # Early Stopping can make the actual 
+                                            # number of epochs different from the original one
 
-        train_dl = SplitDataLoader(
-            train_files, 
-            tot_traces=TOT_TRACES,
-            train_size=0.9,
-            target=target,
-            byte_idx=b
+    # Loss
+    loss_data = np.vstack(
+        (
+            np.arange(actual_epochs)+1, # X-axis values
+            b_history['loss'], # Y-axis values for 'loss'
+            b_history['val_loss'] # Y-axis values for 'val_loss'
         )
-        train_data, val_data = train_dl.load()
-        x_train, y_train, _, _ = train_data
-        x_val, y_val, _, _ = val_data
+    ).T
+    helpers.save_csv(
+        data=loss_data, 
+        columns=['Epochs', 'Loss', 'Val_Loss'],
+        output_path=LOSS_HIST_FILE
+    )
 
-        # Scale data to 0-mean and 1-variance
-        scaler = StandardScaler()
-        scaler.fit(x_train)
-        x_train = scaler.transform(x_train)
-        x_val = scaler.transform(x_val)
-        
-
-        hp_tuner = HPTuner(
-            model_type=model_type, 
-            hp_space=HP, 
-            n_models=N_MODELS, 
-            n_epochs=EPOCHS
+    # Accuracy
+    acc_data = np.vstack(
+        (
+            np.arange(actual_epochs)+1, # X-axis values
+            b_history['accuracy'], # Y-axis values for 'loss'
+            b_history['val_accuracy'] # Y-axis values for 'val_loss'
         )
-            
-        best_hp = hp_tuner.genetic_algorithm(
-            n_gen=N_GEN,
-            selection_perc=0.3,
-            second_chance_prob=0.2,
-            mutation_prob=0.2,
-            x_train=x_train,
-            y_train=y_train,
-            x_val=x_val,
-            y_val=y_val
-        )
-            
-        
-        # Save history data to .CSV files
-        b_history = hp_tuner.best_history
-        actual_epochs = len(b_history['loss']) # Early Stopping can make the actual 
-                                               # number of epochs different from the original one
+    ).T
+    helpers.save_csv(
+        data=acc_data, 
+        columns=['Epochs', 'Acc', 'Val_Acc'],
+        output_path=ACC_HIST_FILE
+    )
 
-        # Loss
-        loss_data = np.vstack(
-            (
-                np.arange(actual_epochs)+1, # X-axis values
-                b_history['loss'], # Y-axis values for 'loss'
-                b_history['val_loss'] # Y-axis values for 'val_loss'
-            )
-        ).T
-        helpers.save_csv(
-            data=loss_data, 
-            columns=['Epochs', 'Loss', 'Val_Loss'],
-            output_path=LOSS_HIST_FILE
-        )
-
-        # Accuracy
-        acc_data = np.vstack(
-            (
-                np.arange(actual_epochs)+1, # X-axis values
-                b_history['accuracy'], # Y-axis values for 'loss'
-                b_history['val_accuracy'] # Y-axis values for 'val_loss'
-            )
-        ).T
-        helpers.save_csv(
-            data=acc_data, 
-            columns=['Epochs', 'Acc', 'Val_Acc'],
-            output_path=ACC_HIST_FILE
-        )
-
-        # Plot trainin history
-        vis.plot_history(b_history, HISTORY_PLOT)
-        
-        with open(HP_PATH, 'w') as jfile:
-            json.dump(best_hp, jfile)
-
-        print()
+    # Plot training history
+    vis.plot_history(b_history, HISTORY_PLOT)
+    
+    with open(HP_PATH, 'w') as jfile:
+        json.dump(best_hp, jfile)
 
 
 if __name__ == '__main__':

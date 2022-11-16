@@ -9,6 +9,8 @@ import helpers
 import constants
 import visualization as vis
 
+TARGET = 'SBOX_OUT'
+
 
 def main():
 
@@ -17,19 +19,17 @@ def main():
     generalize the results.
     Settings parameters (provided in order via command line):
         - n_devs: Number of train devices
-        - target: Target of the attack (SBOX_IN or SBOX_OUT)
         - b: Byte to be retrieved (from 0 to 15)
 
     The result is a PNG file containing the average GE.
     """
     
-    _, n_devs, target, b = sys.argv
+    _, n_devs, b = sys.argv
     
     n_devs = int(n_devs) # Number of training devices (to access the right results folder)
-    target = target.upper()
     b = int(b)
     
-    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d'
+    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/{n_devs}d'
     AVG_GES_FILE = RES_ROOT + f'/avg_ges.csv'
     AVG_GES_FILE_NPY = RES_ROOT + f'/avg_ges.npy'
     AVG_GES_PLOT = RES_ROOT + f'/avg_ges_plot.svg'

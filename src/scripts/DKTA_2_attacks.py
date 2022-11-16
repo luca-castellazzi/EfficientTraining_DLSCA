@@ -23,6 +23,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 TOT_TRACES = 50000
 EPOCHS = 100
 
+TARGET = 'SBOX_OUT'
+
+
 def main():
 
     """
@@ -30,8 +33,6 @@ def main():
     settings.
     Settings parameters (provided in order via command line):
         - n_devs: Number of train devices
-        - model_type: Type of model to consider (MLP or CNN)
-        - target: Target of the attack (SBOX_IN or SBOX_OUT)
         - b: Byte to be retrieved (from 0 to 15)
     
     All possible permutations of devices are automatically considered.
@@ -44,13 +45,11 @@ def main():
     alongside plots about attack-loss (both as PNG files).
     """
     
-    _, n_devs, model_type, target, b = sys.argv
+    _, n_devs, b = sys.argv
     n_devs = int(n_devs)
-    model_type = model_type.upper()
-    target = target.upper()
     b = int(b)
     
-    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{target}/byte{b}/{n_devs}d' 
+    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/{n_devs}d' 
     HP_PATH = RES_ROOT + '/hp.json'
 
 
@@ -81,7 +80,7 @@ def main():
                 train_files, 
                 tot_traces=TOT_TRACES,
                 train_size=0.9,
-                target=target,
+                target=TARGET,
                 byte_idx=b
             )
             train_data, val_data = train_dl.load()
@@ -96,7 +95,7 @@ def main():
                       
             clear_session() # Start with a new Keras session every time    
             
-            attack_net = Network(model_type, hp)
+            attack_net = Network('MLP', hp)
             attack_net.build_model()
             attack_net.add_checkpoint_callback(SAVED_MODEL_PATH)
 
@@ -115,7 +114,7 @@ def main():
             test_dl = DataLoader(
                 test_files, 
                 tot_traces=TOT_TRACES,
-                target=target,
+                target=TARGET,
                 byte_idx=b
             )
             x_test, _, pbs_test, tkb_test = test_dl.load()
@@ -131,7 +130,7 @@ def main():
                 pltxt_bytes=pbs_test, 
                 true_key_byte=tkb_test, 
                 n_exp=100, 
-                target=target
+                TARGET=TARGET
             )
             ges.append(ge)
         
