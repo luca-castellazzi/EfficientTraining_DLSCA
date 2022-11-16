@@ -211,17 +211,17 @@ def ge(model, x_test, pltxt_bytes, true_key_byte, n_exp, target):
     return ge
 
 
-def retrieve_key_byte(preds, pltxt_bytes, target, n_traces=500):
+def retrieve_key_byte(preds, pltxt_bytes, target):
     
-    # Consider all couples predictions-plaintext
-    all_preds_pltxt = list(zip(preds, pltxt_bytes))
+    # # Consider all couples predictions-plaintext
+    # all_preds_pltxt = list(zip(preds, pltxt_bytes))
 
-    # Sample randomly the predictions that will generate the final result
-    sampled = random.sample(all_preds_pltxt, n_traces)
-    sampled_preds, sampled_pltxt_bytes = list(zip(*sampled))
+    # # Sample randomly the predictions that will generate the final result
+    # sampled = random.sample(all_preds_pltxt, n_traces)
+    # sampled_preds, sampled_pltxt_bytes = list(zip(*sampled))
     
-    # Compute the final rankings (for increasing number of traces)
-    final_rankings = compute_final_rankings(sampled_preds, sampled_pltxt_bytes, target)
+    # Compute the final rankings (for increasing number of traces)]
+    final_rankings = compute_final_rankings(preds, pltxt_bytes, target)
 
     resulting_key_bytes = np.array([ranking[0] for ranking in final_rankings])
 

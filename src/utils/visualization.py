@@ -220,11 +220,11 @@ def plot_overlap(all_ges, to_compare, title, ylim_max, output_path):
     plt.close(f)
 
 
-def plot_multikey(ges, traces, title, ylim_max, output_path):
+def plot_tr_comparison(ges, traces, title, ylim_max, output_path):
 
     """
-    Plots the average GEs resulting from a MultiKey experiment and saves the result 
-    in a SVG file.
+    Plots the average GEs resulting from a trace-comparison experiment and saves 
+    the result in a SVG file.
     
     Parameters:
         - ges (np.ndarray):
@@ -240,9 +240,10 @@ def plot_multikey(ges, traces, title, ylim_max, output_path):
     # Plot the GEs (default matplotlib colors)
     f, ax = plt.subplots(figsize=(10,5))
     for i, ge in enumerate(ges):
-        ax.plot(ge, label=f'{traces[i]} Traces', linewidth=3)
+        ax.plot(ge, label=f'{traces[i]} Traces', marker='o')
         
     ax.set_title(title)
+    ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
     ax.set_ylim([-3, ylim_max])
     ax.set_xlabel('Number of Attack Traces')
     ax.set_ylabel('Avg GE')
