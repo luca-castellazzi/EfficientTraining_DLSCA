@@ -58,6 +58,8 @@ def main():
 
     if n_keys <= 10:
         # Use the original 10 keys
+        # train_files = [f'{constants.MSK_PC_TRACES_PATH}/D3-K7_round1_500MHz + Resampled + Trim.trs']
+        # RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/MSK_{n_devs}d/{tot_traces}t'
         train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
                        for k in list(constants.KEYS)[1:]
                        for dev in train_devs]
@@ -70,7 +72,7 @@ def main():
         RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/mk_{n_devs}d'
 
     if tot_traces < 50000:
-            RES_ROOT = RES_ROOT + f'/{tot_traces}traces'
+        RES_ROOT = RES_ROOT + f'/{tot_traces}traces'
     
     LOSS_HIST_FILE = RES_ROOT + f'/loss_hist_data.csv'
     ACC_HIST_FILE = RES_ROOT + f'/acc_hist_data.csv'
