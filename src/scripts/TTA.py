@@ -59,16 +59,14 @@ def main():
         ges = []
 
         # Tot Traces Analysis (TTA)
-        # for train_devs, test_dev in tqdm(constants.PERMUTATIONS[n_devs], desc=f'{int(tot_train / 1000)}k Traces: '):
-        for train_devs, test_dev in tqdm(constants.PERMUTATIONS[n_devs], desc=f'{int(tot_train / 1)} Traces: '):
+        for train_devs, test_dev in tqdm(constants.PERMUTATIONS[n_devs], desc=f'{int(tot_train / 1000)}k Traces: '):
 
             train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
                         for k in list(constants.KEYS)[1:]
                         for dev in train_devs]
             test_files = [f'{constants.PC_TRACES_PATH}/{test_dev}-K0_500MHz + Resampled.trs']
 
-            # TRACES_FOLDER = RES_ROOT + f'/{int(tot_train / 1000)}k_traces'
-            TRACES_FOLDER = RES_ROOT + f'/{int(tot_train / 1)}_traces'
+            TRACES_FOLDER = RES_ROOT + f'/{int(tot_train / 1000)}k_traces'
             if not os.path.exists(TRACES_FOLDER):
                 os.mkdir(TRACES_FOLDER)
             SAVED_MODEL_PATH = TRACES_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
@@ -98,7 +96,6 @@ def main():
             x_train = scaler.transform(x_train) 
             x_val = scaler.transform(x_val)
             x_test = scaler.transform(x_test)
-
 
 
             clear_session() # Start with a new Keras session every time    
