@@ -213,6 +213,23 @@ def ge(model, x_test, pltxt_bytes, true_key_byte, n_exp, target):
 
 def retrieve_key_byte(preds, pltxt_bytes, target):
     
+    """
+    Retrieves the most probable key-byte for increasing number of attack traces, 
+    given some predictions.
+    
+    Parameters: 
+        - preds (np.ndarray):
+            Model predictions.
+        - pltxt_bytes (np.array):
+            Plaintext used during the encryption (single byte).
+        - target (str):
+            Target of the attack.
+            
+    Returns:
+        - resulting_key_bytes (np.array):
+            Most probable key-byte for increasing number of attack traces.
+    """
+
     # # Consider all couples predictions-plaintext
     # all_preds_pltxt = list(zip(preds, pltxt_bytes))
 
@@ -226,3 +243,31 @@ def retrieve_key_byte(preds, pltxt_bytes, target):
     resulting_key_bytes = np.array([ranking[0] for ranking in final_rankings])
 
     return resulting_key_bytes
+
+
+def min_att_tr(ge, threshold=0.5):
+
+    """
+    Computes the minimum number of attack traces that allows to have Guessing 
+    Entropy values less that a given threshold.
+    
+    Parameters:
+        - ge (np.array):
+            Guessing Entropy to consider.
+        - threshold (float, default=0.5):
+            Threshold for GE values. 
+
+    Returns:
+        - min_att_traces (int):
+            Minimum number of attack traces to have GE values less than the 
+            threshold.
+    """
+
+    min_att_traces = ge.shape[0] # ge is a np.array with (N,) as shape
+
+    for i, el in enumerate(ge):
+        if el <= threshold:
+            min_att_traces = i
+            break
+    
+    return min_att_traces

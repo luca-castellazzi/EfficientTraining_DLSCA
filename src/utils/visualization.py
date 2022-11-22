@@ -1,11 +1,11 @@
 # Basics
-from turtle import showturtle
 import matplotlib
 matplotlib.use('svg') # Avoid interactive mode (and save files as .SVG as default)
 import matplotlib.pyplot as plt
 import matplotlib.colors as clrs
 
 # Custom
+import results
 
 
 def plot_nicv(nicvs, configs, output_path):
@@ -121,15 +121,16 @@ def plot_conf_matrix(conf_matrix, output_path):
     plt.close(f)
 
 
-def plot_avg_ges(ges, title, ylim_max, output_path):
+def plot_ges(ges, labels, title, ylim_max, output_path):
 
     """
-    Plots the average GEs resulting from a DKTA experiment and saves the result 
-    in a SVG file.
+    Plots GEs using Google Turbo color-palette and saves the result in a .SVG file.
     
     Parameters:
         - ges (np.ndarray):
-            Average GEs to plot.
+            GEs to plot.
+        - labels (str list):
+            Labels to use as plot-legend.
         - title (str):
             Title of the plot.
         - ylim_max (int):
@@ -144,20 +145,14 @@ def plot_avg_ges(ges, title, ylim_max, output_path):
     
     # Plot the GEs
     f, ax = plt.subplots(figsize=(10,5))
-    for i, ge in enumerate(ges):
-            
-        label = f'{i+1} key'
-        if i != 0:
-            label += 's' # Plural
-            
-        ax.plot(ge, label=label, marker='o', color=colors[i])
+    for ge, l, c in zip(ges, labels, colors):
+        ax.plot(ge, label=l, marker='o', color=c)
         
-    # ax.set_title(f'Byte: {b}  |  Train-Devices: {n_devs}')
     ax.set_title(title)
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
     ax.set_ylim([-3, ylim_max]) 
     ax.set_xlabel('Number of traces')
-    ax.set_ylabel('Avg GE')
+    ax.set_ylabel('GE')
     ax.legend()
     ax.grid()
 
@@ -207,7 +202,7 @@ def plot_overlap(all_ges, to_compare, title, ylim_max, output_path):
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
     ax.set_ylim([-3, ylim_max])
     ax.set_xlabel('Number of traces')
-    ax.set_ylabel('Avg GE')
+    ax.set_ylabel('GE')
     ax.legend()
     ax.grid()
     
@@ -220,15 +215,59 @@ def plot_overlap(all_ges, to_compare, title, ylim_max, output_path):
     plt.close(f)
 
 
-def plot_tr_comparison(ges, traces, title, ylim_max, output_path):
+# def plot_tr_comparison(ges, traces, title, ylim_max, output_path):
+
+#     """
+#     Plots the average GEs resulting from a trace-comparison experiment and saves 
+#     the result in a SVG file.
+    
+#     Parameters:
+#         - ges (np.ndarray):
+#             Average GEs to plot.
+#         - title (str):
+#             Title of the plot.
+#         - ylim_max (int):
+#             Upper limit for y-axis.
+#         - output_path (str):
+#             Absolute path to the SVG file containing the plot.
+#     """
+    
+#     # Plot the GEs (default matplotlib colors)
+#     f, ax = plt.subplots(figsize=(10,5))
+#     for i, ge in enumerate(ges):
+#         ax.plot(ge, label=f'{traces[i]} Traces', marker='o')
+        
+#     ax.set_title(title)
+#     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
+#     ax.set_ylim([-3, ylim_max])
+#     ax.set_xlabel('Number of Attack Traces')
+#     ax.set_ylabel('Avg GE')
+#     ax.legend()
+#     ax.grid()
+
+#     f.savefig(
+#         output_path, 
+#         bbox_inches='tight', 
+#         dpi=600
+#     )
+    
+#     plt.close(f)
+
+
+def plot_soa_vs_custom(soa_ge, custom_ge, threshold, title, ylim_max, output_path):
 
     """
-    Plots the average GEs resulting from a trace-comparison experiment and saves 
-    the result in a SVG file.
-    
+    Plots GEs derived with both a State-of-the-Art approach and a custom approach 
+    highlighting the minimum number of traces that ensures GE values less than a 
+    given threshold.
+
     Parameters:
-        - ges (np.ndarray):
-            Average GEs to plot.
+        - soa_ge (np.ndarray):
+            GE derived with a State-of-the-Art approach.
+        - custom_ge (np.ndarray):
+            GE derived with a custom approach.
+        - threshold (float):
+            Threshold for GE values.
         - title (str):
             Title of the plot.
         - ylim_max (int):
@@ -236,24 +275,66 @@ def plot_tr_comparison(ges, traces, title, ylim_max, output_path):
         - output_path (str):
             Absolute path to the SVG file containing the plot.
     """
-    
-    # Plot the GEs (default matplotlib colors)
-    f, ax = plt.subplots(figsize=(10,5))
-    for i, ge in enumerate(ges):
-        ax.plot(ge, label=f'{traces[i]} Traces', marker='o')
-        
-    ax.set_title(title)
-    ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
-    ax.set_ylim([-3, ylim_max])
-    ax.set_xlabel('Number of Attack Traces')
-    ax.set_ylabel('Avg GE')
-    ax.legend()
-    ax.grid()
+
+    f = plt.figure(figsize=(10,5))
+
+    plt.plot(soa_ge, label='SoA', marker='o', color='b')
+    v_value = results.min_att_tr(soa_ge, threshold)
+    plt.axvline(v_value, color='b', linestyle='--', label=f'SoA GE<={threshold}')
+
+    plt.plot(custom_ge, label='Custom', marker='o', color='r')
+    v_value = results.min_att_tr(custom_ge, threshold)
+    plt.axvline(v_value, color='r', linestyle='--', label=f'Custom GE<={threshold}')
+
+    plt.xticks(range(len(soa_ge)), labels=range(1, len(soa_ge)+1)) # Consider the soa_ge, but both have same length
+    plt.ylim([-3, ylim_max])
+    plt.xlabel('Number of Attack Traces')
+    plt.ylabel('GE')
+    plt.title(title)
+    plt.legend()
+    plt.grid()
 
     f.savefig(
         output_path, 
         bbox_inches='tight', 
         dpi=600
     )
-    
+
+    plt.close(f)
+
+
+def plot_min_att_tr(min_att_tr, xlabels, title, output_path):
+
+    """
+    Plots the minimum number of attack traces that allows to have GE values less 
+    than a given threshold, for different experiments.
+
+    Parameters:
+        - min_att_tr (int list):
+            Minimum number of attack traces to have GE values less than the 
+            threshold.
+        - xlabels (int list):
+            Markers for x-axis values.
+        - title (str):
+            Title of the plot.
+        - output_path (str):
+            Absolute path to the SVG file containing the plot.
+    """
+
+    f = plt.figure(figsize=(10,5))
+
+    plt.plot(min_att_tr, marker='o', color='b')
+
+    plt.xticks(range(len(min_att_tr)), labels=xlabels)
+    plt.xlabel('Number of Total Train-Traces')
+    plt.ylabel('Min Number of Attack Traces for GE~0')
+    plt.title(title)
+    plt.grid()
+
+    f.savefig(
+        output_path, 
+        bbox_inches='tight', 
+        dpi=600
+    )
+
     plt.close(f)
