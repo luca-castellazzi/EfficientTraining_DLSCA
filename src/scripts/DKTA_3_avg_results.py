@@ -64,8 +64,16 @@ def main():
     np.save(AVG_GES_FILE_NPY, avg_ges)
     
     # Plot Avg GEs
-    vis.plot_avg_ges(
-        ges=avg_ges[:, :10], 
+    labels = []
+    for i, _ in enumerate(avg_ges):
+        l = f'{i+1} key'
+        if i != 0:
+            l += 's' # Plural
+        labels.append(l)
+
+    vis.plot_ges(
+        ges=avg_ges[:, :10],
+        labels=labels,
         title=f'Byte: {b}  |  Train-Devices: {n_devs}',
         ylim_max=50,
         output_path=AVG_GES_PLOT 
