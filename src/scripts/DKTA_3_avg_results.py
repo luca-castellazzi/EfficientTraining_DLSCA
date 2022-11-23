@@ -21,7 +21,7 @@ def main():
         - n_devs: Number of train devices
         - b: Byte to be retrieved (from 0 to 15)
 
-    The result is a PNG file containing the average GE.
+    The result is a .SVG file containing the average GE.
     """
     
     _, n_devs, b = sys.argv
