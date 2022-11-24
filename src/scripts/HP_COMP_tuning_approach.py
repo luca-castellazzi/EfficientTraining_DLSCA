@@ -1,7 +1,7 @@
 # Basic
 import json
+import time
 import numpy as np
-from tqdm import tqdm
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import StandardScaler
 
@@ -98,7 +98,9 @@ def main():
     print('State-of-the-Art Approach...')
 
     # HP Tuning and Training 
+    soa_start = time.time()
     soa_hp = soa.hp_tuning(x_train, y_train, x_val, y_val)
+    soa_end = time.time()
     with open(SOA_HP, 'w') as jfile:
         json.dump(soa_hp, jfile)
     soa_model = soa.build_model(soa_hp['layers'], soa_hp['neurons'])
@@ -243,6 +245,12 @@ def main():
         ylim_max=50,
         output_path=COMP_PLOT
     )
+
+
+
+##### Print training times #####################################################
+
+    print(f'Time to complete SoA Hyperparameter Tuning: {((soa_end - soa_start) / 60):.2f} min')
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 # Basic
 import json
+import time
 import numpy as np
 from tqdm import tqdm
 from tensorflow.keras.models import load_model
@@ -27,7 +28,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 
 BYTE = 5
 TARGET = 'SBOX_OUT'
 GE_EXP = 100
-TOT_TRAIN = [50000, 100000, 200000]
+TOT_TRAIN = [100000, 200000]
 VAL_SIZE = 5000
 TOT_TEST = 50000
 ATT_TRACES = 15 # Number of attack-traces to consider when plotting GEs
@@ -67,6 +68,8 @@ def main():
     # Train and Test with different trainset-sizes
     soa_ges = []
     cstm_ges = []
+    soa_times = []
+    cstm_times = []
     
     for tot_train in tqdm(TOT_TRAIN, desc='Attacking: '):
 
@@ -108,7 +111,9 @@ def main():
 
         # SoA
         soa_model = soa.build_model(soa_hp['layers'], soa_hp['neurons'])
+        soa_start = time.time()
         _ = soa.fit(soa_model, x_train, y_train, x_val, y_val)
+        soa_end = time.time()
         soa_ge = results.ge(
             model=soa_model,
             x_test=x_test,
@@ -124,6 +129,7 @@ def main():
         cstm_net.build_model()
         CSTM_MODEL = RES_ROOT + f'/model_{tot_train}.h5'
         cstm_net.add_checkpoint_callback(CSTM_MODEL)
+        cstm_start = time.time()
         _ = cstm_net.model.fit(
             x_train, 
             y_train, 
@@ -133,6 +139,7 @@ def main():
             callbacks=cstm_net.callbacks,
             verbose=0
         )
+        cstm_end = time.time()
         cstm_model = load_model(CSTM_MODEL)
         cstm_ge = results.ge(
             model=cstm_model,
@@ -144,38 +151,49 @@ def main():
         )
         cstm_ges.append(cstm_ge)
 
+        # Get train times
+        soa_train_time = (soa_end - soa_start) / 60
+        cstm_train_time = (cstm_end - cstm_start) / 60
+        soa_times.append(soa_train_time)
+        cstm_times.append(cstm_train_time)
+
     
     # Compare the results
-    for tot_train, soa_ge, cstm_ge in zip(TOT_TRAIN, soa_ges, cstm_ges):
+    for tot_train, soa_ge, cstm_ge, soa_t, cstm_t in zip(TOT_TRAIN, soa_ges, cstm_ges, soa_times, cstm_times):
 
-        COMP_FILE = RES_ROOT + f'/comparison_{tot_train}.csv'
-        COMP_PLOT = RES_ROOT + f'/comparison_{tot_train}.svg'
+        # COMP_FILE = RES_ROOT + f'/comparison_{tot_train}.csv'
+        # COMP_PLOT = RES_ROOT + f'/comparison_{tot_train}.svg'
         
-        # Save Results
-        plottable_soa_ge = soa_ge[:ATT_TRACES]
-        plottable_cstm_ge = cstm_ge[:ATT_TRACES]
-        comp_data = np.vstack(
-            (
-                np.arange(ATT_TRACES)+1, # X-axis values
-                plottable_soa_ge, # Y-axis values for SoA
-                plottable_cstm_ge # Y-axis values for Custom
-            )
-        ).T
-        helpers.save_csv(
-            data=comp_data, 
-            columns=['AttackTraces', 'SoA', 'Custom'],
-            output_path=COMP_FILE
-        )
+        # # Save Results
+        # plottable_soa_ge = soa_ge[:ATT_TRACES]
+        # plottable_cstm_ge = cstm_ge[:ATT_TRACES]
+        # comp_data = np.vstack(
+        #     (
+        #         np.arange(ATT_TRACES)+1, # X-axis values
+        #         plottable_soa_ge, # Y-axis values for SoA
+        #         plottable_cstm_ge # Y-axis values for Custom
+        #     )
+        # ).T
+        # helpers.save_csv(
+        #     data=comp_data, 
+        #     columns=['AttackTraces', 'SoA', 'Custom'],
+        #     output_path=COMP_FILE
+        # )
 
-        # Plot GE Comparison
-        vis.plot_soa_vs_custom(
-            soa_ge=plottable_soa_ge,
-            custom_ge=plottable_cstm_ge,
-            threshold=0.5,
-            title=f'HP Tuning Approach: State-of-the-Art vs Custom  |  {n_devs} Train-Devices',
-            ylim_max=50,
-            output_path=COMP_PLOT
-        )
+        # # Plot GE Comparison
+        # vis.plot_soa_vs_custom(
+        #     soa_ge=plottable_soa_ge,
+        #     custom_ge=plottable_cstm_ge,
+        #     threshold=0.5,
+        #     title=f'HP Tuning Approach: State-of-the-Art vs Custom  | Train-Devices: {n_devs}  |  Tot Traces: {int(tot_train/1000)}k',
+        #     ylim_max=50,
+        #     output_path=COMP_PLOT
+        # )
+
+        # Print train times
+        print(f'SoA train-time with {int(tot_train/1000)}k traces:    {soa_t:.2f} min')
+        print(f'Custom train-time with {int(tot_train/1000)}k traces: {cstm_t:.2f} min')
+        print()
 
 
 if __name__ == '__main__':
