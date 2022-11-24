@@ -267,7 +267,7 @@ def min_att_tr(ge, threshold=0.5):
 
     for i, el in enumerate(ge):
         if el <= threshold:
-            min_att_traces = i
+            min_att_traces = i + 1 # +1 because the actual number of traces is index+1
             break
     
     return min_att_traces

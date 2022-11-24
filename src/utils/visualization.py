@@ -303,7 +303,7 @@ def plot_soa_vs_custom(soa_ge, custom_ge, threshold, title, ylim_max, output_pat
     plt.close(f)
 
 
-def plot_min_att_tr(min_att_tr, xlabels, title, output_path):
+def plot_min_att_tr(min_att_tr, xlabels, ylim_max, title, output_path):
 
     """
     Plots the minimum number of attack traces that allows to have GE values less 
@@ -326,8 +326,9 @@ def plot_min_att_tr(min_att_tr, xlabels, title, output_path):
     plt.plot(min_att_tr, marker='o', color='b')
 
     plt.xticks(range(len(min_att_tr)), labels=xlabels)
+    plt.ylim([2, ylim_max])
     plt.xlabel('Number of Total Train-Traces')
-    plt.ylabel('Min Number of Attack Traces for GE~0')
+    plt.ylabel('Number of Attack Traces for GE~0')
     plt.title(title)
     plt.grid()
 
