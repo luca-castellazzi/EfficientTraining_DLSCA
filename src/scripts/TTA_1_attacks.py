@@ -12,8 +12,7 @@ import sys
 sys.path.insert(0, '../utils')
 import constants
 import results
-import helpers
-import visualization as vis
+import soa_reproduction as soa
 from data_loader import DataLoader, SplitDataLoader
 sys.path.insert(0, '../modeling')
 from network import Network
@@ -32,16 +31,19 @@ TOT_TEST = 50000
 
 def main():
 
-    _, n_devs = sys.argv
+    _, n_devs, approach = sys.argv
     n_devs = int(n_devs)
 
     # Get HPs
-    HP_PATH = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{BYTE}/{n_devs}d/hp.json'
+    if approach == 'soa':
+        HP_PATH = f'{constants.RESULTS_PATH}/HPComparison/TuningApproach/{n_devs}d/soa_hp.json'
+    else:
+        HP_PATH = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{BYTE}/{n_devs}d/hp.json'
     with open(HP_PATH, 'r') as jfile:
         hp = json.load(jfile)
 
     # Definition of constant root path 
-    RES_ROOT = f'{constants.RESULTS_PATH}/TTA/{n_devs}d'
+    RES_ROOT = f'{constants.RESULTS_PATH}/TTA/{approach}/{n_devs}d'
 
     for tot_train in TOT_TRAIN:
 
@@ -61,10 +63,11 @@ def main():
                         for dev in train_devs]
             test_files = [f'{constants.PC_TRACES_PATH}/{test_dev}-K0_500MHz + Resampled.trs']
 
-            TRACES_FOLDER = RES_ROOT + f'/{int(tot_train / 1000)}k_traces'
-            if not os.path.exists(TRACES_FOLDER):
-                os.mkdir(TRACES_FOLDER)
-            SAVED_MODEL_PATH = TRACES_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
+            if approach == 'custom':
+                TRACES_FOLDER = RES_ROOT + f'/{int(tot_train / 1000)}k_traces'
+                if not os.path.exists(TRACES_FOLDER):
+                    os.mkdir(TRACES_FOLDER)
+                SAVED_MODEL_PATH = TRACES_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
 
             train_dl = SplitDataLoader(
                 train_files, 
@@ -96,21 +99,25 @@ def main():
             clear_session() # Start with a new Keras session every time    
 
             # Train and Attack
-            attack_net = Network('MLP', hp)
-            attack_net.build_model()
-            attack_net.add_checkpoint_callback(SAVED_MODEL_PATH)
+            if approach == 'soa':
+                test_model = soa.build_model(hp['layers'], hp['neurons'])
+                _ = soa.fit(test_model, x_train, y_train, x_val, y_val)
+            else:
+                custom_net = Network('MLP', hp)
+                custom_net.build_model()
+                custom_net.add_checkpoint_callback(SAVED_MODEL_PATH)
 
-            attack_net.model.fit(
-                x_train, 
-                y_train, 
-                validation_data=(x_val, y_val),
-                epochs=EPOCHS,
-                batch_size=attack_net.hp['batch_size'],
-                callbacks=attack_net.callbacks,
-                verbose=0
-            )
+                custom_net.model.fit(
+                    x_train, 
+                    y_train, 
+                    validation_data=(x_val, y_val),
+                    epochs=EPOCHS,
+                    batch_size=custom_net.hp['batch_size'],
+                    callbacks=custom_net.callbacks,
+                    verbose=0
+                )
 
-            test_model = load_model(SAVED_MODEL_PATH)          
+                test_model = load_model(SAVED_MODEL_PATH)          
             
             # Compute GE
             ge = results.ge(

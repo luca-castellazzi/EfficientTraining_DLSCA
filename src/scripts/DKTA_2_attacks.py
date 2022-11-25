@@ -130,7 +130,7 @@ def main():
                 pltxt_bytes=pbs_test, 
                 true_key_byte=tkb_test, 
                 n_exp=100, 
-                TARGET=TARGET
+                target=TARGET
             )
             ges.append(ge)
         
