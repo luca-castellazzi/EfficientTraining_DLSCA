@@ -51,7 +51,7 @@ def main():
         soa_data=soa_min_att_tr,
         custom_data=custom_min_att_tr,
         xlabels=labels,
-        ylim_max=9,
+        ylim_max=15,
         title=f'Min Number of Attack Traces - SoA vs Custom  |  Byte: {BYTE}  |  Train-Devices: {n_devs}',
         output_path=OVERLAP_PLOT 
     )

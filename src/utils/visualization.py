@@ -326,7 +326,7 @@ def plot_min_att_tr(min_att_tr, xlabels, ylim_max, title, output_path):
     plt.plot(min_att_tr, marker='o', color='b')
 
     plt.xticks(range(len(min_att_tr)), labels=xlabels)
-    plt.ylim([2, ylim_max])
+    plt.ylim([1, ylim_max])
     plt.xlabel('Number of Total Train-Traces')
     plt.ylabel('Number of Attack Traces for GE~0')
     plt.title(title)
@@ -349,7 +349,7 @@ def plot_overlap_min_att_tr(soa_data, custom_data, xlabels, ylim_max, title, out
     plt.plot(custom_data, marker='o', color='r', label='Custom')
 
     plt.xticks(range(len(soa_data)), labels=xlabels)
-    plt.ylim([2, ylim_max])
+    plt.ylim([1, ylim_max])
     plt.xlabel('Number of Total Train-Traces')
     plt.ylabel('Number of Attack Traces for GE~0')
     plt.title(title)

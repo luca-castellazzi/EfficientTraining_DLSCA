@@ -46,17 +46,12 @@ def main():
         # * .npy (containing GEs data)
         # * .csv (containing GEs data for plots)
         # * .svg (plots)
-        #
-        # Directories allow to have the amount of traces
-        # .npy files give GEs data
+    	#
+        # .npy files allow to get the number of traces
 
-        filepath = RES_ROOT + f'/{filename}'
-
-        if os.path.isdir(filepath):
-            tt_labels.append(filename.split('_')[0])
-        else:
-            if '.npy' in filename:
-                ges_files.append(filename)
+        if '.npy' in filename:
+            tt_labels.append(filename.split('_')[-1].split('.')[0]) # avg_ge_ Nk .npy --> Nk is needed
+            ges_files.append(filename)
 
     # Labels and GE files can be appended in the wrong order: need to sort
     tt_labels.sort(key=lambda x: int(x.split('k')[0])) # N k_traces --> int(N) is needed to sort
@@ -78,6 +73,11 @@ def main():
 
 ##### Save Results #############################################################
 
+    if approach == 'soa':
+        upper_approach = 'SoA'
+    else:
+        upper_approach = 'Custom'
+
     # Save GEs
     ges_data = np.vstack(
         (
@@ -94,7 +94,7 @@ def main():
     vis.plot_ges(
         ges=ges[:, :10], 
         labels=[f'{tt_l} traces' for tt_l in tt_labels],
-        title=f'Tot Traces Analysis  |  Byte: {BYTE}, Train-Devices: {n_devs}',
+        title=f'Tot Traces Analysis - {upper_approach}  |  Byte: {BYTE}, Train-Devices: {n_devs}',
         ylim_max=50,
         output_path=TT_GES_PLOT 
     )
@@ -112,15 +112,11 @@ def main():
         output_path=MIN_ATT_TR_FILE
     )
     # Plot min number of attack traces
-    if approach == 'soa':
-        title = f'Min Number of Attack Traces - SoA  |  Byte: {BYTE}  |  Train-Devices: {n_devs}'
-    else:
-        title = f'Min Number of Attack Traces - Custom  |  Byte: {BYTE}  |  Train-Devices: {n_devs}'
     vis.plot_min_att_tr(
         min_att_tr=min_att_traces,
         xlabels=tt_labels,
-        ylim_max=9,
-        title=title,
+        ylim_max=15,
+        title=f'Min Number of Attack Traces - {upper_approach}  |  Byte: {BYTE}  |  Train-Devices: {n_devs}',
         output_path=MIN_ATT_TR_PLOT 
     )
 
