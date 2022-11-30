@@ -94,7 +94,7 @@ def main():
     vis.plot_ges(
         ges=ges[:, :10], 
         labels=[f'{tt_l} traces' for tt_l in tt_labels],
-        title=f'Tot Traces Analysis - {upper_approach}  |  Byte: {BYTE}, Train-Devices: {n_devs}',
+        title=f'Tot Traces Analysis - {upper_approach}  |  Byte: {BYTE}  |  Train-Devices: {n_devs}',
         ylim_max=50,
         output_path=TT_GES_PLOT 
     )
