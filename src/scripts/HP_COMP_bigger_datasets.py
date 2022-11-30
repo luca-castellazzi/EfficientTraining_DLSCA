@@ -161,34 +161,34 @@ def main():
     # Compare the results
     for tot_train, soa_ge, cstm_ge, soa_t, cstm_t in zip(TOT_TRAIN, soa_ges, cstm_ges, soa_times, cstm_times):
 
-        # COMP_FILE = RES_ROOT + f'/comparison_{tot_train}.csv'
-        # COMP_PLOT = RES_ROOT + f'/comparison_{tot_train}.svg'
+        COMP_FILE = RES_ROOT + f'/comparison_{tot_train}.csv'
+        COMP_PLOT = RES_ROOT + f'/comparison_{tot_train}.svg'
         
-        # # Save Results
-        # plottable_soa_ge = soa_ge[:ATT_TRACES]
-        # plottable_cstm_ge = cstm_ge[:ATT_TRACES]
-        # comp_data = np.vstack(
-        #     (
-        #         np.arange(ATT_TRACES)+1, # X-axis values
-        #         plottable_soa_ge, # Y-axis values for SoA
-        #         plottable_cstm_ge # Y-axis values for Custom
-        #     )
-        # ).T
-        # helpers.save_csv(
-        #     data=comp_data, 
-        #     columns=['AttackTraces', 'SoA', 'Custom'],
-        #     output_path=COMP_FILE
-        # )
+        # Save Results
+        plottable_soa_ge = soa_ge[:ATT_TRACES]
+        plottable_cstm_ge = cstm_ge[:ATT_TRACES]
+        comp_data = np.vstack(
+            (
+                np.arange(ATT_TRACES)+1, # X-axis values
+                plottable_soa_ge, # Y-axis values for SoA
+                plottable_cstm_ge # Y-axis values for Custom
+            )
+        ).T
+        helpers.save_csv(
+            data=comp_data, 
+            columns=['AttackTraces', 'SoA', 'Custom'],
+            output_path=COMP_FILE
+        )
 
-        # # Plot GE Comparison
-        # vis.plot_soa_vs_custom(
-        #     soa_ge=plottable_soa_ge,
-        #     custom_ge=plottable_cstm_ge,
-        #     threshold=0.5,
-        #     title=f'HP Tuning Approach: State-of-the-Art vs Custom  | Train-Devices: {n_devs}  |  Tot Traces: {int(tot_train/1000)}k',
-        #     ylim_max=50,
-        #     output_path=COMP_PLOT
-        # )
+        # Plot GE Comparison
+        vis.plot_soa_vs_custom(
+            soa_ge=plottable_soa_ge,
+            custom_ge=plottable_cstm_ge,
+            threshold=0.5,
+            title=f'HP Tuning Approach: State-of-the-Art vs Custom  | Train-Devices: {n_devs}  |  Tot Traces: {int(tot_train/1000)}k',
+            ylim_max=50,
+            output_path=COMP_PLOT
+        )
 
         # Print train times
         print(f'SoA train-time with {int(tot_train/1000)}k traces:    {soa_t:.2f} min')
