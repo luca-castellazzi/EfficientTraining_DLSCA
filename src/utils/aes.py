@@ -6,6 +6,32 @@ from helpers import to_coords
 import constants
 
 
+def _key(plaintext, key):
+    return key
+
+def _sbox_in(plaintext, key):
+    # AddRoundKey
+    sbox_in = plaintext ^ key
+    return sbox_in
+
+def _sbox_out(plaintext, key):
+    # AddRoundKey
+    sbox_in = plaintext ^ key
+    # SubBytes
+    rows, cols = to_coords(sbox_in)
+    sbox_out = constants.SBOX_DEC[rows, cols]
+    return sbox_out
+
+def _hw_sbox_out(plaintext, key):
+    # AddRoundKey
+    sbox_in = plaintext ^ key
+    # SubBytes
+    rows, cols = to_coords(sbox_in)
+    sbox_out = constants.SBOX_DEC[rows, cols]
+    # HW Computation
+    hw = [bin(val).replace('0b', '').count('1') for val in sbox_out]
+    return hw
+
 def labels_from_key(plaintext, key, target):
     
     """ 
@@ -25,37 +51,31 @@ def labels_from_key(plaintext, key, target):
             Integer-version of the target labels.
     """
     
-    if target == 'KEY':
-        labels = key
-    else:
-        # AddRoundKey
-        sbox_in = plaintext ^ key
+    actions = {
+        'KEY': _key,
+        'SBOX_IN': _sbox_in,
+        'SBOX_OUT':_sbox_out,
+        'HW_SO': _hw_sbox_out
+    }
+    generate_labels = actions[target] # action.get(target, _default_fun) to specify a default behavior in case of key not found
 
-        if target == 'SBOX_IN':
-            labels = sbox_in
-        elif target == 'SBOX_OUT':
-            # SubBytes
-            rows, cols = to_coords(sbox_in)
-            sbox_out = constants.SBOX_DEC[rows, cols]
-            labels = sbox_out
-        else:
-            pass # Future implementations (HW, HD, ...)
+    labels = generate_labels(plaintext, key)
 
-#    # AddRoundKey
-#    sbox_in = plaintext ^ key
-#
-#    # Labeling
-#    if target == 'SBOX_IN':
-#        labels = sbox_in
-#    elif target == 'SBOX_OUT':
-#        # SubBytes
-#        rows, cols = to_coords(sbox_in)
-#        sbox_out = constants.SBOX_DEC[rows, cols]
-#        labels = sbox_out
-#    elif target == 'KEY':
-#        labels = key
-#    else:
-#        pass # Future implementations (target = HW, target = KEY, ...)
+    # if target == 'KEY':
+    #     labels = key
+    # else:
+    #     # AddRoundKey
+    #     sbox_in = plaintext ^ key
+
+    #     if target == 'SBOX_IN':
+    #         labels = sbox_in
+    #     elif target == 'SBOX_OUT':
+    #         # SubBytes
+    #         rows, cols = to_coords(sbox_in)
+    #         sbox_out = constants.SBOX_DEC[rows, cols]
+    #         labels = sbox_out
+    #     else:
+    #         pass # Future implementations (HW, HD, ...)
 
     return labels
     

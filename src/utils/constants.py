@@ -37,7 +37,8 @@ TRACE_NUM = 50000
 N_CLASSES = {
     'KEY': 256,
     'SBOX_IN': 256,
-    'SBOX_OUT': 256
+    'SBOX_OUT': 256,
+    'HW_SO': 9,
 }
 
 # Int-version of AES SBox
