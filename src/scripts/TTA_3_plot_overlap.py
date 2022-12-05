@@ -42,7 +42,7 @@ def main():
     ).T
     helpers.save_csv(
         data=overlap_data,
-        columns=['TotTraces', 'SoA', 'Custom'],
+        columns=['TotTraces', 'SoA', 'GenAlg'],
         output_path=OVERLAP_FILE
     )
 
@@ -50,9 +50,10 @@ def main():
     vis.plot_overlap_min_att_tr(
         soa_data=soa_min_att_tr,
         custom_data=custom_min_att_tr,
+        threshold=0.5,
         xlabels=labels,
         ylim_max=15,
-        title=f'Min Number of Attack Traces - SoA vs Custom  |  Byte: {BYTE}  |  Train-Devices: {n_devs}',
+        title=f'Min Number of Attack Traces - SoA vs GenAlg  |  Byte: {BYTE}  |  Train-Devices: {n_devs}',
         output_path=OVERLAP_PLOT 
     )
 

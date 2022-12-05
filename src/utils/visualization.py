@@ -215,51 +215,12 @@ def plot_overlap(all_ges, to_compare, title, ylim_max, output_path):
     plt.close(f)
 
 
-# def plot_tr_comparison(ges, traces, title, ylim_max, output_path):
-
-#     """
-#     Plots the average GEs resulting from a trace-comparison experiment and saves 
-#     the result in a SVG file.
-    
-#     Parameters:
-#         - ges (np.ndarray):
-#             Average GEs to plot.
-#         - title (str):
-#             Title of the plot.
-#         - ylim_max (int):
-#             Upper limit for y-axis.
-#         - output_path (str):
-#             Absolute path to the SVG file containing the plot.
-#     """
-    
-#     # Plot the GEs (default matplotlib colors)
-#     f, ax = plt.subplots(figsize=(10,5))
-#     for i, ge in enumerate(ges):
-#         ax.plot(ge, label=f'{traces[i]} Traces', marker='o')
-        
-#     ax.set_title(title)
-#     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
-#     ax.set_ylim([-3, ylim_max])
-#     ax.set_xlabel('Number of Attack Traces')
-#     ax.set_ylabel('Avg GE')
-#     ax.legend()
-#     ax.grid()
-
-#     f.savefig(
-#         output_path, 
-#         bbox_inches='tight', 
-#         dpi=600
-#     )
-    
-#     plt.close(f)
-
-
 def plot_soa_vs_custom(soa_ge, custom_ge, threshold, title, ylim_max, output_path):
 
     """
-    Plots GEs derived with both a State-of-the-Art approach and a custom approach 
-    highlighting the minimum number of traces that ensures GE values less than a 
-    given threshold.
+    Plots GEs derived with both the State-of-the-Art approach and the Genetic 
+    Algorithm approach, highlighting the minimum number of traces that ensures GE 
+    values less than a given threshold.
 
     Parameters:
         - soa_ge (np.ndarray):
@@ -282,9 +243,9 @@ def plot_soa_vs_custom(soa_ge, custom_ge, threshold, title, ylim_max, output_pat
     v_value = results.min_att_tr(soa_ge, threshold)
     plt.axvline(v_value, color='b', linestyle='--', label=f'SoA GE<={threshold}')
 
-    plt.plot(custom_ge, label='Custom', marker='o', color='r')
+    plt.plot(custom_ge, label='GenAlg', marker='o', color='r')
     v_value = results.min_att_tr(custom_ge, threshold)
-    plt.axvline(v_value, color='r', linestyle='--', label=f'Custom GE<={threshold}')
+    plt.axvline(v_value, color='r', linestyle='--', label=f'GenAlg GE<={threshold}')
 
     plt.xticks(range(len(soa_ge)), labels=range(1, len(soa_ge)+1)) # Consider the soa_ge, but both have same length
     plt.ylim([-3, ylim_max])
@@ -303,7 +264,7 @@ def plot_soa_vs_custom(soa_ge, custom_ge, threshold, title, ylim_max, output_pat
     plt.close(f)
 
 
-def plot_min_att_tr(min_att_tr, xlabels, ylim_max, title, output_path):
+def plot_min_att_tr(min_att_tr, threshold, xlabels, ylim_max, title, output_path):
 
     """
     Plots the minimum number of attack traces that allows to have GE values less 
@@ -313,6 +274,8 @@ def plot_min_att_tr(min_att_tr, xlabels, ylim_max, title, output_path):
         - min_att_tr (int list):
             Minimum number of attack traces to have GE values less than the 
             threshold.
+        - threshold (float):
+            Threshold for GE values.
         - xlabels (int list):
             Markers for x-axis values.
         - title (str):
@@ -328,7 +291,7 @@ def plot_min_att_tr(min_att_tr, xlabels, ylim_max, title, output_path):
     plt.xticks(range(len(min_att_tr)), labels=xlabels)
     plt.ylim([1, ylim_max])
     plt.xlabel('Number of Total Train-Traces')
-    plt.ylabel('Number of Attack Traces for GE~0')
+    plt.ylabel(f'Number of Attack Traces for GE<={threshold}')
     plt.title(title)
     plt.grid()
 
@@ -341,17 +304,39 @@ def plot_min_att_tr(min_att_tr, xlabels, ylim_max, title, output_path):
     plt.close(f)
 
 
-def plot_overlap_min_att_tr(soa_data, custom_data, xlabels, ylim_max, title, output_path):
+def plot_overlap_min_att_tr(soa_data, custom_data, threshold, xlabels, ylim_max, title, output_path):
+
+    """
+    Plots the minimum number of attack traces that allows to have GE values less 
+    than a given threshold using data derived from both the State-of-the-Art 
+    approach and a custom approach.
+
+    Parameters:
+        - soa_data (np.array):
+            Data relative to State-of-the-Art approach.
+        - custom_data (np.array):
+            Data relative to custom approach.
+        - threshold (float):
+            Threshold for GE values.
+        - xlabels (int list):
+            Markers for x-axis values.
+        - ylim_max (int):
+            Upper limit for y-axis.
+        - title (str):
+            Title of the plot.
+        - output_path (str):
+            Absolute path to the SVG file containing the plot.
+    """
 
     f = plt.figure(figsize=(10,5))
 
     plt.plot(soa_data, marker='o', color='b', label='SoA')
-    plt.plot(custom_data, marker='o', color='r', label='Custom')
+    plt.plot(custom_data, marker='o', color='r', label='GenAlg')
 
     plt.xticks(range(len(soa_data)), labels=xlabels)
     plt.ylim([1, ylim_max])
     plt.xlabel('Number of Total Train-Traces')
-    plt.ylabel('Number of Attack Traces for GE~0')
+    plt.ylabel(f'Number of Attack Traces for GE<={threshold}')
     plt.title(title)
     plt.legend()
     plt.grid()

@@ -54,10 +54,10 @@ def main():
     SOA_ACC_FILE = RES_ROOT + '/soa_acc_hist.csv'
     SOA_HISTORY_PLOT = RES_ROOT + '/soa_hist.svg'
     # Custom
-    CSTM_LOSS_FILE = RES_ROOT + '/cstm_loss_hist.csv'
-    CSTM_ACC_FILE = RES_ROOT + '/cstm_acc_hist.csv'
-    CSTM_HISTORY_PLOT = RES_ROOT + '/cstm_hist.svg'
-    CSTM_MODEL = RES_ROOT + '/cstm_model.h5'
+    CSTM_LOSS_FILE = RES_ROOT + '/genAlg_loss_hist.csv'
+    CSTM_ACC_FILE = RES_ROOT + '/genAlg_acc_hist.csv'
+    CSTM_HISTORY_PLOT = RES_ROOT + '/genAlg_hist.svg'
+    CSTM_MODEL = RES_ROOT + '/genAlg_model.h5'
     CSTM_HP = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{BYTE}/{n_devs}d/hp.json'
     # Both
     COMP_FILE = RES_ROOT + '/comparison.csv'
@@ -232,7 +232,7 @@ def main():
     ).T
     helpers.save_csv(
         data=comp_data, 
-        columns=['AttackTraces', 'SoA', 'Custom'],
+        columns=['AttackTraces', 'SoA', 'GenAlg'],
         output_path=COMP_FILE
     )
 
@@ -241,7 +241,7 @@ def main():
         soa_ge=plottable_soa_ge,
         custom_ge=plottable_cstm_ge,
         threshold=0.5,
-        title=f'HP Tuning Approach: State-of-the-Art vs Custom  |  Train-Devices: {n_devs}',
+        title=f'HP Tuning Approach: State-of-the-Art vs Genetic Algorithm  |  Train-Devices: {n_devs}',
         ylim_max=50,
         output_path=COMP_PLOT
     )

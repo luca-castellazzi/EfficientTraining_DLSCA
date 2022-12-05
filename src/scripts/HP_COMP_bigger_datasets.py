@@ -176,7 +176,7 @@ def main():
         ).T
         helpers.save_csv(
             data=comp_data, 
-            columns=['AttackTraces', 'SoA', 'Custom'],
+            columns=['AttackTraces', 'SoA', 'GenAlg'],
             output_path=COMP_FILE
         )
 
@@ -185,14 +185,14 @@ def main():
             soa_ge=plottable_soa_ge,
             custom_ge=plottable_cstm_ge,
             threshold=0.5,
-            title=f'HP Tuning Approach: State-of-the-Art vs Custom  | Train-Devices: {n_devs}  |  Tot Traces: {int(tot_train/1000)}k',
+            title=f'HP Tuning Approach: State-of-the-Art vs Genetic Algorithm  | Train-Devices: {n_devs}  |  Tot Traces: {int(tot_train/1000)}k',
             ylim_max=50,
             output_path=COMP_PLOT
         )
 
         # Print train times
         print(f'SoA train-time with {int(tot_train/1000)}k traces:    {soa_t:.2f} min')
-        print(f'Custom train-time with {int(tot_train/1000)}k traces: {cstm_t:.2f} min')
+        print(f'Genetic Algorithm train-time with {int(tot_train/1000)}k traces: {cstm_t:.2f} min')
         print()
 
 

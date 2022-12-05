@@ -76,7 +76,7 @@ def main():
     if approach == 'soa':
         upper_approach = 'SoA'
     else:
-        upper_approach = 'Custom'
+        upper_approach = 'Genetic Algorithm'
 
     # Save GEs
     ges_data = np.vstack(
@@ -114,6 +114,7 @@ def main():
     # Plot min number of attack traces
     vis.plot_min_att_tr(
         min_att_tr=min_att_traces,
+        threshold=THRESHOLD,
         xlabels=tt_labels,
         ylim_max=15,
         title=f'Min Number of Attack Traces - {upper_approach}  |  Byte: {BYTE}  |  Train-Devices: {n_devs}',
