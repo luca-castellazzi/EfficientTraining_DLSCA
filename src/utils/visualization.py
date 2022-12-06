@@ -194,9 +194,9 @@ def plot_overlap(all_ges, to_compare, title, ylim_max, output_path):
 
             if j == len(ges) - 1: # Label only the last element of each group
                 label = f'Byte {to_compare[i]}'
-                ax.plot(ge, color=colors[i], marker='o', label=label, alpha=0.5)
+                ax.plot(ge, color=colors[i], marker='o', label=label)
             else:
-                ax.plot(ge, color=colors[i], marker='o', alpha=0.5)
+                ax.plot(ge, color=colors[i], marker='o')
 
     ax.set_title(title)
     ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1)) # Consider the last ge, but all have same length
