@@ -74,7 +74,7 @@ def main():
     vis.plot_ges(
         ges=avg_ges[:, :10],
         labels=labels,
-        title=f'Byte: {b}  |  Train-Devices: {n_devs}',
+        title=f'DKTA  |  Byte: {b}  |  Train-Devices: {n_devs}',
         ylim_max=50,
         output_path=AVG_GES_PLOT 
     )

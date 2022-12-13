@@ -43,7 +43,7 @@ def main():
         hp = json.load(jfile)
 
     # Definition of constant root path 
-    RES_ROOT = f'{constants.RESULTS_PATH}/TTA/{approach}/{n_devs}d'
+    RES_ROOT = f'{constants.RESULTS_PATH}/DTTA/{approach}/{n_devs}d'
 
     for tot_train in TOT_TRAIN:
 

@@ -28,7 +28,7 @@ def main():
     _, n_devs, approach = sys.argv
     n_devs = int(n_devs)
     
-    RES_ROOT = f'{constants.RESULTS_PATH}/TTA/{approach}/{n_devs}d'
+    RES_ROOT = f'{constants.RESULTS_PATH}/DTTA/{approach}/{n_devs}d'
     TT_GES_FILE = RES_ROOT + '/ges.csv'
     TT_GES_PLOT = RES_ROOT + '/ges.svg'
     MIN_ATT_TR_FILE = RES_ROOT + '/min_att_tr.csv'
@@ -94,7 +94,7 @@ def main():
     vis.plot_ges(
         ges=ges[:, :10], 
         labels=[f'{tt_l} traces' for tt_l in tt_labels],
-        title=f'Tot Traces Analysis - {upper_approach}  |  Byte: {BYTE}  |  Train-Devices: {n_devs}',
+        title=f'DTTA - {upper_approach}  |  Byte: {BYTE}  |  Train-Devices: {n_devs}',
         ylim_max=50,
         output_path=TT_GES_PLOT 
     )
