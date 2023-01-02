@@ -31,7 +31,6 @@ HP = {
     'learning_rate':  [5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5],
     'batch_size':     [128, 256, 512, 1024]
 }
-
 TARGET = 'SBOX_OUT'
 
 
@@ -41,38 +40,24 @@ def main():
     Performs hyperparameter tuning for an MLP model (target: SBOX_OUT) with the specified settings.
     Settings parameters (provided in order via command line):
         - train_devs: Devices to use during training, provided as comma-separated string without spaces
-        - n_keys: Number of keys to use during the tuning process
         - tot_traces: Number of total train-traces
         - b: Byte to be attacked
     
     The result is a JSON file containing the best hyperparameters.
     """
     
-    _, train_devs, n_keys, tot_traces, b = sys.argv
+    _, train_devs, tot_traces, b = sys.argv
     
     train_devs = train_devs.upper().split(',')
     n_devs = len(train_devs)
-    n_keys = int(n_keys)
     tot_traces = int(tot_traces)
     b = int(b)
 
-    if n_keys <= 10:
-        # Use the original 10 keys
-        # train_files = [f'{constants.MSK_PC_TRACES_PATH}/D3-K7_round1_500MHz + Resampled + Trim.trs']
-        # RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/MSK_{n_devs}d/{tot_traces}t'
-        train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
-                       for k in list(constants.KEYS)[1:]
-                       for dev in train_devs]
-        RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/{n_devs}d'
-    else:
-        # MultiKey scenario
-        train_files = [f'{constants.PC_MULTIKEY_PATH}/{dev}-MK{k}.trs' 
-                       for k in range(n_keys)
-                       for dev in train_devs]
-        RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/mk_{n_devs}d'
-
-    if tot_traces < 50000:
-        RES_ROOT = RES_ROOT + f'/{tot_traces}traces'
+        
+    train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
+                   for k in list(constants.KEYS)[1:]
+                   for dev in train_devs]
+    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/{n_devs}d'
     
     LOSS_HIST_FILE = RES_ROOT + f'/loss_hist_data.csv'
     ACC_HIST_FILE = RES_ROOT + f'/acc_hist_data.csv'
