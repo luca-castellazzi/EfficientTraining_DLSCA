@@ -137,3 +137,6 @@ dmypy.json
 
 # Renesas folder (for now)
 renesas
+
+# .SVG images (They are saved "locally")
+*.svg
