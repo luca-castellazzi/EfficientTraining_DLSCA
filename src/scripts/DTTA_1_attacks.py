@@ -6,16 +6,17 @@ from tqdm import tqdm
 from tensorflow.keras.models import load_model
 from tensorflow.keras.backend import clear_session
 from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 # Custom
 import sys
 sys.path.insert(0, '../utils')
 import constants
 import results
-import soa_reproduction as soa
 from data_loader import DataLoader, SplitDataLoader
 sys.path.insert(0, '../modeling')
-from network import Network
+import soa
+from models import mlp
 
 # Suppress TensorFlow messages
 import os
@@ -100,28 +101,41 @@ def main():
 
             # Train and Attack
             if approach == 'soa':
-                test_model = soa.build_model(hp['layers'], hp['neurons'])
-                _ = soa.fit(test_model, x_train, y_train, x_val, y_val)
+                attack_model = soa.build_model(hp['layers'], hp['neurons'])
+                _ = soa.fit(attack_model, x_train, y_train, x_val, y_val)
             else:
-                custom_net = Network('MLP', hp)
-                custom_net.build_model()
-                custom_net.add_checkpoint_callback(SAVED_MODEL_PATH)
-
-                custom_net.model.fit(
+                custom_model = mlp(hp)
+                callbacks = [
+                    EarlyStopping(
+                        monitor='val_loss', 
+                        patience=15
+                    ),
+                    ReduceLROnPlateau(
+                        monitor='val_loss',
+                        factor=0.2,
+                        patience=7,
+                        min_lr=1e-7),
+                    ModelCheckpoint(
+                        SAVED_MODEL_PATH,
+                        monitor='val_loss',
+                        save_best_only=True
+                    )
+                ]
+                custom_model.fit(
                     x_train, 
                     y_train, 
                     validation_data=(x_val, y_val),
                     epochs=EPOCHS,
-                    batch_size=custom_net.hp['batch_size'],
-                    callbacks=custom_net.callbacks,
+                    batch_size=hp['batch_size'],
+                    callbacks=callbacks,
                     verbose=0
                 )
 
-                test_model = load_model(SAVED_MODEL_PATH)          
+                attack_model = load_model(SAVED_MODEL_PATH)          
             
             # Compute GE
             ge = results.ge(
-                model=test_model,
+                model=attack_model,
                 x_test=x_test,
                 pltxt_bytes=pbs_test, 
                 true_key_byte=tkb_test, 
