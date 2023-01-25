@@ -3,8 +3,7 @@ import json
 import time
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from tensorflow.keras.optimizers import SGD, Adam, RMSprop
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 # Custom
 import sys
@@ -29,8 +28,8 @@ HP = {
     'dropout_rate':  [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
     'add_hlayers':   [1, 2, 3, 4, 5],
     'add_hneurons':  [100, 200, 300, 400, 500], 
-    'hl2':           [0.0, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4],
-    'optimizer':     [Adam, RMSprop, SGD],
+    'add_hl2':       [0.0, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4],
+    'optimizer':     ['adam', 'rmsprop', 'sgd'],
     'learning_rate': [5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5],
     'batch_size':    [128, 256, 512, 1024]
 }

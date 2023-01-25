@@ -5,6 +5,7 @@ from tqdm import tqdm
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.backend import clear_session
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 
 # Custom
@@ -14,7 +15,7 @@ import results
 import constants
 from data_loader import DataLoader, SplitDataLoader
 sys.path.insert(0, '../modeling')
-from network import Network
+from models import mlp
 
 # Suppress TensorFlow messages
 import os
@@ -65,7 +66,7 @@ def main():
             
         ges = []
 
-        for n_keys in tqdm(range(1, len(constants.KEYS)), desc=f'{"".join(train_devs)}vs{test_dev}: '): 
+        for n_keys in tqdm(range(1, len(constants.KEYS)), desc=f'{"".join(train_devs)}vs{test_dev}: '):
         
             N_KEYS_FOLDER = RES_ROOT + f'/{n_keys}k'
             if not os.path.exists(N_KEYS_FOLDER):
@@ -95,18 +96,32 @@ def main():
                       
             clear_session() # Start with a new Keras session every time    
             
-            attack_net = Network('MLP', hp)
-            attack_net.build_model()
-            attack_net.add_checkpoint_callback(SAVED_MODEL_PATH)
+            model = mlp(hp)
+            callbacks = [
+                EarlyStopping(
+                    monitor='val_loss', 
+                    patience=15
+                ),
+                ReduceLROnPlateau(
+                    monitor='val_loss',
+                    factor=0.2,
+                    patience=7,
+                    min_lr=1e-7),
+                ModelCheckpoint(
+                    SAVED_MODEL_PATH,
+                    monitor='val_loss',
+                    save_best_only=True
+                )
+            ]
 
             #Training (with Validation)
-            attack_net.model.fit(
+            model.fit(
                 x_train, 
                 y_train, 
                 validation_data=(x_val, y_val),
                 epochs=EPOCHS,
-                batch_size=attack_net.hp['batch_size'],
-                callbacks=attack_net.callbacks,
+                batch_size=hp['batch_size'],
+                callbacks=callbacks,
                 verbose=0
             )
             
@@ -123,9 +138,9 @@ def main():
             x_test = scaler.transform(x_test)        
             
             # Compute GE
-            test_model = load_model(SAVED_MODEL_PATH) 
+            attack_model = load_model(SAVED_MODEL_PATH) 
             ge = results.ge(
-                model=test_model,
+                model=attack_model,
                 x_test=x_test,
                 pltxt_bytes=pbs_test, 
                 true_key_byte=tkb_test, 
@@ -136,8 +151,6 @@ def main():
         
         ges = np.array(ges)
         np.save(GES_FILE, ges) # .NPY file because no direct plot
-        
-        print()
         
         
 if __name__ == '__main__':

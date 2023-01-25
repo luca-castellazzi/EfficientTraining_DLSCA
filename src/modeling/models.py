@@ -2,13 +2,19 @@
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, Activation, Conv1D, MaxPooling1D, Flatten
 from tensorflow.keras.optimizers import SGD, Adam, RMSprop
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from tensorflow.keras.regularizers import L2
 
 # # Custom
 # import sys
 # sys.path.insert(0, '../utils')
 # import constants
+
+
+OPTIMIZERS = {
+    'adam': Adam,
+    'rmsprop': RMSprop,
+    'sdg': SGD
+}
 
 
 def mlp(hp):
@@ -20,13 +26,13 @@ def mlp(hp):
         - hp (dict):
             Hyperparameters of the network.
             Considered Hyperparameters are:
-                * Dropout Rate
-                * Number of Additional Hidden Layers (1 hidden layer by default)
-                * Number of Neurons for the additional hidden layers
-                * L2-Regularization Coefficient for the additional hidden layers
-                * Learning Rate
-                * Optimizer
-                * Batch Size
+                * dropout_rate:  Dropout Rate
+                * add_hlayers:   Number of Additional Hidden Layers (1 hidden layer by default)
+                * add_hneurons:  Number of Neurons for the additional hidden layers
+                * add_hl2:       L2-Regularization Coefficient for the additional hidden layers
+                * learning_rate: Learning Rate
+                * optimizer:     Optimizer
+                * batch_size:    Batch Size
 
     Network Architecture:
         * Input
@@ -61,7 +67,7 @@ def mlp(hp):
             Dense(
                 hp['add_hneurons'], 
                 activation='relu',
-                kernel_regularizer=L2(hp['hl2'])
+                kernel_regularizer=L2(hp['add_hl2'])
             )
         )
         # BatchNorm
@@ -78,10 +84,10 @@ def mlp(hp):
 
 
     lr = hp['learning_rate']
-    opt = hp['optimizer'](learning_rate=lr)
+    opt_str = hp['optimizer']
     
     model.compile(
-        optimizer=opt, 
+        optimizer=OPTIMIZERS[opt_str](learning_rate=lr), 
         loss='categorical_crossentropy',
         metrics=['accuracy']
     )
