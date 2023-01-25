@@ -3,6 +3,8 @@ import json
 import time
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.optimizers import SGD, Adam, RMSprop
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 # Custom
 import sys
@@ -13,6 +15,8 @@ import visualization as vis
 from data_loader import SplitDataLoader
 sys.path.insert(0, '../modeling')
 from hp_tuner import HPTuner
+from models import mlp
+from tuners import GeneticTuner
 
 # Suppress TensorFlow messages
 import os
@@ -23,13 +27,13 @@ N_MODELS = 15
 N_GEN = 20
 EPOCHS = 100
 HP = {
-    'hidden_layers':  [1, 2, 3, 4, 5],
-    'hidden_neurons': [100, 200, 300, 400, 500],
-    'dropout_rate':   [0.0, 0.1, 0.2, 0.3, 0.4, 0.5], 
-    'l2':             [0.0, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4],
-    'optimizer':      ['adam', 'rmsprop', 'sgd'],
-    'learning_rate':  [5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5],
-    'batch_size':     [128, 256, 512, 1024]
+    'dropout_rate':  [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
+    'add_hlayers':   [1, 2, 3, 4, 5],
+    'add_hneurons':  [100, 200, 300, 400, 500], 
+    'hl2':           [0.0, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4],
+    'optimizer':     [Adam, RMSprop, SGD],
+    'learning_rate': [5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5],
+    'batch_size':    [128, 256, 512, 1024]
 }
 TARGET = 'SBOX_OUT'
 
@@ -84,7 +88,7 @@ def main():
 
     # HP Tuning via Genetic Algorithm
     hp_tuner = HPTuner(
-        model_type='MLP', 
+        model_fn=mlp, 
         hp_space=HP, 
         n_models=N_MODELS, 
         n_epochs=EPOCHS
