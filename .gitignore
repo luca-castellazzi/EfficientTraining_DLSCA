@@ -132,11 +132,8 @@ dmypy.json
 # Vim swap files
 *.swp
 
-# vscode folder
+# Folders and Images
 .vscode
-
-# Renesas folder (for now)
 renesas
-
-# .SVG images (They are saved "locally")
 *.svg
+notebooks
