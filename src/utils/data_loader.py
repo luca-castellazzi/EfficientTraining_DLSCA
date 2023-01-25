@@ -188,10 +188,11 @@ class SplitDataLoader(DataLoader):
     Subclass of DataLoader used to directly split data into train and validation
     sets.
     
-    Additional parameters:
+    Additional attributes:
         - n_train_tr_per_config (int):
             Number of train-traces to be collected per different device-key 
             configuration.
+            
     Overwritten methods:
         - load:
             Retrieves the values of the traces, the plaintexts and the keys and
@@ -202,23 +203,12 @@ class SplitDataLoader(DataLoader):
     def __init__(self, trace_files, tot_traces, train_size, target, byte_idx=None):
     
         """
-        Class constructor: and generates a SplitDataLoader object (most of inputs 
+        Class constructor: generates a SplitDataLoader object (most of inputs 
         are not attributes).
         
-        Parameters:
-            - configs (str list):
-                Device-keys configurations used during the encryption.
-            - tot_traces (int):
-                Total number of traces to retrieve.
+        Additional parameters:
             - train_size (float):
                 Size of the train-set expressed as percentage.
-            - target (str):
-                Target of the attack.
-            - byte_idx (int, default=None):
-                Byte index considered during the labeling of the traces.
-            - mk_traces (bool, default=False):
-                MultiKey flag.
-                Indicates if the data to retrieve comes from a MultiKey traceset.
         """
         
         super().__init__(trace_files, tot_traces, target, byte_idx)
