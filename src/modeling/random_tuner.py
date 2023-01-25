@@ -16,24 +16,21 @@ class RandomTuner(HPTuner):
     Additional attributes:
         - n_models (int):
             Number of models to generate and evaluate.
-        - n_epochs (int):
-            Number of training epochs to use for training each model.
 
     Overwritten methods:
         - tune:
             Implements Random Search.
     """
 
-    def __init__(self, model_fn, hp_space, n_models, n_epochs):
+    def __init__(self, model_fn, hp_space, n_epochs, n_models):
 
         """
         Class constructor: takes as input all class attributes and generates a 
         RandomTuner object.
         """
 
-        super().__init__(model_fn, hp_space)
+        super().__init__(model_fn, hp_space, n_epochs)
         self.n_models = n_models
-        self.n_epochs = n_epochs
 
     
     def tune(self, train_data, val_data, callbacks, use_gen=False):

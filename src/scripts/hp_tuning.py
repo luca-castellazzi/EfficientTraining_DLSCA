@@ -14,9 +14,8 @@ import constants
 import visualization as vis
 from data_loader import SplitDataLoader
 sys.path.insert(0, '../modeling')
-from hp_tuner import HPTuner
 from models import mlp
-from tuners import GeneticTuner
+from genetic_tuner import GeneticTuner
 
 # Suppress TensorFlow messages
 import os
@@ -87,36 +86,46 @@ def main():
     x_val = scaler.transform(x_val)
 
     # HP Tuning via Genetic Algorithm
-    hp_tuner = HPTuner(
+    callbacks = [
+        EarlyStopping(
+            monitor='val_loss', 
+            patience=15
+        ),
+        ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.2,
+            patience=7,
+            min_lr=1e-7),
+    ]
+
+    tuner = GeneticTuner(
         model_fn=mlp, 
         hp_space=HP, 
-        n_models=N_MODELS, 
-        n_epochs=EPOCHS
-    )
-        
-    best_hp = hp_tuner.genetic_algorithm(
+        n_epochs=EPOCHS,
+        pop_size=N_MODELS,
         n_gen=N_GEN,
         selection_perc=0.3,
         second_chance_prob=0.2,
-        mutation_prob=0.2,
-        x_train=x_train,
-        y_train=y_train,
-        x_val=x_val,
-        y_val=y_val
+        mutation_prob=0.2
     )
         
+    best_hp, best_history = tuner.tune(
+        train_data=(x_train, y_train),
+        val_data=(x_val, y_val),
+        callbacks=callbacks
+    )
+
     
     # Save history data to .CSV files
-    b_history = hp_tuner.best_history
-    actual_epochs = len(b_history['loss']) # Early Stopping can make the actual 
+    actual_epochs = len(best_history['loss']) # Early Stopping can make the actual 
                                             # number of epochs different from the original one
 
     # Loss
     loss_data = np.vstack(
         (
             np.arange(actual_epochs)+1, # X-axis values
-            b_history['loss'], # Y-axis values for 'loss'
-            b_history['val_loss'] # Y-axis values for 'val_loss'
+            best_history['loss'], # Y-axis values for 'loss'
+            best_history['val_loss'] # Y-axis values for 'val_loss'
         )
     ).T
     helpers.save_csv(
@@ -129,8 +138,8 @@ def main():
     acc_data = np.vstack(
         (
             np.arange(actual_epochs)+1, # X-axis values
-            b_history['accuracy'], # Y-axis values for 'loss'
-            b_history['val_accuracy'] # Y-axis values for 'val_loss'
+            best_history['accuracy'], # Y-axis values for 'loss'
+            best_history['val_accuracy'] # Y-axis values for 'val_loss'
         )
     ).T
     helpers.save_csv(
@@ -140,7 +149,7 @@ def main():
     )
 
     # Plot training history
-    vis.plot_history(b_history, HISTORY_PLOT)
+    vis.plot_history(best_history, HISTORY_PLOT)
     
     with open(HP_PATH, 'w') as jfile:
         json.dump(best_hp, jfile)

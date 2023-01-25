@@ -54,7 +54,7 @@ class GeneticTuner(HPTuner):
             Implements a Genetic Algorithm.
     """
 
-    def __init__(self, model_fn, hp_space, pop_size, n_gen, selection_perc,
+    def __init__(self, model_fn, hp_space, n_epochs, pop_size, n_gen, selection_perc,
         second_chance_prob, mutation_prob):
 
         """
@@ -62,7 +62,7 @@ class GeneticTuner(HPTuner):
         GeneticTuner object.
         """
 
-        super().__init__(model_fn, hp_space)
+        super().__init__(model_fn, hp_space, n_epochs)
         self.pop_size = pop_size
         self.n_gen = n_gen
         self.selection_perc = selection_perc

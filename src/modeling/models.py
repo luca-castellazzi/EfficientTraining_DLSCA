@@ -85,3 +85,5 @@ def mlp(hp):
         loss='categorical_crossentropy',
         metrics=['accuracy']
     )
+
+    return model

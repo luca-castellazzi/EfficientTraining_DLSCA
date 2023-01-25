@@ -11,13 +11,8 @@ class HPTuner():
             return the compiled model.
         - hp_space (dict):
             Whole hyperparameter space.
-
-        - best_val_loss (float):
-            Validation loss of the best-performing hyperparameters.
-        - best_hp (dict):
-            Best-performing hyperparameters.
-        - best_history (dict):
-            Training history of the best-performing hyperparameters.
+        - n_epochs (int):
+            Number of training epochs to use for training.
 
     Methods:
         - tune:
@@ -25,7 +20,7 @@ class HPTuner():
     """
     
     
-    def __init__(self, model_fn, hp_space):
+    def __init__(self, model_fn, hp_space, n_epochs):
     
         """
         Class constructor: takes as input all class attributes and generates a 
@@ -34,6 +29,7 @@ class HPTuner():
         
         self.model_fn = model_fn
         self.hp_space = hp_space
+        self.n_epochs = n_epochs
 
 
     def tune(self, train_data, val_data, callbacks, use_gen=False):
