@@ -171,8 +171,8 @@ class DataLoader():
         
         x = np.vstack(samples) # (tot_traces x trace_len)
         y = np.vstack(labels) # (tot_traces x n_classes)
-        pbs = np.vstack(pltxt_bytes) # (tot_traces x 1)
-        tkbs = np.vstack(true_key_bytes) # (tot_traces x 1)
+        pbs = np.array(pltxt_bytes) # (tot_traces x 1)
+        tkbs = np.array(true_key_bytes) # (tot_traces x 1)
         
         x, y, pbs, tkbs = self._shuffle(x, y, pbs, tkbs)
         
