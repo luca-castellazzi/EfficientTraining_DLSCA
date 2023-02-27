@@ -4,21 +4,27 @@ from tensorflow.keras.utils import Sequence
 from tensorflow.keras.utils import to_categorical
 
 import aes
+import constants
 
 
 class DataGenerator(Sequence):
     
-    def __init__(self, tr_file, tr_indices, batch_size, target, n_classes, byte_idx, scaler, to_fit=True, shuffle_on_epoch_end=True, cnn=False):
+    def __init__(self, tr_file, tr_indices, tr_len, target, byte_idx, scaler, 
+        batch_size=None, start_sample=None, stop_sample=None, cnn=False, 
+        to_fit=True, shuffle_on_epoch_end=True):
         self.tr_file = tr_file
         self.tr_indices = tr_indices # "Rows" to be read from the .TRS file. len(tr_indices) is the total number of traces to collect.
-        self.batch_size = batch_size
         self.target = target
-        self.n_classes = n_classes
         self.byte_idx = byte_idx
         self.scaler = scaler
+        self.batch_size = batch_size
+        self.start_sample = start_sample if start_sample is not None else 0
+        self.stop_sample = stop_sample if start_sample is not None else tr_len
+        #
+        self.cnn = cnn
         self.to_fit = to_fit
         self.shuffle_on_epoch_end = shuffle_on_epoch_end
-        self.cnn = cnn
+         
         
         self.on_epoch_end()
         
@@ -58,7 +64,7 @@ class DataGenerator(Sequence):
         with trsfile.open(self.tr_file, 'r') as traces:
             batch_traces = [traces[i] for i in batch_indices]
             for tr in batch_traces:
-                s = tr.samples
+                s = tr.samples[self.start_sample:self.stop_sample]
                 l = self._retrieve_label(tr)
                 
                 x.append(s)
@@ -115,6 +121,10 @@ class DataGenerator(Sequence):
         l = aes.labels_from_key(p, k, self.target)
         l = l[self.byte_idx]
         
-        l = to_categorical(l, self.n_classes)
+        l = to_categorical(l, constants.N_CLASSES[self.target])
         
         return l
+
+    
+    def set_batch_size(self, batch_size):
+        self.batch_size = batch_size
