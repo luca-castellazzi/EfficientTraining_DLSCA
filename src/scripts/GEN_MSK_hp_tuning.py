@@ -2,7 +2,6 @@
 import json
 import time
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.metrics import TopKCategoricalAccuracy
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
