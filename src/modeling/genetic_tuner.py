@@ -54,15 +54,15 @@ class GeneticTuner(HPTuner):
             Implements a Genetic Algorithm.
     """
 
-    def __init__(self, model_fn, hp_space, n_epochs, pop_size, n_gen, selection_perc,
-        second_chance_prob, mutation_prob):
+    def __init__(self, model_fn, trace_len, n_classes, hp_space, n_epochs, 
+        pop_size, n_gen, selection_perc, second_chance_prob, mutation_prob):
 
         """
         Class constructor: takes as input all class attributes and generates a 
         GeneticTuner object.
         """
 
-        super().__init__(model_fn, hp_space, n_epochs)
+        super().__init__(model_fn, trace_len, n_classes, hp_space, n_epochs)
         self.pop_size = pop_size
         self.n_gen = n_gen
         self.selection_perc = selection_perc
@@ -70,7 +70,7 @@ class GeneticTuner(HPTuner):
         self.mutation_prob = mutation_prob
 
 
-    def tune(self, train_data, val_data, callbacks, use_gen=False):
+    def tune(self, train_data, val_data, callbacks, metrics=['accuracy'], use_gen=False):
 
         """
         Performs hyperparameter tuning with a Genetic Algorithm: populations of 
@@ -100,6 +100,7 @@ class GeneticTuner(HPTuner):
                 train_data=train_data, 
                 val_data=val_data, 
                 callbacks=callbacks,
+                metrics=metrics,
                 use_gen=use_gen
             )
             parents = self._select(evaluation)
@@ -130,7 +131,7 @@ class GeneticTuner(HPTuner):
         return pop
 
     
-    def _evaluate(self, pop, train_data, val_data, callbacks, use_gen=False):
+    def _evaluate(self, pop, train_data, val_data, callbacks, metrics, use_gen):
     
         """
         Evaluates the given population of hyperparameters training and validating 
@@ -146,6 +147,8 @@ class GeneticTuner(HPTuner):
                 If tuple, should be in (samples, labels) format.
             - callbacks (keras.callbacks list):
                 List of callbacks to use during model training.
+            - metrics (list):
+                List of metrics to use during model training.
             - use_gen (bool, default: False):
                 Whether or not the provided train and val data are DataGenerators. 
         
@@ -164,14 +167,21 @@ class GeneticTuner(HPTuner):
             
             clear_session() # Start a new keras session every new training
             
-            model = self.model_fn(hp_config)
+            model = self.model_fn(
+                hp=hp_config, 
+                input_len=self.trace_len, 
+                n_classes=self.n_classes,
+                metrics=metrics
+            )
 
             if use_gen:
+                # train_data and val_data are DataGenerators
+                train_data.set_batch_size(hp_config['batch_size'])
+                val_data.set_batch_size(hp_config['batch_size'])
                 history = model.fit(
                     train_data,
                     validation_data=val_data,
                     epochs=self.n_epochs,
-                    batch_size=hp_config['batch_size'],
                     callbacks=callbacks,
                     verbose=0
                 ).history

@@ -33,7 +33,7 @@ class RandomTuner(HPTuner):
         self.n_models = n_models
 
     
-    def tune(self, train_data, val_data, callbacks, use_gen=False):
+    def tune(self, train_data, val_data, callbacks, metrics=['accuracy'], use_gen=False):
 
         """
         Performs hyperparameter tuning with a Random Search: a fixed number of 
@@ -59,7 +59,12 @@ class RandomTuner(HPTuner):
             clear_session()
 
             random_hp = {k: random.choice(self.hp_space[k]) for k in self.hp_space.keys()}
-            model = self.model_fn(random_hp)
+            model = self.model_fn(
+                hp=random_hp,
+                input_len=self.trace_len,
+                n_classes=self.n_classes,
+                metrics=metrics
+            )
 
             if use_gen:
                 history = model.fit(

@@ -9,6 +9,10 @@ class HPTuner():
             (tensorflow.keras.Sequential or tensorflow.keras.Model).
             The function should receive a dictionary of hyperparameters and 
             return the compiled model.
+        - trace_len (int):
+            Length of the traces.
+        - n_classes (int):
+            Number of possible targets that the model can classify. 
         - hp_space (dict):
             Whole hyperparameter space.
         - n_epochs (int):
@@ -20,7 +24,7 @@ class HPTuner():
     """
     
     
-    def __init__(self, model_fn, hp_space, n_epochs):
+    def __init__(self, model_fn, trace_len, n_classes, hp_space, n_epochs):
     
         """
         Class constructor: takes as input all class attributes and generates a 
@@ -28,11 +32,13 @@ class HPTuner():
         """
         
         self.model_fn = model_fn
+        self.trace_len = trace_len
+        self.n_classes = n_classes
         self.hp_space = hp_space
         self.n_epochs = n_epochs
 
 
-    def tune(self, train_data, val_data, callbacks, use_gen=False):
+    def tune(self, train_data, val_data, callbacks, metrics, use_gen=False):
 
         """
         Performs hyperparameter tuning (should be overwritten by classes that 
@@ -46,6 +52,8 @@ class HPTuner():
                 If tuple, should be in (samples, labels) format.
             - callbacks (keras.callbacks list):
                 List of callbacks to use during model training.
+            - metrics (list):
+                List of metrics to use during model training.
             - use_gen (bool, default: False):
                 Whether or not the provided train and val data are DataGenerators. 
         """
