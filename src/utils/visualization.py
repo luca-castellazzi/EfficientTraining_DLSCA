@@ -63,23 +63,23 @@ def plot_history(history, output_path):
             Absolute path to the SVG file containing the plot.
     """
 
-    f, ax = plt.subplots(1, 2, figsize=(18,8))
+    h_labels = list(history.keys()) # Format: [x, ..., val_x, ..., lr]
+    n_labels = len(h_labels) - 1 # There is LR due to callbacks
+    n_metrics = int(n_labels / 2) # Do not consider VAL ones
     
-    ax[0].plot(history['loss'], label='train_loss')
-    ax[0].plot(history['val_loss'], label='val_loss')
-    ax[0].set_title('Train and Val Loss')
-    ax[0].set_ylabel('Loss')
-    ax[0].set_xlabel('Epochs')
-    ax[0].legend()
-    ax[0].grid()
-    
-    ax[1].plot(history['accuracy'], label='train_acc')
-    ax[1].plot(history['val_accuracy'], label='val_acc')
-    ax[1].set_title('Train and Val Acc')
-    ax[1].set_ylabel('Acc')
-    ax[1].set_xlabel('Epochs')
-    ax[1].legend()
-    ax[1].grid()
+    metrics = [(h_labels[i], h_labels[i+n_metrics]) for i in range(0, n_metrics)]
+
+    f, ax = plt.subplots(1, n_metrics, figsize=(20,5))
+
+    for i, (m, val_m) in enumerate(metrics):
+
+        ax[i].plot(history[m], label=f'train_{m}')
+        ax[i].plot(history[val_m], label=val_m)
+        ax[i].set_title(f'Train and Val {m.title()}')
+        ax[i].set_ylabel(m.title())
+        ax[i].set_xlabel('Epochs')
+        ax[i].legend()
+        ax[i].grid()
     
     f.savefig(
         output_path, 
