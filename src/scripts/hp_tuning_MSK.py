@@ -35,6 +35,7 @@ HP = {
     'batch_size':    [128, 256, 512, 1024]
 }
 TARGET = 'SBOX_OUT'
+STOP_SAMPLE = 7700
 
 
 def main():
@@ -73,9 +74,10 @@ def main():
     train_dl = SplitDataLoader(
         train_files, 
         tot_traces=tot_traces,
-        train_size=1-(tot_traces/val_traces),
+        train_size=1-(val_traces/tot_traces),
         target=TARGET,
-        byte_idx=b
+        byte_idx=b,
+        stop_sample=STOP_SAMPLE
     )
     train_data, val_data = train_dl.load()
     x_train, y_train, _, _ = train_data

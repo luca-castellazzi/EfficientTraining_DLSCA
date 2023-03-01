@@ -12,6 +12,7 @@ class DataGenerator(Sequence):
     def __init__(self, tr_file, tr_indices, tr_len, target, byte_idx, scaler, 
         batch_size=None, start_sample=None, stop_sample=None, cnn=False, 
         to_fit=True, shuffle_on_epoch_end=True):
+
         self.tr_file = tr_file
         self.tr_indices = tr_indices # "Rows" to be read from the .TRS file. len(tr_indices) is the total number of traces to collect.
         self.target = target
@@ -20,12 +21,10 @@ class DataGenerator(Sequence):
         self.batch_size = batch_size
         self.start_sample = start_sample if start_sample is not None else 0
         self.stop_sample = stop_sample if start_sample is not None else tr_len
-        #
         self.cnn = cnn
         self.to_fit = to_fit
         self.shuffle_on_epoch_end = shuffle_on_epoch_end
          
-        
         self.on_epoch_end()
         
         

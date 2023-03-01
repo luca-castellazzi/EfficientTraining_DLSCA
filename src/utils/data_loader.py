@@ -39,24 +39,27 @@ class DataLoader():
     """
 
 
-    def __init__(self, trace_files, tot_traces, target, byte_idx=None):
+    def __init__(self, trace_files, tot_traces, target, byte_idx=None, 
+                 start_sample=None, stop_sample=None):
     
         """
-        Class constructor: and generates a DataLoader object (most of inputs are 
-        not attributes).
+        Class constructor: generates a DataLoader object.
         
         Parameters:
             - trace_files (str list):
-            Paths to the trace files.
+                Paths to the trace files.
             - tot_traces (int):
                 Total number of traces to retrieve.
             - target (str):
                 Target of the attack.
+            - tr_len (int):
+                Length of the traces to load.
             - byte_idx (int, default=None):
                 Byte index considered during the labeling of the traces.
-            - mk_traces (bool, default=False):
-                MultiKey flag.
-                Indicates if the data to retrieve comes from a MultiKey traceset.
+            - start_sample (int, default=None):
+                Index of the first sample to consider in each trace.
+            - stop_sample (int, default=None):
+                Indes of the last sample to consider in each trace.
         """
 
         self.trace_files = trace_files
@@ -67,6 +70,9 @@ class DataLoader():
         self.n_classes = constants.N_CLASSES[target]
         
         self.byte_idx = byte_idx
+
+        self.start_sample = start_sample
+        self.stop_sample = stop_sample
         
     
     def _retrieve_metadata(self, tr):
@@ -158,12 +164,23 @@ class DataLoader():
         labels = []
         pltxt_bytes = []
         true_key_bytes = []
+
+        start_none = self.start_sample is None
+        stop_none = self.stop_sample is None
         
         for tfile in self.trace_files:
             with trsfile.open(tfile, 'r') as traces:
                 for tr in traces[:self.n_tr_per_config]:
-                    s = tr.samples
+                    if (not start_none) and (not stop_none):
+                        s = tr.samples[self.start_sample:self.stop_sample]
+                    elif start_none and (not stop_none):
+                        s = tr.samples[:self.stop_sample]
+                    elif (not start_none) and stop_none:
+                        s = tr.samples[self.start_sample:]
+                    else:
+                        s = tr.samples
                     l, p, k = self._retrieve_metadata(tr)
+
                     samples.append(s)
                     labels.append(l)
                     pltxt_bytes.append(p)
@@ -200,7 +217,8 @@ class SplitDataLoader(DataLoader):
             In addition, splits the data into train and validation sets.
     """
    
-    def __init__(self, trace_files, tot_traces, train_size, target, byte_idx=None):
+    def __init__(self, trace_files, tot_traces, train_size, target, byte_idx=None,
+                 start_sample=None, stop_sample=None):
     
         """
         Class constructor: generates a SplitDataLoader object (most of inputs 
@@ -211,7 +229,8 @@ class SplitDataLoader(DataLoader):
                 Size of the train-set expressed as percentage.
         """
         
-        super().__init__(trace_files, tot_traces, target, byte_idx)
+        super().__init__(trace_files, tot_traces, target, byte_idx, start_sample,
+            stop_sample)
         
         self.n_train_tr_per_config = int(train_size * self.n_tr_per_config)
         
@@ -243,6 +262,9 @@ class SplitDataLoader(DataLoader):
         y_val = []
         pbs_val = []
         tkbs_val = []
+
+        start_none = self.start_sample is None
+        stop_none = self.stop_sample is None
         
         for tfile in self.trace_files:
             
@@ -253,7 +275,14 @@ class SplitDataLoader(DataLoader):
             
             with trsfile.open(tfile, 'r') as traces:
                 for tr in traces[:self.n_tr_per_config]:
-                    s = tr.samples
+                    if (not start_none) and (not stop_none):
+                        s = tr.samples[self.start_sample:self.stop_sample]
+                    elif start_none and (not stop_none):
+                        s = tr.samples[:self.stop_sample]
+                    elif (not start_none) and stop_none:
+                        s = tr.samples[self.start_sample:]
+                    else:
+                        s = tr.samples
                     l, p, k = self._retrieve_metadata(tr)
                     
                     config_s.append(s)

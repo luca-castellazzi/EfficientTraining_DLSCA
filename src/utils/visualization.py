@@ -121,7 +121,7 @@ def plot_conf_matrix(conf_matrix, output_path):
     plt.close(f)
 
 
-def plot_ges(ges, labels, title, ylim_max, output_path):
+def plot_ges(ges, labels, title, ylim_max, output_path, grid=True):
 
     """
     Plots GEs using Google Turbo color-palette and saves the result in a .SVG file.
@@ -137,6 +137,8 @@ def plot_ges(ges, labels, title, ylim_max, output_path):
             Upper limit for y-axis.
         - output_path (str):
             Absolute path to the SVG file containing the plot.
+        - grid (bool, default: True):
+            Whether or not plot a grid.
     """
     
     # Set the color palette
@@ -146,15 +148,20 @@ def plot_ges(ges, labels, title, ylim_max, output_path):
     # Plot the GEs
     f, ax = plt.subplots(figsize=(10,5))
     for ge, l, c in zip(ges, labels, colors):
-        ax.plot(ge, label=l, marker='o', color=c)
+        if ges.shape[1] <= 30:
+            ax.plot(ge, label=l, marker='o', color=c)
+        else:
+            ax.plot(ge, label=l, color=c, linewidth=4)
         
     ax.set_title(title)
-    ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
+    if ges.shape[1] <= 30:
+        ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
     ax.set_ylim([-3, ylim_max]) 
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('GE')
     ax.legend()
-    ax.grid()
+    if grid:
+        ax.grid()
 
     f.savefig(
         output_path, 
