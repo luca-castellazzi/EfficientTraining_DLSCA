@@ -1,56 +1,67 @@
+# Basics
 import gc
 import trsfile
 import numpy as np
-
 from tqdm import tqdm
+from contextlib import ExitStack
 
 
 class BatchScaler():
 
-    def __init__(self, tr_file, tr_tot, tr_len, n_batch, start_sample, stop_sample):
-
-        self.tr_file = tr_file
-        self.tr_tot = tr_tot
-        self.n_batch = n_batch
+    def __init__(self, tr_files, batch_indices, tr_len, start_sample, stop_sample):
+        
+        self.tr_files = tr_files
+        self.batch_indices = batch_indices
+        self.batch_size = np.vstack(batch_indices).shape[1]
         self.start_sample = start_sample if start_sample is not None else 0
         self.stop_sample = stop_sample if stop_sample is not None else tr_len
 
         self.tot_samples = self.stop_sample - self.start_sample
-        self.batch_size = int(tr_tot / n_batch)
+        
 
     def _compute_statistics(self, traces):
         pass
     
     def fit(self):
-
-        with trsfile.open(self.tr_file, 'r') as traces:    
-            self._compute_statistics(traces)
+        pass    
 
     def transform(self, data):
         pass
 
 
-
 class BatchStandardScaler(BatchScaler):
-
-    def __init__(self, tr_file, tr_tot, tr_len, n_batch, start_sample=None, 
-        stop_sample=None):
-
-        super().__init__(tr_file, tr_tot, tr_len, n_batch, start_sample, stop_sample)
+        
+    def __init__(self, tr_files, batch_indices, tr_len, start_sample=None, stop_sample=None):
+        
+        super().__init__(tr_files, batch_indices, tr_len, start_sample, stop_sample)
         self.mean = np.zeros((self.tot_samples, ))
         self.var = np.zeros((self.tot_samples, ))
         
 
-    def _compute_statistics(self, traces):
+    def fit(self):
+            
+        for i, batch_range in tqdm(enumerate(self.batch_indices)):
+            
+            # Open multiple .TRS files
+            with ExitStack() as stack:
 
-        for i in tqdm(range(self.n_batch)):
+                tracesets = [stack.enter_context(trsfile.open(tr_file, 'r')) 
+                             for tr_file in self.tr_files]
+
+                # Get the same amount of traces from each file
+                # The total amount of traces is the batch_size (which can be slightly
+                # different from the original one when multiple files are considered)
+                batch_traces = [tset[i] 
+                                for i in batch_range
+                                for tset in tracesets]
+                
             # Set previous and current number of traces
             m = i * self.batch_size
             n = self.batch_size
             
             # Get current batch of data
             new_x = [tr.samples[self.start_sample:self.stop_sample] 
-                     for tr in traces[m:m+n]]
+                     for tr in batch_traces]
             new_x = np.vstack(new_x)
             
             # Consider old mean and compute the current one
@@ -82,28 +93,40 @@ class BatchStandardScaler(BatchScaler):
         return scaled_data
 
 
-
 class BatchMinMaxScaler(BatchScaler):
 
-    def __init__(self, tr_file, tr_tot, tr_len, n_batch, start_sample=None, 
-        stop_sample=None, output_range=(0, 1)):
+    def __init__(self, tr_files, batch_indices, tr_len, start_sample=None, stop_sample=None, output_range=(0, 1)):
 
-        super().__init__(tr_file, tr_tot, tr_len, n_batch, start_sample, stop_sample)
+        super().__init__(tr_files, batch_indices, tr_len, start_sample, stop_sample)
         self.min = [np.inf for _ in range(self.tot_samples)]
         self.max = [-np.inf for _ in range(self.tot_samples)]
         self.range_min, self.range_max = output_range
 
 
-    def _compute_statistics(self, traces):
+    def fit(self):
 
-        for i in tqdm(range(self.n_batch)):
+        for i, batch_range in tqdm(enumerate(self.batch_indices)):
+            
+            # Open multiple .TRS files
+            with ExitStack() as stack:
+
+                tracesets = [stack.enter_context(trsfile.open(tr_file, 'r')) 
+                             for tr_file in self.tr_files]
+
+                # Get the same amount of traces from each file
+                # The total amount of traces is the batch_size (which can be slightly
+                # different from the original one when multiple files are considered)
+                batch_traces = [tset[i] 
+                                for i in batch_range
+                                for tset in tracesets]
+                
             # Set previous and current number of traces
             m = i * self.batch_size
             n = self.batch_size
             
             # Get current batch of data
             new_x = [tr.samples[self.start_sample:self.stop_sample]
-                     for tr in traces[m:m+n]]
+                     for tr in batch_traces]
             new_x = np.vstack(new_x)
 
             # Compute min and max of the batch
@@ -129,5 +152,3 @@ class BatchMinMaxScaler(BatchScaler):
         scaled_data = scaled_data * (self.range_max - self.range_min) + self.range_min
 
         return scaled_data
-
-
