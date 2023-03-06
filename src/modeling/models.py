@@ -17,7 +17,7 @@ OPTIMIZERS = {
 }
 
 
-def mlp(hp, input_len, metrics=['accuracy']):
+def mlp(hp, input_len, n_classes, metrics=['accuracy']):
 
     """
     Builds and compiles an MLP network to attack Unmasked-AES-128, targeting SBOX_OUT.
@@ -79,7 +79,7 @@ def mlp(hp, input_len, metrics=['accuracy']):
         model.add(Dropout(hp['dropout_rate']))
 
     # Output Dense
-    model.add(Dense(256))
+    model.add(Dense(n_classes))
     # BatchNorm (before activation)
     model.add(BatchNormalization())
     # Softmax

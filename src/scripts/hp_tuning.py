@@ -99,6 +99,8 @@ def main():
 
     tuner = GeneticTuner(
         model_fn=mlp, 
+        trace_len=x_train.shape[1],
+        n_classes=y_train.shape[1],
         hp_space=HP, 
         n_epochs=EPOCHS,
         pop_size=N_MODELS,

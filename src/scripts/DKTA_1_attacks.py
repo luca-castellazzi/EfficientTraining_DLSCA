@@ -96,7 +96,11 @@ def main():
                       
             clear_session() # Start with a new Keras session every time    
             
-            model = mlp(hp)
+            model = mlp(
+                hp=hp, 
+                input_len=x_train.shapep[1], 
+                n_classes=y_train.shape[1]
+            )
             callbacks = [
                 EarlyStopping(
                     monitor='val_loss', 
