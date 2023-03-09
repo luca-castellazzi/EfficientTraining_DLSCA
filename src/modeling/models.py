@@ -4,11 +4,6 @@ from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, Activati
 from tensorflow.keras.optimizers import SGD, Adam, RMSprop
 from tensorflow.keras.regularizers import L2
 
-# # Custom
-# import sys
-# sys.path.insert(0, '../utils')
-# import constants
-
 
 OPTIMIZERS = {
     'adam': Adam,
