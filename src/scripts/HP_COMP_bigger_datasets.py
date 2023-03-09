@@ -125,7 +125,11 @@ def main():
         soa_ges.append(soa_ge)
 
         # Custom
-        cstm_model = mlp(cstm_hp)
+        cstm_model = mlp(
+            hp=cstm_hp,
+            input_len=x_train.shape[1],
+            n_classes=y_train.shape[1]
+        )
         CSTM_SAVED_MODEL_PATH = RES_ROOT + f'/model_{tot_train}.h5'
         callbacks = [
             EarlyStopping(

@@ -26,21 +26,28 @@ def plot_nicv(nicvs, configs, output_path):
     cmap = plt.cm.Set1
     colors = cmap(range(len(configs)))
  
-    f, ax = plt.subplots(4, 4, figsize=(25,25))
+    f = plt.figure(figsize=(10,10))
     
     for i, c in enumerate(configs):
-        row = 0
-        for b in range(16):
-            col = b % 4
 
-            ax[row, col].plot(nicvs[i][b], label=c, color=colors[i])
-            ax[row, col].legend()
-            ax[row, col].set_title(f'Byte {b}')
-            ax[row, col].set_xlabel('Samples')
-            ax[row, col].set_ylabel('NICV')
+        plt.plot(nicvs[i], label=c, color=colors[i])
+        plt.legend()
+        plt.title(f'Byte 5')
+        plt.xlabel('Samples')
+        plt.ylabel('NICV')
 
-            if col == 3:
-                row += 1
+        # row = 0
+        # for b in range(16):
+        #     col = b % 4
+
+        #     ax[row, col].plot(nicvs[i][b], label=c, color=colors[i])
+        #     ax[row, col].legend()
+        #     ax[row, col].set_title(f'Byte {b}')
+        #     ax[row, col].set_xlabel('Samples')
+        #     ax[row, col].set_ylabel('NICV')
+
+        #     if col == 3:
+        #         row += 1
 
     f.savefig(
         output_path,

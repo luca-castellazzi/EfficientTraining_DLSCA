@@ -159,7 +159,11 @@ def main():
         cstm_hp = json.load(jfile)
     
     # Training
-    cstm_model = mlp(cstm_hp)
+    cstm_model = mlp(
+        hp=cstm_hp,
+        input_len=x_train.shape[1],
+        n_classes=y_train.shape[1]
+    )
     callbacks = [
         EarlyStopping(
             monitor='val_loss', 
