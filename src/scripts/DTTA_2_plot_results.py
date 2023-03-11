@@ -28,7 +28,7 @@ def main():
     _, n_devs, approach = sys.argv
     n_devs = int(n_devs)
     
-    RES_ROOT = f'{constants.RESULTS_PATH}/DTTA/{approach}/{n_devs}d'
+    RES_ROOT = f'{constants.RESULTS_PATH}/DTTA/unmsk/{approach}/{n_devs}d'
     TT_GES_FILE = RES_ROOT + '/ges.csv'
     TT_GES_PLOT = RES_ROOT + '/ges.svg'
     MIN_ATT_TR_FILE = RES_ROOT + '/min_att_tr.csv'

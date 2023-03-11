@@ -18,7 +18,7 @@ def main():
     _, n_devs = sys.argv
     n_devs = int(n_devs)
 
-    RES_ROOT = f'{constants.RESULTS_PATH}/DTTA'
+    RES_ROOT = f'{constants.RESULTS_PATH}/DTTA/unmsk'
     OVERLAP_FILE = RES_ROOT + f'/min_att_tr_overlap_{n_devs}d.csv'
     OVERLAP_PLOT = RES_ROOT + f'/min_att_tr_overlap_{n_devs}d.svg'
 

@@ -23,7 +23,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 for INFO & WARNINGs & ERRORs
 
 TOT_TRACES = 50000
-VAL_TRACES = 2000
+VAL_TRACES = 5000
 STOP_SAMPLE = 7700
 EPOCHS = 100
 
@@ -57,7 +57,7 @@ def main():
     HP_PATH = RES_ROOT + '/hp.json'
 
 
-    with open(HP_PATH, 'r') as jfile:
+    with open(HP_PATH, 'r') as jfile: 
         hp = json.load(jfile)
     
     
