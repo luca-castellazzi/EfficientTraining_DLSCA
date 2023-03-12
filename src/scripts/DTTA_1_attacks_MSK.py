@@ -73,7 +73,6 @@ def main():
                 os.mkdir(TRACES_FOLDER)
             SAVED_MODEL_PATH = TRACES_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
 
-            print('BATCH_SCALING...')
             batch_scaler = BatchStandardScaler(
                 tr_files=train_files,
                 tr_tot=train_tot,
@@ -140,7 +139,6 @@ def main():
                 )
             ]
             
-            print('TRAINING...')
             model.fit(
                 train_gen,
                 validation_data=val_gen,
@@ -149,7 +147,6 @@ def main():
                 verbose=0
             )
 
-            print('ATTACKING...')
             attack_model = load_model(SAVED_MODEL_PATH)  
 
             # Testing (every time consider random test traces from the same set)
