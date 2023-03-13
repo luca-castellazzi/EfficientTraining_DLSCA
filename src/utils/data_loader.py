@@ -19,12 +19,21 @@ class DataLoader():
             Paths to the trace files.
         - n_tr_per_config (int):
             Number of traces to be collected per different device-key configuration.
+        - start_tr (int):
+            Index of the first trace to read.
+        - stop_tr (int):
+            Index of the last trace to read (+1).
         - target (str):
             Target of the attack.
         - n_classes (int):
             Number of possible labels.
         - byte_idx (int, default=None):
             Byte index to consider during the labeling of the traces.
+        - start_sample (int, default=None):
+            Index of the first trace-sample to read. If None, set to 0 automatically.
+        - stop_sample (int, default=None):
+            Indes of the last trace-sample to read (+1). If None, all the samples 
+            will be considered.
            
     Methods:
         - _retrieve_metadata:
@@ -39,7 +48,7 @@ class DataLoader():
     """
 
 
-    def __init__(self, trace_files, tot_traces, target, byte_idx=None, 
+    def __init__(self, trace_files, tot_traces, target, start_tr_idx=0, byte_idx=None, 
                  start_sample=None, stop_sample=None):
     
         """
@@ -52,8 +61,8 @@ class DataLoader():
                 Total number of traces to retrieve.
             - target (str):
                 Target of the attack.
-            - tr_len (int):
-                Length of the traces to load.
+            - start_tr_idx (int, default=0):
+                Index of the first trace to consider in each file.
             - byte_idx (int, default=None):
                 Byte index considered during the labeling of the traces.
             - start_sample (int, default=None):
@@ -64,7 +73,9 @@ class DataLoader():
 
         self.trace_files = trace_files
         
-        self.n_tr_per_config = int(tot_traces / len(trace_files))
+        self.n_tr_per_config = tot_traces // len(trace_files)
+        self.start_tr = start_tr_idx * self.n_tr_per_config
+        self.stop_tr = self.start_tr + self.n_tr_per_config
         
         self.target = target
         self.n_classes = constants.N_CLASSES[target]
@@ -170,7 +181,7 @@ class DataLoader():
         
         for tfile in self.trace_files:
             with trsfile.open(tfile, 'r') as traces:
-                for tr in traces[:self.n_tr_per_config]:
+                for tr in traces[self.start_tr:self.stop_tr]:
                     if (not start_none) and (not stop_none):
                         s = tr.samples[self.start_sample:self.stop_sample]
                     elif start_none and (not stop_none):
@@ -217,8 +228,8 @@ class SplitDataLoader(DataLoader):
             In addition, splits the data into train and validation sets.
     """
    
-    def __init__(self, trace_files, tot_traces, train_size, target, byte_idx=None,
-                 start_sample=None, stop_sample=None):
+    def __init__(self, trace_files, tot_traces, train_size, target, start_tr_idx=0, 
+                 byte_idx=None, start_sample=None, stop_sample=None):
     
         """
         Class constructor: generates a SplitDataLoader object (most of inputs 
@@ -229,8 +240,8 @@ class SplitDataLoader(DataLoader):
                 Size of the train-set expressed as percentage.
         """
         
-        super().__init__(trace_files, tot_traces, target, byte_idx, start_sample,
-            stop_sample)
+        super().__init__(trace_files, tot_traces, target, start_tr_idx, byte_idx,
+                         start_sample, stop_sample)
         
         self.n_train_tr_per_config = int(train_size * self.n_tr_per_config)
         
@@ -274,7 +285,7 @@ class SplitDataLoader(DataLoader):
             config_k = []
             
             with trsfile.open(tfile, 'r') as traces:
-                for tr in traces[:self.n_tr_per_config]:
+                for tr in traces[self.start_tr:self.stop_tr]:
                     if (not start_none) and (not stop_none):
                         s = tr.samples[self.start_sample:self.stop_sample]
                     elif start_none and (not stop_none):

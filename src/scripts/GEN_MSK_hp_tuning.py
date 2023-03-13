@@ -11,7 +11,7 @@ sys.path.insert(0, '../utils')
 import helpers
 import constants
 import visualization as vis
-from data_generator import DataGenerator
+from data_generatorOLD import DataGenerator
 from batch_scalers import BatchStandardScaler
 sys.path.insert(0, '../modeling')
 from models import msk_mlp, msk_cnn
