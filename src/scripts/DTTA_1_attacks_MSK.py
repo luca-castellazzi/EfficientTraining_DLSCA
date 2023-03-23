@@ -1,12 +1,10 @@
 # Basics
-import json
 import time
 import numpy as np
 from tqdm import tqdm
 from tensorflow.keras.models import load_model
 from tensorflow.keras.backend import clear_session
 from sklearn.preprocessing import StandardScaler
-# from tensorflow.keras.metrics import TopKCategoricalAccuracy
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 # Custom
@@ -44,11 +42,6 @@ def main():
     else:
         N_KEYS = 7 # This fixes the max amount of traces available (50k * 7 = 350k)
 
-    # Get HPs
-    HP_PATH = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{BYTE}/msk_{n_devs}d/hp.json'
-    with open(HP_PATH, 'r') as jfile:
-        hp = json.load(jfile)
-
     # Definition of constant root path 
     RES_ROOT = f'{constants.RESULTS_PATH}/DTTA/msk/{n_devs}d'
 
@@ -56,7 +49,7 @@ def main():
 
         ges = []
 
-        AVG_GE_FILE = RES_ROOT + f'/avg_ge_{int(tot / 1000)}k'
+        AVG_GE_FILE = RES_ROOT + f'/avg_ge_{int(tot / 1000)}k.npy'
 
         for train_devs, test_dev in tqdm(constants.PERMUTATIONS[n_devs], desc=f'{int(tot / 1000)}k Traces: '):
 
@@ -68,7 +61,7 @@ def main():
             TRACES_FOLDER = RES_ROOT + f'/{int(tot / 1000)}k_traces'
             if not os.path.exists(TRACES_FOLDER):
                 os.mkdir(TRACES_FOLDER)
-            SAVED_MODEL_PATH = TRACES_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
+            NEW_MODEL_PATH = TRACES_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
 
             train_dl = SplitDataLoader(
                 train_files, 
@@ -91,25 +84,13 @@ def main():
 
             clear_session() # Start with a new Keras session every time    
 
-                # # Train and Attack
-                # metrics = [
-                #     'accuracy',
-                #     TopKCategoricalAccuracy(k=10, name='topK')
-                # ] 
-
-                # model = msk_mlp(
-                #     hp=hp, 
-                #     input_len=STOP_SAMPLE, 
-                #     n_classes=constants.N_CLASSES[TARGET],
-                #     metrics=metrics
-                # )
-            
             # Continue the training only if the considered number of traces exceeds 50k
             if tot > ADD_TRACES:
-                
-                DKTA_DIR = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{BYTE}/msk_{n_devs}d/{N_KEYS}k'
-                model = load_model(f'{DKTA_DIR}/model_{"".join(train_devs)}vs{test_dev}.h5')
-                    
+
+                # Load the previous model to continue training
+                PREV_MODEL_PATH = RES_ROOT + f'/{int(TOT[i-1] / 1000)}k_traces/model_{"".join(train_devs)}vs{test_dev}.h5'
+                model = load_model(PREV_MODEL_PATH)
+
                 callbacks = [
                     EarlyStopping(
                         monitor='val_loss', 
@@ -121,7 +102,7 @@ def main():
                         patience=7,
                         min_lr=1e-7),
                     ModelCheckpoint(
-                        SAVED_MODEL_PATH,
+                        NEW_MODEL_PATH,
                         monitor='val_loss',
                         save_best_only=True
                     )
@@ -136,7 +117,7 @@ def main():
                     verbose=0
                 )
 
-            attack_model = load_model(SAVED_MODEL_PATH)  
+            attack_model = load_model(NEW_MODEL_PATH)  
 
             # Testing (every time consider random test traces from the same set)
             test_dl = DataLoader(
@@ -161,6 +142,10 @@ def main():
                 n_exp=100, 
                 target=TARGET
             )
+
+            SINGLE_GE_FILE = TRACES_FOLDER + f'/ge_{"".join(train_devs)}vs{test_dev}.npy'
+            np.save(SINGLE_GE_FILE, ge)
+
             ges.append(ge)
 
         ges = np.vstack(ges)

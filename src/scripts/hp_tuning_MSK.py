@@ -14,7 +14,7 @@ import constants
 import visualization as vis
 from data_loader import SplitDataLoader
 sys.path.insert(0, '../modeling')
-from models import msk_mlp, msk_cnn
+from models import msk_mlp
 from genetic_tuner import GeneticTuner
 
 # Suppress TensorFlow messages
@@ -35,7 +35,13 @@ HP = {
     'batch_size':    [128, 256, 512, 1024]
 }
 TARGET = 'SBOX_OUT'
-STOP_SAMPLE = 7700
+TOT_SAMPLES = 7700
+
+TOT_TR = 50000
+VAL_TOT = 5000
+TRAIN_TOT = TOT_TR - VAL_TOT
+
+BYTE = 5
 
 
 def main():
@@ -44,25 +50,23 @@ def main():
     Performs hyperparameter tuning for an MLP model (target: SBOX_OUT) with the specified settings.
     Settings parameters (provided in order via command line):
         - train_devs: Devices to use during training, provided as comma-separated string without spaces
-        - tot_traces: Number of total train-traces
-        - val_traces: Number of traces to use as validation set
-        - b: Byte to be attacked
+
+    The hyperparameter space is specified as constant value. 
+    Hyperparameter tuning can be done either with DataGenerators, or with numpy arrays directly. 
+    In case of numpy array, batch_size must be added to the hp-space.
     
     The result is a JSON file containing the best hyperparameters.
     """
     
-    _, train_devs, tot_traces, val_traces, b = sys.argv
+    _, train_devs = sys.argv
     
     train_devs = train_devs.upper().split(',')
     n_devs = len(train_devs)
-    tot_traces = int(tot_traces)
-    val_traces = int(val_traces)
-    b = int(b)
 
-    train_files = [f'{constants.MSK_PC_TRACES_PATH}/second_order/{dev}-{k} + Resampled.trs' 
-                    for k in list(constants.KEYS)[1:]
+    train_files = [f'{constants.MSK_PC_TRACES_PATH}/second_order/{dev}-K1 + Resampled.trs' 
+                    # for k in list(constants.KEYS)[1:]
                     for dev in train_devs]
-    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/msk_{n_devs}d'
+    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{BYTE}/msk_{n_devs}d'
     
     LOSS_HIST_FILE = RES_ROOT + f'/loss_hist_data.csv'
     ACC_HIST_FILE = RES_ROOT + f'/acc_hist_data.csv'
@@ -73,11 +77,11 @@ def main():
     # Get data
     train_dl = SplitDataLoader(
         train_files, 
-        tot_traces=tot_traces,
-        train_size=1-(val_traces/tot_traces),
+        tot_traces=TOT_TR,
+        train_size=1-(VAL_TOT/TOT_TR),
         target=TARGET,
-        byte_idx=b,
-        stop_sample=STOP_SAMPLE
+        byte_idx=BYTE,
+        stop_sample=TOT_SAMPLES
     )
     train_data, val_data = train_dl.load()
     x_train, y_train, _, _ = train_data
@@ -92,14 +96,14 @@ def main():
     # HP Tuning via Genetic Algorithm
     tuner = GeneticTuner(
         model_fn=msk_mlp,
-        trace_len=x_train.shape[1],
-        n_classes=y_train.shape[1],
+        trace_len=TOT_SAMPLES,
+        n_classes=constants.N_CLASSES[TARGET],
         hp_space=HP, 
         n_epochs=EPOCHS,
         pop_size=N_MODELS,
         n_gen=N_GEN,
         selection_perc=0.3,
-        second_chance_prob=0.2,
+        second_chance_prob=0.1,
         mutation_prob=0.2
     )
     
