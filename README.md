@@ -1,1 +1,1 @@
-# Device-Key Trade-off Analysis in Deep Learning based Side-Channel Attacks
+# Towards Efficient Training in Deep Learning Side-Channel Attacks 
