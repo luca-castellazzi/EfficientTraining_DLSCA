@@ -41,7 +41,7 @@ TOT_TR = 50000
 VAL_TOT = 5000
 TRAIN_TOT = TOT_TR - VAL_TOT
 
-BYTE = 5
+BYTE = 11
 
 
 def main():
