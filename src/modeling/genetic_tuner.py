@@ -3,7 +3,29 @@
 #  This Genetic Algorithm hyperparameter tuning method for Neural Network is      #
 #  based onthe implementation by Matt Harvey (https://github.com/harvitronix)     #
 #  available at https://github.com/harvitronix/neural-network-genetic-algorithm), #
-#  licensed under MIT License.                                                    #
+#  licensed under MIT License:                                                    #      
+#                                                                                 #
+#  The MIT License                                                                #
+#                                                                                 #
+#  Copyright (c) 2017 Matt Harvey                                                 #
+#                                                                                 #
+#  Permission is hereby granted, free of charge, to any person obtaining a copy   # 
+#  of this software and associated documentation files (the "Software"), to deal  #
+#  in the Software without restriction, including without limitation the rights   #
+#  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+#  copies of the Software, and to permit persons to whom the Software is          #
+#  furnished to do so, subject to the following conditions:                       #
+#                                                                                 #
+#  The above copyright notice and this permission notice shall be included in     #
+#  all copies or substantial portions of the Software.                            #
+#                                                                                 #
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+#  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    # 
+#  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #  
+#  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+#  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN      #
+#  THE SOFTWARE.                                                                  #
 #                                                                                 #
 ###################################################################################
 
@@ -70,7 +92,7 @@ class GeneticTuner(HPTuner):
         self.mutation_prob = mutation_prob
 
 
-    def tune(self, train_data, val_data, callbacks, metrics=['accuracy'], use_gen=False):
+    def tune(self, train_data, val_data, callbacks, batch_size=None, metrics=['accuracy'], use_gen=False):
 
         """
         Performs hyperparameter tuning with a Genetic Algorithm: populations of 
@@ -84,6 +106,23 @@ class GeneticTuner(HPTuner):
         The performance of the hyperparameters is given by the validation loss 
         (the lower the better).
         
+        Parameters:
+            - train_data (tuple or DataGenerator):
+                Train and validation data.
+                If tuple, should be in (samples, labels) format.
+            - val_data (tuple or DataGenerator):
+                If tuple, should be in (samples, labels) format.
+            - callbacks (keras.callbacks list):
+                List of callbacks to use during model training.
+            - batch_size (int, default: None):
+                Batch size to use during model training.
+                If None, it is considered as hyperparameter (and must be inclued
+                in hyperparameter space).
+            - metrics (list, default: ['accuracy']):
+                List of metrics to use during model training.
+            - use_gen (bool, default: False):
+                Whether or not the provided train and val data are DataGenerators. 
+
         Returns:
             - best_hp (dict):
                 Best-performing hyperparameters.
@@ -100,6 +139,7 @@ class GeneticTuner(HPTuner):
                 train_data=train_data, 
                 val_data=val_data, 
                 callbacks=callbacks,
+                batch_size=batch_size,
                 metrics=metrics,
                 use_gen=use_gen
             )
@@ -131,7 +171,7 @@ class GeneticTuner(HPTuner):
         return pop
 
     
-    def _evaluate(self, pop, train_data, val_data, callbacks, metrics, use_gen):
+    def _evaluate(self, pop, train_data, val_data, callbacks, batch_size, metrics, use_gen):
     
         """
         Evaluates the given population of hyperparameters training and validating 
@@ -147,9 +187,11 @@ class GeneticTuner(HPTuner):
                 If tuple, should be in (samples, labels) format.
             - callbacks (keras.callbacks list):
                 List of callbacks to use during model training.
+            - batch_size (int or None):
+                Batch size to use during model training.
             - metrics (list):
                 List of metrics to use during model training.
-            - use_gen (bool, default: False):
+            - use_gen (bool):
                 Whether or not the provided train and val data are DataGenerators. 
         
         Returns:
@@ -176,8 +218,6 @@ class GeneticTuner(HPTuner):
 
             if use_gen:
                 # train_data and val_data are DataGenerators
-                train_data.set_batch_size(hp_config['batch_size'])
-                val_data.set_batch_size(hp_config['batch_size'])
                 history = model.fit(
                     train_data,
                     validation_data=val_data,
@@ -186,18 +226,19 @@ class GeneticTuner(HPTuner):
                     verbose=0
                 ).history
             else:
+                if batch_size is None:
+                    bs = hp_config['batch_size']
+                else:
+                    bs = batch_size
                 history = model.fit(
                     train_data[0], # x_train
                     train_data[1], # y_train
                     validation_data=(val_data[0], val_data[1]), # (x_val, y_val)
                     epochs=self.n_epochs,
-                    batch_size=hp_config['batch_size'],
+                    batch_size=bs,
                     callbacks=callbacks,
                     verbose=0
                 ).history
-            
-            # TODO: if ModelCheckpoint in callbacks, load the saved model and 
-            # use it to evaluate y_val (and gain val_loss for ranking)
  
             val_loss = history['val_loss'][-1]      
             res.append((val_loss, hp_config, history))
