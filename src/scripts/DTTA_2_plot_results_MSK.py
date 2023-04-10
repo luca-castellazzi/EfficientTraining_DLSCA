@@ -10,7 +10,7 @@ import helpers
 import visualization as vis
 
 THRESHOLD = 0.5
-BYTE = 5
+BYTE = 11
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
     _, n_devs = sys.argv
     n_devs = int(n_devs)
 
-    RES_ROOT = f'{constants.RESULTS_PATH}/DTTA/msk/{n_devs}d'
+    RES_ROOT = f'{constants.RESULTS_PATH}/DTTA/msk/byte{BYTE}/{n_devs}d'
     TT_AVG_GES_FILE = RES_ROOT + '/avg_ges.csv'
     TT_AVG_GES_PLOT = RES_ROOT + '/avg_ges.svg'
     MIN_ATT_TR_FILE = RES_ROOT + '/min_att_tr.csv'

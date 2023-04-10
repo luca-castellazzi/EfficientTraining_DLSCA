@@ -10,7 +10,7 @@ import constants
 import visualization as vis
 
 TARGET = 'SBOX_OUT'
-BYTE = 5
+BYTE = 11
 
 
 def main():

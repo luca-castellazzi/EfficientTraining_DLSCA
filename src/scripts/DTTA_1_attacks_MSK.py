@@ -20,7 +20,7 @@ from models import msk_mlp
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 for INFO & WARNINGs & ERRORs
 
-BYTE = 5
+BYTE = 11
 TARGET = 'SBOX_OUT'
 EPOCHS = 100
 ADD_TRACES = 50000
@@ -33,17 +33,21 @@ STOP_SAMPLE = 7700
 
 def main():
 
+    # To proper run this script "as is", copy-paste the .h5 model files from DKTA to this script's 50k_traces folder
+    # They will be used directly without further training
+    # And they will be improved for additional number of traces 
+
     _, n_devs = sys.argv
     n_devs = int(n_devs)
 
     # Set the number of keys to use (given by DKTA)
     if n_devs == 1:
-        N_KEYS = 9
+        N_KEYS = 9 # 9 for both byte 5 and 11
     else:
-        N_KEYS = 7 # This fixes the max amount of traces available (50k * 7 = 350k)
+        N_KEYS = 9 # 7 for byte 5, 9 for byte 11
 
     # Definition of constant root path 
-    RES_ROOT = f'{constants.RESULTS_PATH}/DTTA/msk/{n_devs}d'
+    RES_ROOT = f'{constants.RESULTS_PATH}/DTTA/msk/byte{BYTE}/{n_devs}d'
 
     for i, tot in enumerate(TOT):
 
