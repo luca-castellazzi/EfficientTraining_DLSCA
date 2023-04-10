@@ -137,6 +137,3 @@ dmypy.json
 renesas
 *.svg
 notebooks
-
-# Tmp files
-tf_test.py
