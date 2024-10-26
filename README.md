@@ -20,3 +20,7 @@ Contains all utils functions used within the main scripts.
 
 ## Notes
 The collected traces used in this project are available on Zenodo at [this link](https://doi.org/10.5281/zenodo.7817187). 
+
+
+## License
+[GPLv3](LICENSE.txt)
