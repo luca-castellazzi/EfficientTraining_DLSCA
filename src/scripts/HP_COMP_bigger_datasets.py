@@ -6,6 +6,7 @@ from tqdm import tqdm
 from tensorflow.keras.models import load_model
 from tensorflow.keras.backend import clear_session
 from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 # Custom
 import sys
@@ -15,9 +16,9 @@ import constants
 import results
 import helpers
 import visualization as vis
-import soa_reproduction as soa
 sys.path.insert(0, '../modeling')
-from network import Network
+import soa
+from models import mlp
 
 # Suppress TensorFlow messages
 import os
@@ -77,7 +78,6 @@ def main():
         # This ensures to increase only the size of the actual train set
         train_perc = 1 - (VAL_SIZE / tot_train)
 
-
         # Get Data
         # Data-loading needs to be done inside the loop in order to ensure the 
         # even distribution of traces accross devices and keys
@@ -125,24 +125,42 @@ def main():
         soa_ges.append(soa_ge)
 
         # Custom
-        cstm_net = Network('MLP', cstm_hp)
-        cstm_net.build_model()
-        CSTM_MODEL = RES_ROOT + f'/model_{tot_train}.h5'
-        cstm_net.add_checkpoint_callback(CSTM_MODEL)
+        cstm_model = mlp(
+            hp=cstm_hp,
+            input_len=x_train.shape[1],
+            n_classes=y_train.shape[1]
+        )
+        CSTM_SAVED_MODEL_PATH = RES_ROOT + f'/model_{tot_train}.h5'
+        callbacks = [
+            EarlyStopping(
+                monitor='val_loss', 
+                patience=15
+            ),
+            ReduceLROnPlateau(
+                monitor='val_loss',
+                factor=0.2,
+                patience=7,
+                min_lr=1e-7),
+            ModelCheckpoint(
+                CSTM_SAVED_MODEL_PATH,
+                monitor='val_loss',
+                save_best_only=True
+            )
+        ]
         cstm_start = time.time()
-        _ = cstm_net.model.fit(
+        _ = cstm_model.fit(
             x_train, 
             y_train, 
             validation_data=(x_val, y_val),
-            epochs=100,
-            batch_size=cstm_net.hp['batch_size'],
-            callbacks=cstm_net.callbacks,
+            epochs=1,#100,
+            batch_size=cstm_hp['batch_size'],
+            callbacks=callbacks,
             verbose=0
         )
         cstm_end = time.time()
-        cstm_model = load_model(CSTM_MODEL)
+        cstm_attack_model = load_model(CSTM_SAVED_MODEL_PATH)
         cstm_ge = results.ge(
-            model=cstm_model,
+            model=cstm_attack_model,
             x_test=x_test,
             pltxt_bytes=pbs_test, 
             true_key_byte=tkb_test, 

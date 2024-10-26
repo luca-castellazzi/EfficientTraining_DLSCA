@@ -4,6 +4,7 @@ import time
 import numpy as np
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 # Custom
 import sys
@@ -13,9 +14,9 @@ import helpers
 import constants
 import results
 import visualization as vis
-import soa_reproduction as soa
 sys.path.insert(0, '../modeling')
-from network import Network
+import soa
+from models import mlp
 
 # Suppress TensorFlow messages
 import os
@@ -57,7 +58,7 @@ def main():
     CSTM_LOSS_FILE = RES_ROOT + '/genAlg_loss_hist.csv'
     CSTM_ACC_FILE = RES_ROOT + '/genAlg_acc_hist.csv'
     CSTM_HISTORY_PLOT = RES_ROOT + '/genAlg_hist.svg'
-    CSTM_MODEL = RES_ROOT + '/genAlg_model.h5'
+    CSTM_SAVED_MODEL_PATH = RES_ROOT + '/genAlg_model.h5'
     CSTM_HP = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{BYTE}/{n_devs}d/hp.json'
     # Both
     COMP_FILE = RES_ROOT + '/comparison.csv'
@@ -158,16 +159,34 @@ def main():
         cstm_hp = json.load(jfile)
     
     # Training
-    cstm_net = Network('MLP', cstm_hp)
-    cstm_net.build_model()
-    cstm_net.add_checkpoint_callback(CSTM_MODEL)
-    cstm_history = cstm_net.model.fit(
+    cstm_model = mlp(
+        hp=cstm_hp,
+        input_len=x_train.shape[1],
+        n_classes=y_train.shape[1]
+    )
+    callbacks = [
+        EarlyStopping(
+            monitor='val_loss', 
+            patience=15
+        ),
+        ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.2,
+            patience=7,
+            min_lr=1e-7),
+        ModelCheckpoint(
+            CSTM_SAVED_MODEL_PATH,
+            monitor='val_loss',
+            save_best_only=True
+        )
+    ]
+    cstm_history = cstm_model.fit(
         x_train, 
         y_train, 
         validation_data=(x_val, y_val),
         epochs=100,
-        batch_size=cstm_net.hp['batch_size'],
-        callbacks=cstm_net.callbacks,
+        batch_size=cstm_hp['batch_size'],
+        callbacks=callbacks,
         verbose=0
     ).history
 
@@ -203,9 +222,9 @@ def main():
     vis.plot_history(cstm_history, CSTM_HISTORY_PLOT)
     
     # GE Computation
-    cstm_model = load_model(CSTM_MODEL)
+    cstm_attack_model = load_model(CSTM_SAVED_MODEL_PATH)
     cstm_ge = results.ge(
-        model=cstm_model,
+        model=cstm_attack_model,
         x_test=x_test,
         pltxt_bytes=pbs_test, 
         true_key_byte=tkb_test, 

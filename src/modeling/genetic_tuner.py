@@ -1,77 +1,159 @@
-##################################################################################
-#                                                                                # 
-#  This Genetic Algorithm for Neural Network hyperparameter tuning is based on   #
-#  the implementation by Matt Harvey (https://github.com/harvitronix) available  # 
-#  at https://github.com/harvitronix/neural-network-genetic-algorithm),          #
-#  licensed under MIT License.                                                   #
-#                                                                                #
-##################################################################################
+###################################################################################
+#                                                                                 # 
+#  This Genetic Algorithm hyperparameter tuning method for Neural Network is      #
+#  based onthe implementation by Matt Harvey (https://github.com/harvitronix)     #
+#  available at https://github.com/harvitronix/neural-network-genetic-algorithm), #
+#  licensed under MIT License:                                                    #      
+#                                                                                 #
+#  The MIT License                                                                #
+#                                                                                 #
+#  Copyright (c) 2017 Matt Harvey                                                 #
+#                                                                                 #
+#  Permission is hereby granted, free of charge, to any person obtaining a copy   # 
+#  of this software and associated documentation files (the "Software"), to deal  #
+#  in the Software without restriction, including without limitation the rights   #
+#  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      #
+#  copies of the Software, and to permit persons to whom the Software is          #
+#  furnished to do so, subject to the following conditions:                       #
+#                                                                                 #
+#  The above copyright notice and this permission notice shall be included in     #
+#  all copies or substantial portions of the Software.                            #
+#                                                                                 #
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     #
+#  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       #
+#  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    # 
+#  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER         #  
+#  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  #
+#  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN      #
+#  THE SOFTWARE.                                                                  #
+#                                                                                 #
+###################################################################################
 
 # Basics
 import random
+from tqdm import tqdm
 from tensorflow.keras.backend import clear_session
 
 # Custom
-from network import Network
+from hp_tuner import HPTuner
 
 
-class GeneticTuner():
+class GeneticTuner(HPTuner):
 
     """
-    Genetic Algorithm for hyperparameter tuning.
+    Subclass of HPTuner (implements the "interface") which performs hyperparameter 
+    tuning through Genetic Algorithm.
     
-    Populations of hyperparameters are generated, tested and updated
-    according to the "natural selection" principle: the best-performing
-    hyperparameters are kept to generate the next population.
-    
-    Attributes:
-        - model_type (str):
-           Type of Neural Network to implement.
-        - hp_space (dict):
-            Whole hyperparameter space.
+    Additional attributes:
         - pop_size (int):
             Size of each population of hyperparameters.
+        - n_gen (int):
+            Number of generations.
         - selection_perc (float):
             Percentage of best-performing hyperparameters to keep by default 
             for the next population.
         - second_chance_prob (float):
-            Probability of keeping a bad-performing hyperparameter set.
+            Probability of keeping a bad-performing hyperparameters.
         - mutation_prob (float):
             Probability of mutating an offspring.
-            
+
     Methods:
-        - populate:
+        - _populate:
             Generates a populations of hyperparameters with random values.
-        - evaluate:
+        - _evaluate:
             Evaluates the performance of a population of hyperparameters.
-        - select:
+        - _select:
             Selects the parents for the next population.
         - _produce_offspring:
             Generates an offspring.
         - _mutate_offspring:
             Mutates an offspring.
-        - evolve:
+        - _evolve:
             Generates the new population of hyperparameters.
+
+    Overwritten methods:
+        - tune:
+            Implements a Genetic Algorithm.
     """
 
+    def __init__(self, model_fn, trace_len, n_classes, hp_space, n_epochs, 
+        pop_size, n_gen, selection_perc, second_chance_prob, mutation_prob):
 
-    def __init__(self, model_type, hp_space, pop_size, selection_perc, 
-                 second_chance_prob, mutation_prob):
-    
         """
-        Class constructor: takes as input all class attributes and generates a
+        Class constructor: takes as input all class attributes and generates a 
         GeneticTuner object.
         """
-    
-        self.model_type = model_type
-        self.hp_space = hp_space
+
+        super().__init__(model_fn, trace_len, n_classes, hp_space, n_epochs)
         self.pop_size = pop_size
+        self.n_gen = n_gen
         self.selection_perc = selection_perc
         self.second_chance_prob = second_chance_prob
         self.mutation_prob = mutation_prob
+
+
+    def tune(self, train_data, val_data, callbacks, batch_size=None, metrics=['accuracy'], use_gen=False):
+
+        """
+        Performs hyperparameter tuning with a Genetic Algorithm: populations of 
+        hyperparameters are generated, tested and updated according to the 
+        "natural selection" principle (the best-performing hyperparameters are 
+        kept to generate the next population).
         
+        Only the hyperparameters that show the best performance after a fixed 
+        number of generations are considered as result.
         
-    def populate(self):
+        The performance of the hyperparameters is given by the validation loss 
+        (the lower the better).
+        
+        Parameters:
+            - train_data (tuple or DataGenerator):
+                Train and validation data.
+                If tuple, should be in (samples, labels) format.
+            - val_data (tuple or DataGenerator):
+                If tuple, should be in (samples, labels) format.
+            - callbacks (keras.callbacks list):
+                List of callbacks to use during model training.
+            - batch_size (int, default: None):
+                Batch size to use during model training.
+                If None, it is considered as hyperparameter (and must be inclued
+                in hyperparameter space).
+            - metrics (list, default: ['accuracy']):
+                List of metrics to use during model training.
+            - use_gen (bool, default: False):
+                Whether or not the provided train and val data are DataGenerators. 
+
+        Returns:
+            - best_hp (dict):
+                Best-performing hyperparameters.
+            - best_history():
+                Training history for the best-performing hyperparameters.  
+        """
+
+        pop = self._populate()
+    
+        for gen in tqdm(range(self.n_gen), desc='Genetic Algorithm: '):
+            
+            evaluation = self._evaluate(
+                pop=pop, 
+                train_data=train_data, 
+                val_data=val_data, 
+                callbacks=callbacks,
+                batch_size=batch_size,
+                metrics=metrics,
+                use_gen=use_gen
+            )
+            parents = self._select(evaluation)
+            
+            if gen != self.n_gen-1:
+                pop = self._evolve(parents)
+        
+        _, best_hp, best_history = evaluation[0] # evaluation is already sorted
+
+        return best_hp, best_history
+
+
+    def _populate(self):
     
         """
         Generates a population of hyperparameters with random values.
@@ -87,24 +169,30 @@ class GeneticTuner():
                for _ in range(self.pop_size)]
             
         return pop
-        
-        
-    def evaluate(self, pop, x_train, y_train, x_val, y_val, n_epochs):
+
+    
+    def _evaluate(self, pop, train_data, val_data, callbacks, batch_size, metrics, use_gen):
     
         """
-        Evaluates the given population of hyperparameters.
-        A Neural Network of the type specified in the constructor is built, 
-        trained and evaluated w.r.t. the specified train and validation data.
+        Evaluates the given population of hyperparameters training and validating 
+        multiple models.
         
         Parameters:
             - pop (list of dict):
                 Population of hyperparameters to evaluate.
-            - x_train, x_val (np.ndarray):
-                Train and validation samples.
-            - y_train, y_val (np.ndarray):
-                Train and validation labels.
-            - n_epochs (int):
-                Number of epochs to use during the training.
+            - train_data (tuple or DataGenerator):
+                Train and validation data.
+                If tuple, should be in (samples, labels) format.
+            - val_data (tuple or DataGenerator):
+                If tuple, should be in (samples, labels) format.
+            - callbacks (keras.callbacks list):
+                List of callbacks to use during model training.
+            - batch_size (int or None):
+                Batch size to use during model training.
+            - metrics (list):
+                List of metrics to use during model training.
+            - use_gen (bool):
+                Whether or not the provided train and val data are DataGenerators. 
         
         Returns:
             - res (list of tuple):
@@ -112,36 +200,55 @@ class GeneticTuner():
                 the population, the validation score (validation loss), the 
                 individual (hyperparameters) and the training history.
                 The tuples are ordered from the best score to the worst score
-                (lowest to highest because loss is considered rank).
+                (lowest loss to highest loss).
         """
         
         res = []
+
         for hp_config in pop:
             
             clear_session() # Start a new keras session every new training
             
-            net = Network(self.model_type, hp_config)
-            net.build_model()
-            history = net.model.fit(
-                x_train, 
-                y_train, 
-                validation_data=(x_val, y_val),
-                epochs=n_epochs,
-                batch_size=net.hp['batch_size'],
-                callbacks=net.callbacks,
-                verbose=0
-            ).history
-            
-            # val_loss, _ = net.model.evaluate(x_val, y_val, verbose=0)  
+            model = self.model_fn(
+                hp=hp_config, 
+                input_len=self.trace_len, 
+                n_classes=self.n_classes,
+                metrics=metrics
+            )
+
+            if use_gen:
+                # train_data and val_data are DataGenerators
+                history = model.fit(
+                    train_data,
+                    validation_data=val_data,
+                    epochs=self.n_epochs,
+                    callbacks=callbacks,
+                    verbose=0
+                ).history
+            else:
+                if batch_size is None:
+                    bs = hp_config['batch_size']
+                else:
+                    bs = batch_size
+                history = model.fit(
+                    train_data[0], # x_train
+                    train_data[1], # y_train
+                    validation_data=(val_data[0], val_data[1]), # (x_val, y_val)
+                    epochs=self.n_epochs,
+                    batch_size=bs,
+                    callbacks=callbacks,
+                    verbose=0
+                ).history
+ 
             val_loss = history['val_loss'][-1]      
             res.append((val_loss, hp_config, history))
             
         res.sort(key=lambda x: x[0])
         
         return res
-        
-        
-    def select(self, evaluation):
+
+
+    def _select(self, evaluation):
     
         """
         Selects the parents for the next population.
@@ -178,13 +285,12 @@ class GeneticTuner():
                 parents.append(hp_config)
 
         return parents
-        
-        
+
+
     def _produce_offspring(self, parent_a, parent_b):
     
         """
         Generates an offspring considering two parents.
-        
         An offspring is a hyperparameter configuration where the values derive
         from the parents in a random way.
         
@@ -207,7 +313,6 @@ class GeneticTuner():
     
         """
         Mutates an offspring.
-        
         A mutation consists in the substitution of a hyperparameter value with
         another chosen from the hyperparameter space (both choices are random).
         
@@ -226,7 +331,7 @@ class GeneticTuner():
         return offspring
         
     
-    def evolve(self, parents):
+    def _evolve(self, parents):
     
         """
         Generates a new population considering all the parents, their offspring 
@@ -259,4 +364,4 @@ class GeneticTuner():
         
         new_pop = parents + offsprings
         
-        return new_pop    
+        return new_pop

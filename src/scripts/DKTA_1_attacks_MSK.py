@@ -5,6 +5,7 @@ from tqdm import tqdm
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.backend import clear_session
+from tensorflow.keras.metrics import TopKCategoricalAccuracy
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 
@@ -15,13 +16,15 @@ import results
 import constants
 from data_loader import DataLoader, SplitDataLoader
 sys.path.insert(0, '../modeling')
-from models import mlp
+from models import msk_mlp
 
 # Suppress TensorFlow messages
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 for INFO & WARNINGs & ERRORs
 
 TOT_TRACES = 50000
+VAL_TRACES = 5000
+STOP_SAMPLE = 7700
 EPOCHS = 100
 
 TARGET = 'SBOX_OUT'
@@ -50,11 +53,11 @@ def main():
     n_devs = int(n_devs)
     b = int(b)
     
-    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/{n_devs}d' 
+    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/msk_{n_devs}d' 
     HP_PATH = RES_ROOT + '/hp.json'
 
 
-    with open(HP_PATH, 'r') as jfile:
+    with open(HP_PATH, 'r') as jfile: 
         hp = json.load(jfile)
     
     
@@ -62,7 +65,7 @@ def main():
       
         GES_FILE = RES_ROOT + f'/ges_{"".join(train_devs)}vs{test_dev}.npy'
         
-        test_files = [f'{constants.PC_TRACES_PATH}/{test_dev}-K0_500MHz + Resampled.trs'] # list is needed in DataLoader
+        test_files = [f'{constants.MSK_PC_TRACES_PATH}/second_order/{test_dev}-K0 + Resampled.trs'] # list is needed in DataLoader
             
         ges = []
 
@@ -73,16 +76,17 @@ def main():
                 os.mkdir(N_KEYS_FOLDER)
             SAVED_MODEL_PATH = N_KEYS_FOLDER + f'/model_{"".join(train_devs)}vs{test_dev}.h5'
             
-            train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
+            train_files = [f'{constants.MSK_PC_TRACES_PATH}/second_order/{dev}-{k} + Resampled.trs' 
                            for k in list(constants.KEYS)[1:n_keys+1]
                            for dev in train_devs]
 
             train_dl = SplitDataLoader(
                 train_files, 
                 tot_traces=TOT_TRACES,
-                train_size=0.9,
+                train_size=1-(VAL_TRACES/TOT_TRACES),
                 target=TARGET,
-                byte_idx=b
+                byte_idx=b,
+                stop_sample=STOP_SAMPLE
             )
             train_data, val_data = train_dl.load()
             x_train, y_train, _, _ = train_data 
@@ -96,11 +100,19 @@ def main():
                       
             clear_session() # Start with a new Keras session every time    
             
-            model = mlp(
+            metrics = [
+                'accuracy',
+                TopKCategoricalAccuracy(k=10, name='topK')
+            ] 
+
+            model = msk_mlp(
                 hp=hp, 
-                input_len=x_train.shapep[1], 
-                n_classes=y_train.shape[1]
+                input_len=x_train.shape[1], 
+                n_classes=y_train.shape[1],
+                metrics=metrics
             )
+
+            #Training (with Validation)
             callbacks = [
                 EarlyStopping(
                     monitor='val_loss', 
@@ -117,8 +129,7 @@ def main():
                     save_best_only=True
                 )
             ]
-
-            #Training (with Validation)
+            
             model.fit(
                 x_train, 
                 y_train, 
@@ -134,7 +145,8 @@ def main():
                 test_files, 
                 tot_traces=TOT_TRACES,
                 target=TARGET,
-                byte_idx=b
+                byte_idx=b,
+                stop_sample=STOP_SAMPLE
             )
             x_test, _, pbs_test, tkb_test = test_dl.load()
 

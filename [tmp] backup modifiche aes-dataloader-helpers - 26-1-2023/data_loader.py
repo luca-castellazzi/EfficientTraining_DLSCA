@@ -4,10 +4,6 @@ import trsfile
 import numpy as np
 from tensorflow.keras.utils import to_categorical
 
-# Custom
-import aes
-import constants
-
 
 class DataLoader():
     
@@ -19,21 +15,10 @@ class DataLoader():
             Paths to the trace files.
         - n_tr_per_config (int):
             Number of traces to be collected per different device-key configuration.
-        - start_tr (int):
-            Index of the first trace to read.
-        - stop_tr (int):
-            Index of the last trace to read (+1).
-        - target (str):
-            Target of the attack.
-        - n_classes (int):
-            Number of possible labels.
+        - labels_fn (function):
+            Function which generates labels from plaintext and key.
         - byte_idx (int, default=None):
             Byte index to consider during the labeling of the traces.
-        - start_sample (int, default=None):
-            Index of the first trace-sample to read. If None, set to 0 automatically.
-        - stop_sample (int, default=None):
-            Indes of the last trace-sample to read (+1). If None, all the samples 
-            will be considered.
            
     Methods:
         - _retrieve_metadata:
@@ -48,42 +33,29 @@ class DataLoader():
     """
 
 
-    def __init__(self, trace_files, tot_traces, target, start_tr_idx=0, byte_idx=None, 
-                 start_sample=None, stop_sample=None):
+    def __init__(self, trace_files, tot_traces, labels_fn, byte_idx):
     
         """
-        Class constructor: generates a DataLoader object.
+        Class constructor: and generates a DataLoader object (most of inputs are 
+        not attributes).
         
         Parameters:
             - trace_files (str list):
-                Paths to the trace files.
+            Paths to the trace files.
             - tot_traces (int):
                 Total number of traces to retrieve.
-            - target (str):
-                Target of the attack.
-            - start_tr_idx (int, default=0):
-                Index of the first trace to consider in each file.
-            - byte_idx (int, default=None):
+            - labels_fn (function):
+                Function which generates labels from plaintext and key.
+                It should get a single plaintext-byte (int) and a single key-byte
+                (int) as input and return the corresponding label (all int values).
+            - byte_idx (int):
                 Byte index considered during the labeling of the traces.
-            - start_sample (int, default=None):
-                Index of the first sample to consider in each trace.
-            - stop_sample (int, default=None):
-                Indes of the last sample to consider in each trace.
         """
 
         self.trace_files = trace_files
-        
-        self.n_tr_per_config = tot_traces // len(trace_files)
-        self.start_tr = start_tr_idx * self.n_tr_per_config
-        self.stop_tr = self.start_tr + self.n_tr_per_config
-        
-        self.target = target
-        self.n_classes = constants.N_CLASSES[target]
-        
+        self.n_tr_per_config = int(tot_traces / len(trace_files))
+        self.labels_fn = labels_fn
         self.byte_idx = byte_idx
-
-        self.start_sample = start_sample
-        self.stop_sample = stop_sample
         
     
     def _retrieve_metadata(self, tr):
@@ -101,22 +73,20 @@ class DataLoader():
         
         Returns:
             - l, p, k (tuple):
-                l is the label associated to the trace.
+                l is the label associated to the trace (int).
                 p is the plaintext used during the encryption (eventually single
                 bytes).
                 k is the key used during the encryption (eventually single bytes).
         """
         
-        p = np.array(tr.get_input()) # int list
-        k = np.array(tr.get_key()) # int list
-        l = aes.labels_from_key(p, k, self.target) # Compute the set of 16 labels
+        p = np.array(tr.get_input())[self.byte_idx] # int list
+        k = np.array(tr.get_key())[self.byte_idx] # int list
+        l = self.labels_fn(p, k) # Compute the set of 16 labels
 
-        if self.byte_idx is not None:
-            l = l[self.byte_idx]
-            p = p[self.byte_idx]
-            k = k[self.byte_idx]
-
-        l = to_categorical(l, self.n_classes)
+        # if self.byte_idx is not None:
+        #     l = l[self.byte_idx]
+        #     p = p[self.byte_idx]
+        #     k = k[self.byte_idx]
         
         return l, p, k
         
@@ -175,32 +145,21 @@ class DataLoader():
         labels = []
         pltxt_bytes = []
         true_key_bytes = []
-
-        start_none = self.start_sample is None
-        stop_none = self.stop_sample is None
         
         for tfile in self.trace_files:
             with trsfile.open(tfile, 'r') as traces:
-                for tr in traces[self.start_tr:self.stop_tr]:
-                    if (not start_none) and (not stop_none):
-                        s = tr.samples[self.start_sample:self.stop_sample]
-                    elif start_none and (not stop_none):
-                        s = tr.samples[:self.stop_sample]
-                    elif (not start_none) and stop_none:
-                        s = tr.samples[self.start_sample:]
-                    else:
-                        s = tr.samples
+                for tr in traces[:self.n_tr_per_config]:
+                    s = tr.samples
                     l, p, k = self._retrieve_metadata(tr)
-
                     samples.append(s)
                     labels.append(l)
                     pltxt_bytes.append(p)
                     true_key_bytes.append(k)
         
         x = np.vstack(samples) # (tot_traces x trace_len)
-        y = np.vstack(labels) # (tot_traces x n_classes)
-        pbs = np.array(pltxt_bytes) # (tot_traces x 1)
-        tkbs = np.array(true_key_bytes) # (tot_traces x 1)
+        y = np.vstack(labels) # (tot_traces x 1)
+        pbs = np.vstack(pltxt_bytes) # (tot_traces x 1)
+        tkbs = np.vstack(true_key_bytes) # (tot_traces x 1)
         
         x, y, pbs, tkbs = self._shuffle(x, y, pbs, tkbs)
         
@@ -228,8 +187,7 @@ class SplitDataLoader(DataLoader):
             In addition, splits the data into train and validation sets.
     """
    
-    def __init__(self, trace_files, tot_traces, train_size, target, start_tr_idx=0, 
-                 byte_idx=None, start_sample=None, stop_sample=None):
+    def __init__(self, trace_files, tot_traces, train_size, labels_fn, byte_idx):
     
         """
         Class constructor: generates a SplitDataLoader object (most of inputs 
@@ -240,9 +198,7 @@ class SplitDataLoader(DataLoader):
                 Size of the train-set expressed as percentage.
         """
         
-        super().__init__(trace_files, tot_traces, target, start_tr_idx, byte_idx,
-                         start_sample, stop_sample)
-        
+        super().__init__(trace_files, tot_traces, labels_fn, byte_idx)
         self.n_train_tr_per_config = int(train_size * self.n_tr_per_config)
         
         
@@ -273,9 +229,6 @@ class SplitDataLoader(DataLoader):
         y_val = []
         pbs_val = []
         tkbs_val = []
-
-        start_none = self.start_sample is None
-        stop_none = self.stop_sample is None
         
         for tfile in self.trace_files:
             
@@ -285,15 +238,8 @@ class SplitDataLoader(DataLoader):
             config_k = []
             
             with trsfile.open(tfile, 'r') as traces:
-                for tr in traces[self.start_tr:self.stop_tr]:
-                    if (not start_none) and (not stop_none):
-                        s = tr.samples[self.start_sample:self.stop_sample]
-                    elif start_none and (not stop_none):
-                        s = tr.samples[:self.stop_sample]
-                    elif (not start_none) and stop_none:
-                        s = tr.samples[self.start_sample:]
-                    else:
-                        s = tr.samples
+                for tr in traces[:self.n_tr_per_config]:
+                    s = tr.samples
                     l, p, k = self._retrieve_metadata(tr)
                     
                     config_s.append(s)

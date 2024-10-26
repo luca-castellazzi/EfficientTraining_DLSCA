@@ -11,7 +11,7 @@
 import numpy as np
 
 
-def nicv(traces, plaintexts, byte_idx):
+def nicv(traces, pltxt_bytes):
 
     """
     Computes the Normalized Inter-Class Variance (NICV) index for the provided
@@ -23,10 +23,8 @@ def nicv(traces, plaintexts, byte_idx):
     Parameters:
         - traces (np.ndarray): 
             Values of the traces.
-        - plaintexts (np.ndarray):
-            Integer-version of the plaintexts.
-        - byte_idx (int): 
-            Byte index to use during the computation of NICV.
+        - pltxt_bytes (np.ndarray):
+            Integer-version of the plaintexts (single byte).
 
     Returns:
         - nicv (np.array): 
@@ -34,8 +32,6 @@ def nicv(traces, plaintexts, byte_idx):
     """
 
     # Define all fixed values
-    num_traces = len(traces) # Number of traces
-    tr_len = len(traces[0]) # Number of samples per trace
     possible_plaintext_values = range(256) # Possible values that a single plaintext-byte can assume 
 
     # Define a structure to handle the mean values during the computation
@@ -43,7 +39,7 @@ def nicv(traces, plaintexts, byte_idx):
 
     # Partition the traces w.r.t. X and compute the corresponding mean value
     for x in possible_plaintext_values:
-        idx_tr_with_x = np.where(plaintexts[:, byte_idx] == x) # Isolate traces by index
+        idx_tr_with_x = np.where(pltxt_bytes == x) # Isolate traces by index
         val_tr_with_x = traces[idx_tr_with_x] # Get the actual values of the isolated traces
         
         if len(val_tr_with_x) != 0:

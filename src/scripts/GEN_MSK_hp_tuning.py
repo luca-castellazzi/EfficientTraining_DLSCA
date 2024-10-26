@@ -2,7 +2,7 @@
 import json
 import time
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.metrics import TopKCategoricalAccuracy
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 # Custom
@@ -11,9 +11,10 @@ sys.path.insert(0, '../utils')
 import helpers
 import constants
 import visualization as vis
-from data_loader import SplitDataLoader
+from data_generatorOLD import DataGenerator
+from batch_scalers import BatchStandardScaler
 sys.path.insert(0, '../modeling')
-from models import mlp
+from models import msk_mlp, msk_cnn
 from genetic_tuner import GeneticTuner
 
 # Suppress TensorFlow messages
@@ -21,19 +22,22 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' # 1 for INFO, 2 for INFO & WARNINGs, 3 for INFO & WARNINGs & ERRORs
 
 
-N_MODELS = 15
-N_GEN = 20
+N_MODELS = 10
+N_GEN = 10
 EPOCHS = 100
 HP = {
-    'dropout_rate':  [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
-    'add_hlayers':   [1, 2, 3, 4, 5],
-    'add_hneurons':  [100, 200, 300, 400, 500], 
+    # 'filters':       [1, 4, 8, 16, 32],
+    # 'filter_size':   [3, 7, 11, 33, 101],
+    'dropout_rate':  [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+    'add_hlayers':   [1, 2, 3, 4, 5, 6, 7],
+    'add_hneurons':  [50, 100, 200, 300, 400, 500], 
     'add_hl2':       [0.0, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4],
     'optimizer':     ['adam', 'rmsprop', 'sgd'],
     'learning_rate': [5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5],
     'batch_size':    [128, 256, 512, 1024]
 }
 TARGET = 'SBOX_OUT'
+CNN = False
 
 
 def main():
@@ -41,49 +45,61 @@ def main():
     """
     Performs hyperparameter tuning for an MLP model (target: SBOX_OUT) with the specified settings.
     Settings parameters (provided in order via command line):
-        - train_devs: Devices to use during training, provided as comma-separated string without spaces
         - tot_traces: Number of total train-traces
         - b: Byte to be attacked
     
     The result is a JSON file containing the best hyperparameters.
     """
     
-    _, train_devs, tot_traces, b = sys.argv
+    _, tot_traces, val_size, b = sys.argv
     
-    train_devs = train_devs.upper().split(',')
-    n_devs = len(train_devs)
     tot_traces = int(tot_traces)
+    val_size = int(val_size)
     b = int(b)
 
         
-    train_files = [f'{constants.PC_TRACES_PATH}/{dev}-{k}_500MHz + Resampled.trs' 
-                   for k in list(constants.KEYS)[1:]
-                   for dev in train_devs]
-    RES_ROOT = f'{constants.RESULTS_PATH}/DKTA/{TARGET}/byte{b}/{n_devs}d'
+    train_file = f'{constants.MSK_PC_TRACES_PATH}/second_order/D1-K1 + Resampled.trs'
+    TR_LEN = 8736
+    RES_ROOT = f'{constants.RESULTS_PATH}/MSK'
     
     LOSS_HIST_FILE = RES_ROOT + f'/loss_hist_data.csv'
     ACC_HIST_FILE = RES_ROOT + f'/acc_hist_data.csv'
+    TOP_K_HIST_FILE = RES_ROOT + f'/topK_hist_data.csv'
     HISTORY_PLOT = RES_ROOT + f'/hp_tuning_history.svg' 
     HP_PATH = RES_ROOT + f'/hp.json'
 
-    # Get data
-    train_dl = SplitDataLoader(
-        train_files, 
-        tot_traces=tot_traces,
-        train_size=0.9,
-        target=TARGET,
-        byte_idx=b
+    # Setup Generators
+    batch_scaler = BatchStandardScaler(
+        tr_file=train_file, 
+        tr_tot=tot_traces-val_size,
+        tr_len=TR_LEN,
+        n_batch=100
     )
-    train_data, val_data = train_dl.load()
-    x_train, y_train, _, _ = train_data
-    x_val, y_val, _, _ = val_data
+    batch_scaler.fit()
 
-    # Scale data to 0-mean and 1-variance
-    scaler = StandardScaler()
-    scaler.fit(x_train)
-    x_train = scaler.transform(x_train)
-    x_val = scaler.transform(x_val)
+    train_indices = range(tot_traces - val_size)
+    val_indices = range(tot_traces - val_size, tot_traces)
 
+    train_gen = DataGenerator(
+        tr_file=train_file,
+        tr_indices=train_indices,
+        tr_len=TR_LEN,
+        target=TARGET,
+        byte_idx=b,
+        scaler=batch_scaler,
+        cnn=CNN
+    )
+
+    val_gen = DataGenerator(
+        tr_file=train_file,
+        tr_indices=val_indices,
+        tr_len=TR_LEN,
+        target=TARGET,
+        byte_idx=b,
+        scaler=batch_scaler,
+        cnn=CNN
+    )
+    
     # HP Tuning via Genetic Algorithm
     callbacks = [
         EarlyStopping(
@@ -98,9 +114,9 @@ def main():
     ]
 
     tuner = GeneticTuner(
-        model_fn=mlp, 
-        trace_len=x_train.shape[1],
-        n_classes=y_train.shape[1],
+        model_fn=msk_mlp,
+        trace_len=TR_LEN,
+        n_classes=constants.N_CLASSES[TARGET],
         hp_space=HP, 
         n_epochs=EPOCHS,
         pop_size=N_MODELS,
@@ -109,11 +125,18 @@ def main():
         second_chance_prob=0.2,
         mutation_prob=0.2
     )
+
+    metrics = [
+        'accuracy',
+        TopKCategoricalAccuracy(k=10, name='topK')
+    ]  
         
     best_hp, best_history = tuner.tune(
-        train_data=(x_train, y_train),
-        val_data=(x_val, y_val),
-        callbacks=callbacks
+        train_data=train_gen,
+        val_data=val_gen,
+        callbacks=callbacks,
+        metrics=metrics,
+        use_gen=True
     )
 
     
@@ -147,6 +170,20 @@ def main():
         data=acc_data, 
         columns=['Epochs', 'Acc', 'Val_Acc'],
         output_path=ACC_HIST_FILE
+    )
+
+    # Top K (k=10) Accuracy
+    topK_data = np.vstack(
+        (
+            np.arange(actual_epochs)+1, # X-axis values
+            best_history['topK'], # Y-axis values for 'loss'
+            best_history['val_topK'] # Y-axis values for 'val_loss'
+        )
+    ).T
+    helpers.save_csv(
+        data=topK_data, 
+        columns=['Epochs', 'TopK', 'Val_TopK'],
+        output_path=TOP_K_HIST_FILE
     )
 
     # Plot training history

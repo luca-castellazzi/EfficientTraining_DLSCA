@@ -32,6 +32,13 @@ def _hw_sbox_out(plaintext, key):
     hw = [bin(val).replace('0b', '').count('1') for val in sbox_out]
     return hw
 
+def _hw_sbox_in(plaintext, key):
+    # AddRoundKey
+    sbox_in = plaintext ^ key
+    # HW Computation
+    hw = [bin(val).replace('0b', '').count('1') for val in sbox_in]
+    return hw
+
 def labels_from_key(plaintext, key, target):
     
     """ 
@@ -55,7 +62,8 @@ def labels_from_key(plaintext, key, target):
         'KEY': _key,
         'SBOX_IN': _sbox_in,
         'SBOX_OUT':_sbox_out,
-        'HW_SO': _hw_sbox_out
+        'HW_SO': _hw_sbox_out,
+        'HW_SI': _hw_sbox_in
     }
     generate_labels = actions[target] # action.get(target, _default_fun) to specify a default behavior in case of key not found
 

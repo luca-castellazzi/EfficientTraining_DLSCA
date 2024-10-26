@@ -26,21 +26,28 @@ def plot_nicv(nicvs, configs, output_path):
     cmap = plt.cm.Set1
     colors = cmap(range(len(configs)))
  
-    f, ax = plt.subplots(4, 4, figsize=(25,25))
+    f = plt.figure(figsize=(10,10))
     
     for i, c in enumerate(configs):
-        row = 0
-        for b in range(16):
-            col = b % 4
 
-            ax[row, col].plot(nicvs[i][b], label=c, color=colors[i])
-            ax[row, col].legend()
-            ax[row, col].set_title(f'Byte {b}')
-            ax[row, col].set_xlabel('Samples')
-            ax[row, col].set_ylabel('NICV')
+        plt.plot(nicvs[i], label=c, color=colors[i])
+        plt.legend()
+        plt.title(f'Byte 5')
+        plt.xlabel('Samples')
+        plt.ylabel('NICV')
 
-            if col == 3:
-                row += 1
+        # row = 0
+        # for b in range(16):
+        #     col = b % 4
+
+        #     ax[row, col].plot(nicvs[i][b], label=c, color=colors[i])
+        #     ax[row, col].legend()
+        #     ax[row, col].set_title(f'Byte {b}')
+        #     ax[row, col].set_xlabel('Samples')
+        #     ax[row, col].set_ylabel('NICV')
+
+        #     if col == 3:
+        #         row += 1
 
     f.savefig(
         output_path,
@@ -63,23 +70,23 @@ def plot_history(history, output_path):
             Absolute path to the SVG file containing the plot.
     """
 
-    f, ax = plt.subplots(1, 2, figsize=(18,8))
+    h_labels = list(history.keys()) # Format: [x, ..., val_x, ..., lr]
+    n_labels = len(h_labels) - 1 # There is LR due to callbacks
+    n_metrics = int(n_labels / 2) # Do not consider VAL ones
     
-    ax[0].plot(history['loss'], label='train_loss')
-    ax[0].plot(history['val_loss'], label='val_loss')
-    ax[0].set_title('Train and Val Loss')
-    ax[0].set_ylabel('Loss')
-    ax[0].set_xlabel('Epochs')
-    ax[0].legend()
-    ax[0].grid()
-    
-    ax[1].plot(history['accuracy'], label='train_acc')
-    ax[1].plot(history['val_accuracy'], label='val_acc')
-    ax[1].set_title('Train and Val Acc')
-    ax[1].set_ylabel('Acc')
-    ax[1].set_xlabel('Epochs')
-    ax[1].legend()
-    ax[1].grid()
+    metrics = [(h_labels[i], h_labels[i+n_metrics]) for i in range(0, n_metrics)]
+
+    f, ax = plt.subplots(1, n_metrics, figsize=(20,5))
+
+    for i, (m, val_m) in enumerate(metrics):
+
+        ax[i].plot(history[m], label=f'train_{m}')
+        ax[i].plot(history[val_m], label=val_m)
+        ax[i].set_title(f'Train and Val {m.title()}')
+        ax[i].set_ylabel(m.title())
+        ax[i].set_xlabel('Epochs')
+        ax[i].legend()
+        ax[i].grid()
     
     f.savefig(
         output_path, 
@@ -121,7 +128,7 @@ def plot_conf_matrix(conf_matrix, output_path):
     plt.close(f)
 
 
-def plot_ges(ges, labels, title, ylim_max, output_path):
+def plot_ges(ges, labels, title, ylim_max, output_path, grid=True):
 
     """
     Plots GEs using Google Turbo color-palette and saves the result in a .SVG file.
@@ -137,6 +144,8 @@ def plot_ges(ges, labels, title, ylim_max, output_path):
             Upper limit for y-axis.
         - output_path (str):
             Absolute path to the SVG file containing the plot.
+        - grid (bool, default: True):
+            Whether or not plot a grid.
     """
     
     # Set the color palette
@@ -146,15 +155,20 @@ def plot_ges(ges, labels, title, ylim_max, output_path):
     # Plot the GEs
     f, ax = plt.subplots(figsize=(10,5))
     for ge, l, c in zip(ges, labels, colors):
-        ax.plot(ge, label=l, marker='o', color=c)
+        if ges.shape[1] <= 30:
+            ax.plot(ge, label=l, marker='o', color=c)
+        else:
+            ax.plot(ge, label=l, color=c, linewidth=4)
         
     ax.set_title(title)
-    ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
+    if ges.shape[1] <= 30:
+        ax.set_xticks(range(len(ge)), labels=range(1, len(ge)+1))
     ax.set_ylim([-3, ylim_max]) 
     ax.set_xlabel('Number of traces')
     ax.set_ylabel('GE')
     ax.legend()
-    ax.grid()
+    if grid:
+        ax.grid()
 
     f.savefig(
         output_path, 
