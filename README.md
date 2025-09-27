@@ -1,6 +1,6 @@
 # Towards Efficient Training in Deep Learning Side-Channel Attacks 
 
-This repository stores the code used for the development of my Master's Thesis @ Politecnico di Milano (A.Y. 2021-2022), entitled _Towards Efficient Training in Deep Learning Side-Channel Attacks_.
+This repository stores the code used for the development of my Master's Thesis @ Politecnico di Milano (A.Y. 2021-2022), entitled _Towards Efficient Training in Deep Learning Side-Channel Attacks_ (avaible [here](https://www.politesi.polimi.it/handle/10589/211827)).
 The Thesis' goal is to study how multiple devices, several encryption-keys and different amount of train-data influence the performance of a Deep Learning based Side-Channel Attack (DL-based SCA) against AES-128.
 
 
